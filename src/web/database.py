@@ -145,6 +145,12 @@ def get_stats():
     }
 
 
+def clear_sort_history():
+    """Delete all sort events from the database."""
+    with get_db() as conn:
+        conn.execute("DELETE FROM sort_events")
+
+
 # ---------------------------------------------------------------------------
 # System state
 # ---------------------------------------------------------------------------

@@ -36,6 +36,7 @@ document.addEventListener("alpine:init", () => {
         settingsDirty: false,
         settingsToast: "",
         settingsToastError: false,
+        clearingData: false,
         _toastTimer: null,
 
         // Computed-ish
@@ -293,6 +294,30 @@ document.addEventListener("alpine:init", () => {
             this._toastTimer = setTimeout(() => {
                 this.settingsToast = "";
             }, 3000);
+        },
+
+        /**
+         * Clear all sort history from the database.
+         */
+        async clearData() {
+            if (!confirm("Are you sure you want to clear all sort history? This cannot be undone.")) {
+                return;
+            }
+            this.clearingData = true;
+            try {
+                const res = await this.api("data/clear", { method: "POST" });
+                if (res.error) {
+                    this.showToast("Error: " + res.error, true);
+                } else {
+                    this.activity = [];
+                    await this.loadStats();
+                    this.showToast("All data cleared");
+                }
+            } catch (err) {
+                this.showToast("Failed to clear data: " + err.message, true);
+            } finally {
+                this.clearingData = false;
+            }
         },
 
         // ---- SSE ----

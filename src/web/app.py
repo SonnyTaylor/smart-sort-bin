@@ -64,6 +64,14 @@ def api_history():
     return jsonify(database.get_recent_sorts(limit))
 
 
+@app.route("/api/data/clear", methods=["POST"])
+def api_clear_data():
+    """Delete all sort history from the database."""
+    database.clear_sort_history()
+    broadcast_sse("data_cleared", {"time": time.time()})
+    return jsonify({"status": "cleared"})
+
+
 # ---------------------------------------------------------------------------
 # REST API - Mode
 # ---------------------------------------------------------------------------

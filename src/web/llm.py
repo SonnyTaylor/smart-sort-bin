@@ -121,9 +121,34 @@ def classify_image(
         with httpx.Client(timeout=timeout) as client:
             resp = client.post(url, headers=headers, json=payload)
             resp.raise_for_status()
-            data = resp.json()
 
-        raw_text = data["choices"][0]["message"]["content"].strip()
+        # Guard against empty response body
+        body = resp.text.strip()
+        if not body:
+            return {
+                "error": f"Empty response from {provider_id} (HTTP {resp.status_code}). "
+                "Check your API key and model ID are correct.",
+                "category": None,
+            }
+
+        data = resp.json()
+
+        # Validate response structure
+        choices = data.get("choices")
+        if not choices or not isinstance(choices, list) or len(choices) == 0:
+            return {
+                "error": f"No choices in API response. Response: {body[:300]}",
+                "category": None,
+            }
+
+        content = choices[0].get("message", {}).get("content", "")
+        if not content:
+            return {
+                "error": "Model returned empty content. It may not support vision or the image was rejected.",
+                "category": None,
+            }
+
+        raw_text = content.strip()
 
         # Parse the JSON response from the model
         # Strip markdown code fences if present
@@ -149,15 +174,34 @@ def classify_image(
         }
 
     except httpx.TimeoutException:
-        return {"error": "Request timed out", "category": None}
-    except httpx.HTTPStatusError as e:
         return {
-            "error": f"API error {e.response.status_code}: {e.response.text[:200]}",
+            "error": f"Request to {provider_id} timed out after {timeout}s. "
+            "Try a faster model or increase the timeout.",
             "category": None,
         }
-    except (json.JSONDecodeError, KeyError, IndexError) as e:
+    except httpx.HTTPStatusError as e:
+        status = e.response.status_code
+        detail = e.response.text[:300] if e.response.text else "No details"
+        hints = {
+            401: "Invalid API key.",
+            403: "Access denied. Check your API key permissions.",
+            404: f"Model '{model}' not found on this provider.",
+            429: "Rate limited. Wait a moment and try again.",
+        }
+        hint = hints.get(status, "")
         return {
-            "error": f"Failed to parse response: {str(e)}",
+            "error": f"API error {status}: {hint} {detail}".strip(),
+            "category": None,
+        }
+    except json.JSONDecodeError as e:
+        return {
+            "error": f"Model response was not valid JSON: {str(e)}",
+            "category": None,
+            "raw_response": locals().get("raw_text", ""),
+        }
+    except (KeyError, IndexError) as e:
+        return {
+            "error": f"Unexpected response structure: {str(e)}",
             "category": None,
             "raw_response": locals().get("raw_text", ""),
         }
