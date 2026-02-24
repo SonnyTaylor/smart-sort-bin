@@ -61,7 +61,7 @@ Connected over UART serial. See [`docs/06_serial_protocol.md`](docs/06_serial_pr
 | Cloud AI | OpenRouter API -- Llama-4-Scout VLM (optional) |
 | MaixCAM | Python + MaixPy + Flask/FastAPI |
 | ESP32 | Arduino / MicroPython |
-| Web Dashboard | HTML/CSS/JS + REST API + SSE |
+| Web Dashboard | Alpine.js + Tailwind CSS (CDN) + REST API + SSE |
 | Data | SQLite (sorting history & statistics) |
 
 ## Web Dashboard
@@ -73,6 +73,7 @@ Accessible at `http://<maixcam-ip>:8080` on the local network:
 - **Camera Feed** -- Live or last-frame view with detection overlay
 - **System Health** -- Temperature, uptime, inference latency
 - **Manual Controls** -- Servo calibration, manual sort trigger, home reset
+- **LLM Settings** -- Provider selection (OpenRouter/OpenAI/Gemini/Custom), free-text model ID input, explicit Save button
 
 ## Project Structure
 

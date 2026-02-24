@@ -1,7 +1,8 @@
 /*
  * AI Smart Bin - Dashboard JS (Alpine.js)
  *
- * Reactive dashboard with webcam, LLM classification, and SSE updates.
+ * Reactive dashboard with webcam, LLM classification, SSE updates,
+ * and batched settings save.
  */
 
 let _activityId = 0;
@@ -28,6 +29,14 @@ document.addEventListener("alpine:init", () => {
         lastResult: null,
         classifyError: "",
         capturedImage: null,
+
+        // Settings
+        selectedProvider: "",
+        pendingSettings: {},     // { providerId: { api_key, model, base_url } }
+        settingsDirty: false,
+        settingsToast: "",
+        settingsToastError: false,
+        _toastTimer: null,
 
         // Computed-ish
         get activeProviderName() {
@@ -86,6 +95,11 @@ document.addEventListener("alpine:init", () => {
 
         async loadProviders() {
             this.providers = await this.api("providers");
+            // Auto-select first provider if none selected
+            if (!this.selectedProvider && this.providers.length > 0) {
+                const active = this.providers.find(p => p.is_active);
+                this.selectedProvider = active ? active.id : this.providers[0].id;
+            }
         },
 
         // ---- Mode ----
@@ -173,7 +187,6 @@ document.addEventListener("alpine:init", () => {
                     this.classifyError = data.error;
                 } else {
                     this.lastResult = data;
-                    // Stats will update via SSE
                 }
             } catch (err) {
                 this.classifyError = "Request failed: " + err.message;
@@ -184,29 +197,68 @@ document.addEventListener("alpine:init", () => {
 
         // ---- Provider settings ----
 
-        async updateProviderKey(id, key) {
-            if (!key) return;
-            await this.api(`providers/${id}`, {
-                method: "PATCH",
-                body: JSON.stringify({ api_key: key }),
-            });
-            await this.loadProviders();
+        selectProvider(id) {
+            this.selectedProvider = id;
         },
 
-        async updateProviderModel(id, model) {
-            await this.api(`providers/${id}`, {
-                method: "PATCH",
-                body: JSON.stringify({ model }),
-            });
-            await this.loadProviders();
+        /**
+         * Track a pending change for a provider field.
+         * Changes are NOT sent to the server until Save is clicked.
+         */
+        setPending(providerId, field, value) {
+            if (!this.pendingSettings[providerId]) {
+                this.pendingSettings[providerId] = {};
+            }
+            this.pendingSettings[providerId][field] = value;
+            this.settingsDirty = true;
         },
 
-        async updateProviderUrl(id, url) {
-            await this.api(`providers/${id}`, {
-                method: "PATCH",
-                body: JSON.stringify({ base_url: url }),
-            });
-            await this.loadProviders();
+        /**
+         * Check whether a provider has unsaved changes.
+         */
+        hasProviderChanges(providerId) {
+            const pending = this.pendingSettings[providerId];
+            if (!pending) return false;
+            return Object.values(pending).some(v => v !== "" && v !== undefined);
+        },
+
+        /**
+         * Save all pending changes for a specific provider via PATCH.
+         */
+        async saveProviderSettings(providerId) {
+            const pending = this.pendingSettings[providerId];
+            if (!pending) return;
+
+            // Build payload with only non-empty fields
+            const payload = {};
+            if (pending.api_key) payload.api_key = pending.api_key;
+            if (pending.model !== undefined && pending.model !== "") payload.model = pending.model;
+            if (pending.base_url !== undefined) payload.base_url = pending.base_url;
+
+            if (Object.keys(payload).length === 0) return;
+
+            try {
+                const res = await this.api(`providers/${providerId}`, {
+                    method: "PATCH",
+                    body: JSON.stringify(payload),
+                });
+
+                if (res.error) {
+                    this.showToast("Error: " + res.error, true);
+                    return;
+                }
+
+                // Clear pending state for this provider
+                delete this.pendingSettings[providerId];
+                this.settingsDirty = Object.keys(this.pendingSettings).some(
+                    k => this.hasProviderChanges(k)
+                );
+
+                await this.loadProviders();
+                this.showToast("Settings saved");
+            } catch (err) {
+                this.showToast("Save failed: " + err.message, true);
+            }
         },
 
         async setActiveProvider(id) {
@@ -215,6 +267,32 @@ document.addEventListener("alpine:init", () => {
                 body: JSON.stringify({ is_active: true }),
             });
             await this.loadProviders();
+            this.showToast("Provider activated");
+        },
+
+        /**
+         * Return a placeholder hint for the model input based on provider.
+         */
+        getModelPlaceholder(providerId) {
+            const hints = {
+                openrouter: "e.g. meta-llama/llama-4-scout",
+                openai: "e.g. gpt-4o-mini",
+                google: "e.g. gemini-2.5-flash",
+                custom: "e.g. my-model-name",
+            };
+            return hints[providerId] || "Model ID";
+        },
+
+        /**
+         * Show a temporary toast notification.
+         */
+        showToast(message, isError = false) {
+            this.settingsToast = message;
+            this.settingsToastError = isError;
+            if (this._toastTimer) clearTimeout(this._toastTimer);
+            this._toastTimer = setTimeout(() => {
+                this.settingsToast = "";
+            }, 3000);
         },
 
         // ---- SSE ----

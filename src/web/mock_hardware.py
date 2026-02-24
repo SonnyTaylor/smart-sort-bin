@@ -1,17 +1,15 @@
 """
 AI Smart Bin - Mock Hardware Layer
 
-Simulates sensor events, classifications, and system health
-so the dashboard can be developed and tested without hardware.
+Simulates system health metrics so the dashboard can be
+developed and tested without physical hardware connected.
+
+Note: Mock auto-sort was removed — in mock mode the dashboard
+shows an empty activity feed and static health placeholders.
 """
 
 import random
 import time
-import threading
-
-import config
-import database
-
 
 # Simulated system health
 _start_time = time.time()
@@ -29,7 +27,7 @@ def get_system_health():
         "cpu_temp_c": round(_mock_temp, 1),
         "uptime_seconds": round(time.time() - _start_time, 1),
         "inference_ms": random.randint(800, 1200),
-        "uart_connected": True,
+        "uart_connected": False,
         "wifi_connected": True,
     }
 
@@ -45,86 +43,3 @@ def get_camera_frame():
         "message": "Mock mode - no camera connected",
         "last_capture_time": time.time(),
     }
-
-
-def simulate_sort():
-    """
-    Simulate a single sort event with random data.
-    Returns the generated sort event dict.
-    """
-    mode = database.get_mode()
-    category = random.choice(config.CATEGORIES)
-    confidence = round(random.uniform(0.70, 0.99), 2)
-    duration_ms = random.randint(1200, 2800)
-
-    # In LLM mode, generate a specific item label
-    labels = {
-        "general": [
-            "Snickers wrapper",
-            "Chip packet",
-            "Tissue",
-            "Plastic straw",
-            "Styrofoam cup",
-            "Cigarette butt",
-        ],
-        "recycling": [
-            "Plastic bottle",
-            "Aluminium can",
-            "Cardboard box",
-            "Glass jar",
-            "Newspaper",
-            "Milk carton",
-        ],
-        "compost": [
-            "Apple core",
-            "Banana peel",
-            "Tea bag",
-            "Egg shell",
-            "Orange peel",
-            "Coffee grounds",
-        ],
-    }
-    label = random.choice(labels[category]) if mode == config.MODE_LLM else ""
-
-    database.log_sort(category, confidence, mode, label, duration_ms)
-
-    return {
-        "category": category,
-        "confidence": confidence,
-        "mode": mode,
-        "label": label,
-        "duration_ms": duration_ms,
-    }
-
-
-class MockSensorLoop:
-    """
-    Background thread that simulates periodic item detections.
-    Calls a callback function whenever a 'sort' happens.
-    """
-
-    def __init__(self, on_sort_callback=None, interval_range=(4, 10)):
-        self.on_sort = on_sort_callback
-        self.interval_range = interval_range
-        self._running = False
-        self._thread = None
-
-    def start(self):
-        if self._running:
-            return
-        self._running = True
-        self._thread = threading.Thread(target=self._loop, daemon=True)
-        self._thread.start()
-
-    def stop(self):
-        self._running = False
-
-    def _loop(self):
-        while self._running:
-            wait = random.uniform(*self.interval_range)
-            time.sleep(wait)
-            if not self._running:
-                break
-            event = simulate_sort()
-            if self.on_sort:
-                self.on_sort(event)

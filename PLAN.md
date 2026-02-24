@@ -104,7 +104,7 @@ The MaixCAM Pro hosts a lightweight web server accessible from any device on the
 
 ### Technical Implementation
 - **Backend:** Flask or FastAPI running on the MaixCAM Pro, serving a REST API.
-- **Frontend:** Lightweight HTML/CSS/JS (no heavy framework). Uses Server-Sent Events (SSE) or WebSocket for real-time stats updates.
+- **Frontend:** Alpine.js for reactivity + Tailwind CSS for styling (both loaded via CDN -- zero build step). Uses Server-Sent Events (SSE) for real-time stats updates.
 - **Data Persistence:** SQLite database on the MaixCAM Pro's storage for sorting history and statistics.
 - **Access:** Available at `http://<maixcam-ip>:8080` on the local network. No authentication required for MVP (local network only).
 

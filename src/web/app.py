@@ -5,7 +5,6 @@ Flask application serving the control dashboard and REST API.
 Run with: uv run app.py
 """
 
-import base64
 import json
 import queue
 import time
@@ -189,9 +188,9 @@ def api_set_servo():
 @app.route("/api/sort", methods=["POST"])
 def api_manual_sort():
     if config.MOCK_MODE:
-        event = mock_hardware.simulate_sort()
-        broadcast_sse("sort_event", event)
-        return jsonify(event)
+        return jsonify(
+            {"status": "mock", "message": "Mock mode - no hardware connected"}
+        ), 200
     return jsonify({"error": "Manual sort not implemented for real hardware yet"}), 501
 
 
@@ -210,10 +209,7 @@ def api_home():
 def api_get_providers():
     """Return all configured providers (API keys masked)."""
     providers = database.get_providers()
-    # Attach available model lists from presets
     for p in providers:
-        preset = llm.PROVIDER_PRESETS.get(p["id"], {})
-        p["available_models"] = preset.get("models", [])
         # Don't send full API key to frontend
         del p["api_key"]
     return jsonify(providers)
@@ -271,15 +267,6 @@ def api_events():
 
 
 # ---------------------------------------------------------------------------
-# Mock sensor loop callback
-# ---------------------------------------------------------------------------
-
-
-def _on_mock_sort(event):
-    broadcast_sse("sort_event", event)
-
-
-# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -288,9 +275,7 @@ def main():
     database.init_db()
 
     if config.MOCK_MODE:
-        print("[mock] Starting simulated sensor loop...")
-        sensor_loop = mock_hardware.MockSensorLoop(on_sort_callback=_on_mock_sort)
-        sensor_loop.start()
+        print("[mock] Running in mock mode (no hardware)")
 
     print(f"[dashboard] http://localhost:{config.PORT}")
     app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG, threaded=True)
