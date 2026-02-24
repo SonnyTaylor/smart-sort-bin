@@ -109,3 +109,17 @@ To handle the bin bags cleanly without them interfering with the central servos:
 - **Testing & Results:** 
   1. **Accuracy Boost:** The higher parameter count (~3x more than Nano) and resolution allowed the model to successfully recognize complex waste geometries, securing the **> 90% Classification Accuracy** parameter.
   2. **Resource Management:** By keeping the resolution at 416x416 (instead of 640x640) and using INT8 quantization, the model fit perfectly within the 256MB RAM constraint without Out-Of-Memory (OOM) errors.
+
+## 8. Evaluated Alternatives & Future Scope
+
+As part of the Systems Engineering design process, several alternative system architectures were evaluated before settling on the localized Edge AI approach. These remain viable paths for future iterations:
+
+### Alternative 1: Cloud Vision Language Models (VLMs)
+- **Concept:** Replace the $86 MaixCAM Pro with an ultra-cheap internet-connected board (e.g., Raspberry Pi Zero W or ESP32-CAM). When rubbish is detected, take a photo and send it via Wi-Fi to a Cloud VLM API (e.g., `meta-llama/llama-4-scout` via OpenRouter).
+- **VLM Specs:** The Llama-4-Scout model supports multi-modal image input and text output. On OpenRouter, it operates at ~338 Tokens Per Second (TPS) with 0.16s latency. The cost is negligible at $0.11 per 1M input tokens.
+- **Why it was deferred:** While this would allow for infinite classification intelligence and "Ameru-style" granular UI (e.g., recognizing exactly a "Snickers Bar" rather than just "General Waste"), it introduces a critical dependency on continuous Wi-Fi. School networks often block IoT devices. The localized Edge AI (MaixCAM) was chosen to ensure 100% offline reliability.
+
+### Alternative 2: Open-Source Hierarchical Datasets
+- **Concept:** Continue using the MaixCAM Pro but train the YOLO11s model on an open-source dataset (like TACO - Trash Annotations in Context) which contains thousands of pre-labeled specific items (e.g., "crushed can", "tissue", "apple core") instead of our 3 broad bins.
+- **Implementation:** A Python dictionary would act as middleware, mapping the specific YOLO detection (`"apple_core"`) to the correct servo output (`"compost"`).
+- **Why it was deferred:** Training on an external dataset introduces "Domain Shift" (the backgrounds and lighting in the open-source photos don't match the inside of our specific bin tray). Taking a smaller, custom dataset on the actual tray ensures higher operational reliability for the baseline prototype.
