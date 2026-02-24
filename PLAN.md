@@ -33,6 +33,15 @@ The sorting mechanism operates on a two-axis system:
 2. **Servo 1 (Pan/Rotate):** Mounted vertically. It rotates the entire tray assembly to align the dropping edge with one of the three partitions (e.g., General, Recycling, Compost).
 3. **Servo 2 (Tilt):** Mounted horizontally on the rotating assembly. It tilts the tray downwards to let gravity slide the item into the selected partition.
 
+### Structural Design: Top Frame Method
+To handle the bin bags cleanly without them interfering with the central servos:
+- **Base Bin:** A single large 60L-75L rectangular container.
+- **Top Plate:** A laser-cut piece of acrylic or 4mm wood mounted across the top of the bin.
+- **Drop Zones:** The top plate features three distinct cutouts/holes corresponding to General, Recycling, and Compost.
+- **Bag Management:** Individual bin bags are pushed through each hole, folded back over the lip of the wood/acrylic, and secured tightly using bulldog/binder clips. 
+- **Mechanism Mounting:** The servo pan/tilt tray is mounted securely to the center of this top plate.
+- **Emptying:** The entire top plate lifts off, providing clear access to tie and remove the bags.
+
 ## 4. AI & Model Training Strategy
 
 1. **Data Collection:** Gather a diverse dataset of common waste items. *Crucially, take these photos on the actual tray under the lighting conditions the bin will experience.* This reduces domain shift.
