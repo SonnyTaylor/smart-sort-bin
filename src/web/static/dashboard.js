@@ -1,243 +1,273 @@
 /*
- * AI Smart Bin - Dashboard JavaScript
+ * AI Smart Bin - Dashboard JS (Alpine.js)
  *
- * Handles API calls, SSE real-time updates, and UI interactions.
- * No external dependencies - vanilla JS only.
+ * Reactive dashboard with webcam, LLM classification, and SSE updates.
  */
 
-// =========================================================================
-// State
-// =========================================================================
+let _activityId = 0;
 
-let currentMode = "yolo";
-const activityItems = [];
-const MAX_ACTIVITY = 100;
+document.addEventListener("alpine:init", () => {
+    Alpine.data("dashboard", () => ({
+        // UI state
+        tab: "dashboard",
+        mockMode: true,
+        sseConnected: false,
 
-// =========================================================================
-// API helpers
-// =========================================================================
+        // Data
+        stats: { total_sorted: 0, breakdown: { general: 0, recycling: 0, compost: 0 }, average_confidence: 0, average_duration_ms: 0 },
+        mode: "yolo",
+        health: { cpu_temp_c: 0, uptime_seconds: 0, inference_ms: 0, uart_connected: false, wifi_connected: false },
+        servos: { general: 0, recycling: 120, compost: 240 },
+        activity: [],
+        providers: [],
 
-async function api(endpoint, options = {}) {
-    const res = await fetch(`/api/${endpoint}`, {
-        headers: { "Content-Type": "application/json" },
-        ...options,
-    });
-    return res.json();
-}
+        // Camera
+        webcamActive: false,
+        webcamStream: null,
+        classifying: false,
+        lastResult: null,
+        classifyError: "",
+        capturedImage: null,
 
-// =========================================================================
-// Load initial data
-// =========================================================================
+        // Computed-ish
+        get activeProviderName() {
+            const active = this.providers.find(p => p.is_active);
+            return active ? active.name : "None";
+        },
 
-async function loadStats() {
-    const stats = await api("stats");
-    document.getElementById("total-sorted").textContent = stats.total_sorted;
-    updateBars(stats.breakdown, stats.total_sorted);
-}
+        // ---- Init ----
 
-async function loadMode() {
-    const data = await api("mode");
-    currentMode = data.mode;
-    updateModeUI();
-}
+        async init() {
+            await Promise.all([
+                this.loadStats(),
+                this.loadMode(),
+                this.loadHealth(),
+                this.loadServos(),
+                this.loadHistory(),
+                this.loadProviders(),
+            ]);
+            this.connectSSE();
+            setInterval(() => this.loadHealth(), 5000);
+        },
 
-async function loadHealth() {
-    const h = await api("health");
-    document.getElementById("health-temp").textContent = h.cpu_temp_c + " C";
-    document.getElementById("health-uptime").textContent = formatUptime(h.uptime_seconds);
-    document.getElementById("health-inference").textContent = h.inference_ms + " ms";
-    document.getElementById("health-uart").textContent = h.uart_connected ? "Connected" : "Disconnected";
-    document.getElementById("health-wifi").textContent = h.wifi_connected ? "Connected" : "Disconnected";
-}
+        // ---- API helpers ----
 
-async function loadServos() {
-    const angles = await api("servos");
-    for (const [cat, angle] of Object.entries(angles)) {
-        const slider = document.getElementById(`slider-${cat}`);
-        const label = document.getElementById(`angle-${cat}`);
-        if (slider) slider.value = angle;
-        if (label) label.textContent = angle;
-    }
-}
+        async api(endpoint, options = {}) {
+            const res = await fetch(`/api/${endpoint}`, {
+                headers: { "Content-Type": "application/json" },
+                ...options,
+            });
+            return res.json();
+        },
 
-async function loadHistory() {
-    const events = await api("history?limit=30");
-    // Events come newest-first from the API
-    events.reverse().forEach(e => addActivityItem(e, false));
-}
+        // ---- Data loading ----
 
-// =========================================================================
-// Mode switching
-// =========================================================================
+        async loadStats() {
+            this.stats = await this.api("stats");
+        },
 
-async function setMode(mode) {
-    await api("mode", {
-        method: "POST",
-        body: JSON.stringify({ mode }),
-    });
-    currentMode = mode;
-    updateModeUI();
-}
+        async loadMode() {
+            const data = await this.api("mode");
+            this.mode = data.mode;
+        },
 
-function updateModeUI() {
-    const btnYolo = document.getElementById("btn-yolo");
-    const btnLlm = document.getElementById("btn-llm");
-    const desc = document.getElementById("mode-desc");
+        async loadHealth() {
+            this.health = await this.api("health");
+        },
 
-    btnYolo.classList.toggle("active", currentMode === "yolo");
-    btnLlm.classList.toggle("active", currentMode === "llm");
+        async loadServos() {
+            this.servos = await this.api("servos");
+        },
 
-    desc.textContent = currentMode === "yolo"
-        ? "Offline edge AI - YOLO11s on NPU"
-        : "Cloud VLM via OpenRouter (requires Wi-Fi)";
-}
+        async loadHistory() {
+            const events = await this.api("history?limit=30");
+            this.activity = events.map(e => ({ ...e, _id: ++_activityId }));
+        },
 
-// =========================================================================
-// Servo controls
-// =========================================================================
+        async loadProviders() {
+            this.providers = await this.api("providers");
+        },
 
-function updateAngleLabel(category, value) {
-    document.getElementById(`angle-${category}`).textContent = value;
-}
+        // ---- Mode ----
 
-async function setServoAngle(category, angle) {
-    await api("servos", {
-        method: "POST",
-        body: JSON.stringify({ category, angle: parseInt(angle, 10) }),
-    });
-}
+        async setMode(mode) {
+            await this.api("mode", { method: "POST", body: JSON.stringify({ mode }) });
+            this.mode = mode;
+        },
 
-async function manualSort() {
-    await api("sort", { method: "POST" });
-}
+        // ---- Servos ----
 
-async function homeServos() {
-    await api("home", { method: "POST" });
-}
+        async setServoAngle(cat, val) {
+            await this.api("servos", {
+                method: "POST",
+                body: JSON.stringify({ category: cat, angle: parseInt(val, 10) }),
+            });
+        },
 
-// =========================================================================
-// Bar chart update
-// =========================================================================
+        async manualSort() {
+            await this.api("sort", { method: "POST" });
+        },
 
-function updateBars(breakdown, total) {
-    for (const cat of ["general", "recycling", "compost"]) {
-        const count = breakdown[cat] || 0;
-        const pct = total > 0 ? ((count / total) * 100) : 0;
-        document.getElementById(`bar-${cat}`).style.width = pct + "%";
-        document.getElementById(`count-${cat}`).textContent = count;
-    }
-}
+        async homeServos() {
+            await this.api("home", { method: "POST" });
+        },
 
-// =========================================================================
-// Activity feed
-// =========================================================================
+        // ---- Webcam ----
 
-function addActivityItem(event, prepend = true) {
-    const list = document.getElementById("activity-list");
-    const empty = list.querySelector(".empty-state");
-    if (empty) empty.remove();
+        async toggleWebcam() {
+            if (this.webcamActive) {
+                this.stopWebcam();
+            } else {
+                await this.startWebcam();
+            }
+        },
 
-    const div = document.createElement("div");
-    div.className = "activity-item";
+        async startWebcam() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } },
+                    audio: false,
+                });
+                this.webcamStream = stream;
+                this.$refs.webcamVideo.srcObject = stream;
+                this.webcamActive = true;
+            } catch (err) {
+                console.error("Webcam error:", err);
+                this.classifyError = "Could not access webcam: " + err.message;
+            }
+        },
 
-    const label = event.label || event.category;
-    const confPct = Math.round((event.confidence || 0) * 100);
-    const timeStr = event.timestamp
-        ? new Date(event.timestamp * 1000).toLocaleTimeString()
-        : new Date().toLocaleTimeString();
+        stopWebcam() {
+            if (this.webcamStream) {
+                this.webcamStream.getTracks().forEach(t => t.stop());
+                this.webcamStream = null;
+            }
+            this.webcamActive = false;
+        },
 
-    div.innerHTML = `
-        <span class="activity-dot ${event.category}"></span>
-        <span class="activity-category">${event.category}</span>
-        <span class="activity-label">${label}</span>
-        <span class="activity-conf">${confPct}%</span>
-        <span class="activity-time">${timeStr}</span>
-    `;
+        async captureAndClassify() {
+            if (!this.webcamActive || this.classifying) return;
 
-    if (prepend) {
-        list.prepend(div);
-    } else {
-        list.append(div);
-    }
+            this.classifying = true;
+            this.classifyError = "";
+            this.lastResult = null;
 
-    // Trim old items
-    activityItems.push(div);
-    while (activityItems.length > MAX_ACTIVITY) {
-        const old = activityItems.shift();
-        old.remove();
-    }
-}
+            const video = this.$refs.webcamVideo;
+            const canvas = this.$refs.webcamCanvas;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext("2d").drawImage(video, 0, 0);
 
-// =========================================================================
-// SSE (Server-Sent Events)
-// =========================================================================
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+            this.capturedImage = dataUrl;
 
-function connectSSE() {
-    const dot = document.getElementById("connection-status");
-    const evtSource = new EventSource("/api/events");
+            try {
+                const res = await fetch("/api/classify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: dataUrl }),
+                });
+                const data = await res.json();
 
-    evtSource.addEventListener("connected", () => {
-        dot.className = "status-dot connected";
-        dot.title = "SSE connected";
-    });
+                if (data.error) {
+                    this.classifyError = data.error;
+                } else {
+                    this.lastResult = data;
+                    // Stats will update via SSE
+                }
+            } catch (err) {
+                this.classifyError = "Request failed: " + err.message;
+            } finally {
+                this.classifying = false;
+            }
+        },
 
-    evtSource.addEventListener("sort_event", (e) => {
-        const event = JSON.parse(e.data);
-        addActivityItem(event, true);
-        // Refresh stats after each sort
-        loadStats();
-    });
+        // ---- Provider settings ----
 
-    evtSource.addEventListener("mode_change", (e) => {
-        const data = JSON.parse(e.data);
-        currentMode = data.mode;
-        updateModeUI();
-    });
+        async updateProviderKey(id, key) {
+            if (!key) return;
+            await this.api(`providers/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ api_key: key }),
+            });
+            await this.loadProviders();
+        },
 
-    evtSource.addEventListener("servo_update", (e) => {
-        const data = JSON.parse(e.data);
-        const slider = document.getElementById(`slider-${data.category}`);
-        const label = document.getElementById(`angle-${data.category}`);
-        if (slider) slider.value = data.angle;
-        if (label) label.textContent = data.angle;
-    });
+        async updateProviderModel(id, model) {
+            await this.api(`providers/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ model }),
+            });
+            await this.loadProviders();
+        },
 
-    evtSource.onerror = () => {
-        dot.className = "status-dot disconnected";
-        dot.title = "SSE disconnected - reconnecting...";
-    };
-}
+        async updateProviderUrl(id, url) {
+            await this.api(`providers/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ base_url: url }),
+            });
+            await this.loadProviders();
+        },
 
-// =========================================================================
-// Utilities
-// =========================================================================
+        async setActiveProvider(id) {
+            await this.api(`providers/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ is_active: true }),
+            });
+            await this.loadProviders();
+        },
 
-function formatUptime(seconds) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    if (h > 0) return `${h}h ${m}m`;
-    if (m > 0) return `${m}m ${s}s`;
-    return `${s}s`;
-}
+        // ---- SSE ----
 
-// =========================================================================
-// Init
-// =========================================================================
+        connectSSE() {
+            const evtSource = new EventSource("/api/events");
 
-document.addEventListener("DOMContentLoaded", async () => {
-    // Load all initial data in parallel
-    await Promise.all([
-        loadStats(),
-        loadMode(),
-        loadHealth(),
-        loadServos(),
-        loadHistory(),
-    ]);
+            evtSource.addEventListener("connected", () => {
+                this.sseConnected = true;
+            });
 
-    // Connect SSE for real-time updates
-    connectSSE();
+            evtSource.addEventListener("sort_event", (e) => {
+                const event = JSON.parse(e.data);
+                event._id = ++_activityId;
+                if (!event.timestamp) event.timestamp = Date.now() / 1000;
+                this.activity.unshift(event);
+                if (this.activity.length > 100) this.activity.pop();
+                this.loadStats();
+            });
 
-    // Refresh health every 5 seconds
-    setInterval(loadHealth, 5000);
+            evtSource.addEventListener("mode_change", (e) => {
+                this.mode = JSON.parse(e.data).mode;
+            });
+
+            evtSource.addEventListener("servo_update", (e) => {
+                const d = JSON.parse(e.data);
+                this.servos[d.category] = d.angle;
+            });
+
+            evtSource.addEventListener("provider_update", () => {
+                this.loadProviders();
+            });
+
+            evtSource.onerror = () => {
+                this.sseConnected = false;
+            };
+        },
+
+        // ---- Utils ----
+
+        formatUptime(s) {
+            if (!s) return "--";
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const sec = Math.floor(s % 60);
+            if (h > 0) return `${h}h ${m}m`;
+            if (m > 0) return `${m}m ${sec}s`;
+            return `${sec}s`;
+        },
+
+        formatTime(ts) {
+            if (!ts) return "";
+            return new Date(ts * 1000).toLocaleTimeString();
+        },
+    }));
 });

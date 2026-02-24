@@ -1,0 +1,12 @@
+[project]
+name = "smartbin-dashboard"
+version = "0.1.0"
+description = "AI Smart Bin web dashboard - VCE Systems Engineering"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+dashboard = "app:main"

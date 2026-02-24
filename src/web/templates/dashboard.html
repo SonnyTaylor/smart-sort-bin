@@ -3,125 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Smart Bin - Dashboard</title>
+    <title>AI Smart Bin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <header>
-        <h1>AI Smart Bin</h1>
-        <div id="connection-status" class="status-dot disconnected" title="SSE disconnected"></div>
-    </header>
-
-    <main>
-        <!-- Row 1: Stats + Mode -->
-        <div class="grid row-1">
-            <!-- Total Sorted -->
-            <div class="card">
-                <h2>Total Sorted</h2>
-                <div class="big-number" id="total-sorted">--</div>
+    <div class="app" x-data="dashboard" x-init="init()">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <h1>AI Smart Bin</h1>
+                <span x-text="mockMode ? 'Mock' : 'Live'"></span>
             </div>
+            <div class="header-right">
+                <div class="status-dot" :class="sseConnected ? 'connected' : 'disconnected'"
+                     :title="sseConnected ? 'Connected' : 'Disconnected'"></div>
+            </div>
+        </header>
 
-            <!-- Category Breakdown -->
-            <div class="card breakdown-card">
-                <h2>Breakdown</h2>
-                <div class="bar-chart" id="bar-chart">
-                    <div class="bar-group">
-                        <span class="bar-label">General</span>
-                        <div class="bar-track"><div class="bar-fill general" id="bar-general" style="width:0%"></div></div>
-                        <span class="bar-count" id="count-general">0</span>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn" :class="tab === 'dashboard' && 'active'" @click="tab = 'dashboard'">Dashboard</button>
+            <button class="tab-btn" :class="tab === 'camera' && 'active'" @click="tab = 'camera'">Camera</button>
+            <button class="tab-btn" :class="tab === 'settings' && 'active'" @click="tab = 'settings'">Settings</button>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: Dashboard -->
+        <!-- ============================================================ -->
+        <div x-show="tab === 'dashboard'">
+            <!-- Row 1: Stats -->
+            <div class="grid g-3">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Total Sorted</span>
                     </div>
-                    <div class="bar-group">
-                        <span class="bar-label">Recycling</span>
-                        <div class="bar-track"><div class="bar-fill recycling" id="bar-recycling" style="width:0%"></div></div>
-                        <span class="bar-count" id="count-recycling">0</span>
+                    <div class="stat-number" x-text="stats.total_sorted"></div>
+                    <div class="stat-label">items classified</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Breakdown</span>
                     </div>
-                    <div class="bar-group">
-                        <span class="bar-label">Compost</span>
-                        <div class="bar-track"><div class="bar-fill compost" id="bar-compost" style="width:0%"></div></div>
-                        <span class="bar-count" id="count-compost">0</span>
+                    <template x-for="cat in ['general', 'recycling', 'compost']" :key="cat">
+                        <div class="bar-group">
+                            <span class="bar-label" x-text="cat"></span>
+                            <div class="bar-track">
+                                <div class="bar-fill" :class="cat"
+                                     :style="`width: ${stats.total_sorted > 0 ? ((stats.breakdown[cat] || 0) / stats.total_sorted * 100) : 0}%`"></div>
+                            </div>
+                            <span class="bar-count" x-text="stats.breakdown[cat] || 0"></span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Mode</span>
+                        <span class="card-badge badge-blue" x-text="mode === 'yolo' ? 'LOCAL' : 'CLOUD'"></span>
                     </div>
+                    <div class="mode-toggle">
+                        <button class="mode-btn" :class="mode === 'yolo' && 'active'" @click="setMode('yolo')">YOLO</button>
+                        <button class="mode-btn" :class="mode === 'llm' && 'active'" @click="setMode('llm')">LLM</button>
+                    </div>
+                    <p class="mode-desc" x-text="mode === 'yolo' ? 'Offline edge AI on NPU' : 'Cloud VLM via ' + activeProviderName"></p>
                 </div>
             </div>
 
-            <!-- Classification Mode -->
-            <div class="card">
-                <h2>Classification Mode</h2>
-                <div class="mode-toggle">
-                    <button id="btn-yolo" class="mode-btn active" onclick="setMode('yolo')">YOLO (Local)</button>
-                    <button id="btn-llm" class="mode-btn" onclick="setMode('llm')">LLM (Cloud)</button>
+            <!-- Row 2: Health + Controls -->
+            <div class="grid g-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">System Health</span>
+                        <span class="card-badge badge-green">Live</span>
+                    </div>
+                    <table class="health-table">
+                        <tr>
+                            <td>CPU Temp</td>
+                            <td :class="health.cpu_temp_c > 60 ? 'health-warn' : 'health-ok'"
+                                x-text="health.cpu_temp_c + ' &deg;C'"></td>
+                        </tr>
+                        <tr><td>Uptime</td><td x-text="formatUptime(health.uptime_seconds)"></td></tr>
+                        <tr><td>Inference</td><td x-text="health.inference_ms + ' ms'"></td></tr>
+                        <tr>
+                            <td>UART</td>
+                            <td :class="health.uart_connected ? 'health-ok' : 'health-bad'"
+                                x-text="health.uart_connected ? 'Connected' : 'Disconnected'"></td>
+                        </tr>
+                        <tr>
+                            <td>Wi-Fi</td>
+                            <td :class="health.wifi_connected ? 'health-ok' : 'health-bad'"
+                                x-text="health.wifi_connected ? 'Connected' : 'Disconnected'"></td>
+                        </tr>
+                    </table>
                 </div>
-                <p class="mode-desc" id="mode-desc">Offline edge AI - YOLO11s on NPU</p>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Controls</span>
+                    </div>
+                    <div class="controls-grid">
+                        <button class="btn btn-primary" @click="manualSort()">Trigger Sort</button>
+                        <button class="btn btn-secondary" @click="homeServos()">Home Servos</button>
+                    </div>
+                    <template x-for="cat in ['general', 'recycling', 'compost']" :key="cat">
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="label" x-text="cat"></span>
+                                <span class="value" x-text="servos[cat] + '&deg;'"></span>
+                            </div>
+                            <input type="range" min="0" max="360"
+                                   :value="servos[cat]"
+                                   @input="servos[cat] = parseInt($event.target.value)"
+                                   @change="setServoAngle(cat, $event.target.value)">
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Row 3: Activity -->
+            <div class="grid g-1">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Recent Activity</span>
+                        <span class="card-badge badge-green" x-show="activity.length > 0"
+                              x-text="activity.length + ' events'"></span>
+                    </div>
+                    <div class="activity-list">
+                        <p class="empty-state" x-show="activity.length === 0">Waiting for sort events...</p>
+                        <template x-for="item in activity" :key="item._id">
+                            <div class="activity-item">
+                                <span class="activity-dot" :class="item.category"></span>
+                                <span class="activity-cat" x-text="item.category"></span>
+                                <span class="activity-label" x-text="item.label || item.category"></span>
+                                <span class="activity-conf" x-text="Math.round(item.confidence * 100) + '%'"></span>
+                                <span class="activity-time" x-text="formatTime(item.timestamp)"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Row 2: Health + Camera + Controls -->
-        <div class="grid row-2">
-            <!-- System Health -->
-            <div class="card">
-                <h2>System Health</h2>
-                <table class="health-table">
-                    <tr><td>CPU Temp</td><td id="health-temp">-- C</td></tr>
-                    <tr><td>Uptime</td><td id="health-uptime">--</td></tr>
-                    <tr><td>Inference</td><td id="health-inference">-- ms</td></tr>
-                    <tr><td>UART</td><td id="health-uart">--</td></tr>
-                    <tr><td>Wi-Fi</td><td id="health-wifi">--</td></tr>
-                </table>
-            </div>
-
-            <!-- Camera Feed -->
-            <div class="card camera-card">
-                <h2>Camera</h2>
-                <div class="camera-placeholder" id="camera-area">
-                    <p>No camera connected (mock mode)</p>
-                </div>
-            </div>
-
-            <!-- Manual Controls -->
-            <div class="card">
-                <h2>Controls</h2>
-                <div class="controls">
-                    <button class="ctrl-btn" onclick="manualSort()">Trigger Sort</button>
-                    <button class="ctrl-btn secondary" onclick="homeServos()">Home Servos</button>
-                </div>
-                <h3>Servo Calibration</h3>
-                <div class="servo-sliders">
-                    <div class="slider-group">
-                        <label>General <span id="angle-general">0</span>&deg;</label>
-                        <input type="range" min="0" max="360" value="0" id="slider-general"
-                               oninput="updateAngleLabel('general', this.value)"
-                               onchange="setServoAngle('general', this.value)">
+        <!-- ============================================================ -->
+        <!-- TAB: Camera -->
+        <!-- ============================================================ -->
+        <div x-show="tab === 'camera'">
+            <div class="grid g-2-1">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Webcam</span>
+                        <span class="card-badge" :class="webcamActive ? 'badge-green' : 'badge-red'"
+                              x-text="webcamActive ? 'Live' : 'Off'"></span>
                     </div>
-                    <div class="slider-group">
-                        <label>Recycling <span id="angle-recycling">120</span>&deg;</label>
-                        <input type="range" min="0" max="360" value="120" id="slider-recycling"
-                               oninput="updateAngleLabel('recycling', this.value)"
-                               onchange="setServoAngle('recycling', this.value)">
+                    <div class="webcam-container">
+                        <video x-ref="webcamVideo" autoplay playsinline x-show="webcamActive"></video>
+                        <canvas x-ref="webcamCanvas" class="hidden"></canvas>
+                        <div class="webcam-placeholder" x-show="!webcamActive">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                            <span>Camera not started</span>
+                        </div>
                     </div>
-                    <div class="slider-group">
-                        <label>Compost <span id="angle-compost">240</span>&deg;</label>
-                        <input type="range" min="0" max="360" value="240" id="slider-compost"
-                               oninput="updateAngleLabel('compost', this.value)"
-                               onchange="setServoAngle('compost', this.value)">
+                    <div class="webcam-controls">
+                        <button class="btn btn-secondary" @click="toggleWebcam()"
+                                x-text="webcamActive ? 'Stop Camera' : 'Start Camera'"></button>
+                        <button class="btn btn-primary" @click="captureAndClassify()" :disabled="!webcamActive || classifying">
+                            <span x-show="!classifying">Capture & Classify</span>
+                            <span x-show="classifying">Classifying...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Result</span>
+                    </div>
+                    <div x-show="!lastResult">
+                        <p class="empty-state">Take a photo to classify</p>
+                    </div>
+                    <div x-show="lastResult" class="capture-result">
+                        <div class="result-category" :class="'activity-dot ' + lastResult?.category"
+                             x-text="lastResult?.category"></div>
+                        <div class="result-label" x-text="lastResult?.label || ''"></div>
+                        <div class="mt-2 text-dim" x-text="'Confidence: ' + Math.round((lastResult?.confidence || 0) * 100) + '%'"></div>
+                        <div class="text-dim" x-text="'Duration: ' + (lastResult?.duration_ms || 0) + ' ms'"></div>
+                        <div class="mt-2 text-dim" x-show="lastResult?.raw_response"
+                             style="font-size:0.72rem; word-break:break-all;"
+                             x-text="'Raw: ' + (lastResult?.raw_response || '')"></div>
+                    </div>
+                    <div x-show="classifyError" class="capture-result mt-2" style="color:var(--danger)">
+                        <span x-text="classifyError"></span>
+                    </div>
+
+                    <!-- Captured image preview -->
+                    <div class="mt-3" x-show="capturedImage">
+                        <div class="card-title" style="margin-bottom:8px">Last Capture</div>
+                        <div class="webcam-container">
+                            <img :src="capturedImage" x-show="capturedImage">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Row 3: Live Feed -->
-        <div class="grid row-3">
-            <div class="card full-width">
-                <h2>Recent Activity</h2>
-                <div class="activity-list" id="activity-list">
-                    <p class="empty-state">Waiting for sort events...</p>
+        <!-- ============================================================ -->
+        <!-- TAB: Settings -->
+        <!-- ============================================================ -->
+        <div x-show="tab === 'settings'">
+            <div class="grid g-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">LLM Providers</span>
+                    </div>
+                    <template x-for="provider in providers" :key="provider.id">
+                        <div class="provider-card" :class="provider.is_active && 'active'">
+                            <div class="provider-header">
+                                <span class="provider-name" x-text="provider.name"></span>
+                                <span class="provider-active" x-show="provider.is_active">Active</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">API Key</label>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <input type="password" class="form-input"
+                                               :placeholder="provider.api_key_set ? provider.api_key_masked : 'Enter API key...'"
+                                               @change="updateProviderKey(provider.id, $event.target.value); $event.target.value = ''">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group" x-show="provider.available_models.length > 0">
+                                <label class="form-label">Model</label>
+                                <select class="form-select"
+                                        @change="updateProviderModel(provider.id, $event.target.value)">
+                                    <template x-for="m in provider.available_models" :key="m">
+                                        <option :value="m" :selected="m === provider.model" x-text="m"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div class="form-group" x-show="provider.id === 'custom'">
+                                <label class="form-label">API URL</label>
+                                <input type="text" class="form-input" :value="provider.base_url"
+                                       placeholder="https://api.example.com/v1/chat/completions"
+                                       @change="updateProviderUrl(provider.id, $event.target.value)">
+                            </div>
+
+                            <div class="form-group" x-show="provider.id === 'custom'">
+                                <label class="form-label">Model Name</label>
+                                <input type="text" class="form-input" :value="provider.model"
+                                       placeholder="model-name"
+                                       @change="updateProviderModel(provider.id, $event.target.value)">
+                            </div>
+
+                            <button class="btn btn-sm" :class="provider.is_active ? 'btn-success' : 'btn-secondary'"
+                                    @click="setActiveProvider(provider.id)" :disabled="provider.is_active">
+                                <span x-text="provider.is_active ? 'Active' : 'Set Active'"></span>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">System Info</span>
+                    </div>
+                    <table class="health-table">
+                        <tr><td>Mode</td><td x-text="mode === 'yolo' ? 'YOLO (Local)' : 'LLM (Cloud)'"></td></tr>
+                        <tr><td>Active Provider</td><td x-text="activeProviderName"></td></tr>
+                        <tr><td>Total Sorted</td><td x-text="stats.total_sorted"></td></tr>
+                        <tr><td>Avg Confidence</td><td x-text="stats.average_confidence + '%'"></td></tr>
+                        <tr><td>Avg Sort Time</td><td x-text="stats.average_duration_ms + ' ms'"></td></tr>
+                        <tr><td>Mock Mode</td><td x-text="mockMode ? 'Yes' : 'No'"></td></tr>
+                    </table>
                 </div>
             </div>
         </div>
-    </main>
 
-    <footer>
-        <p>AI Smart Bin &middot; VCE Systems Engineering 3&amp;4 &middot; Mock Mode</p>
-    </footer>
+        <footer>
+            AI Smart Bin &middot; VCE Systems Engineering 3&amp;4
+        </footer>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js" defer></script>
     <script src="/static/dashboard.js"></script>
 </body>
 </html>

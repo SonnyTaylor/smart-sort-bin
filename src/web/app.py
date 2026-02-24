@@ -2,9 +2,10 @@
 AI Smart Bin - Web Dashboard
 
 Flask application serving the control dashboard and REST API.
-Run with: python app.py
+Run with: uv run app.py
 """
 
+import base64
 import json
 import queue
 import time
@@ -13,6 +14,7 @@ from flask import Flask, Response, jsonify, render_template, request
 
 import config
 import database
+import llm
 import mock_hardware
 
 app = Flask(__name__)
@@ -21,7 +23,6 @@ app = Flask(__name__)
 # SSE (Server-Sent Events) infrastructure
 # ---------------------------------------------------------------------------
 
-# Connected SSE clients receive sort events and health updates in real time
 _sse_clients: list[queue.Queue] = []
 
 
@@ -45,7 +46,6 @@ def broadcast_sse(event_type, data):
 
 @app.route("/")
 def index():
-    """Serve the main dashboard page."""
     return render_template("dashboard.html")
 
 
@@ -56,13 +56,11 @@ def index():
 
 @app.route("/api/stats")
 def api_stats():
-    """Return aggregate sorting statistics."""
     return jsonify(database.get_stats())
 
 
 @app.route("/api/history")
 def api_history():
-    """Return recent sort events."""
     limit = request.args.get("limit", 50, type=int)
     return jsonify(database.get_recent_sorts(limit))
 
@@ -74,13 +72,11 @@ def api_history():
 
 @app.route("/api/mode", methods=["GET"])
 def api_get_mode():
-    """Return the current classification mode."""
     return jsonify({"mode": database.get_mode()})
 
 
 @app.route("/api/mode", methods=["POST"])
 def api_set_mode():
-    """Switch classification mode (yolo / llm)."""
     data = request.get_json(force=True)
     mode = data.get("mode", "")
     try:
@@ -98,19 +94,73 @@ def api_set_mode():
 
 @app.route("/api/health")
 def api_health():
-    """Return system health metrics."""
     return jsonify(mock_hardware.get_system_health())
 
 
 # ---------------------------------------------------------------------------
-# REST API - Camera
+# REST API - Camera / Webcam
 # ---------------------------------------------------------------------------
 
 
 @app.route("/api/camera")
 def api_camera():
-    """Return camera status / last frame metadata."""
     return jsonify(mock_hardware.get_camera_frame())
+
+
+@app.route("/api/classify", methods=["POST"])
+def api_classify():
+    """
+    Classify a webcam photo via the active LLM provider.
+    Expects JSON: {"image": "<base64 jpeg data>"}
+    """
+    data = request.get_json(force=True)
+    image_b64 = data.get("image", "")
+
+    if not image_b64:
+        return jsonify({"error": "No image data provided"}), 400
+
+    # Strip data URI prefix if present
+    if "," in image_b64:
+        image_b64 = image_b64.split(",", 1)[1]
+
+    provider = database.get_active_provider()
+    if not provider:
+        return jsonify({"error": "No active LLM provider configured"}), 400
+    if not provider["api_key"]:
+        return jsonify({"error": f"No API key set for {provider['name']}"}), 400
+
+    start_ms = time.time()
+    result = llm.classify_image(
+        image_b64=image_b64,
+        provider_id=provider["id"],
+        api_key=provider["api_key"],
+        model=provider["model"],
+        base_url=provider["base_url"],
+    )
+    duration_ms = int((time.time() - start_ms) * 1000)
+
+    if result.get("error"):
+        return jsonify(result), 502
+
+    # Log the sort event
+    database.log_sort(
+        category=result["category"],
+        confidence=result["confidence"],
+        mode=config.MODE_LLM,
+        label=result.get("label", ""),
+        duration_ms=duration_ms,
+    )
+
+    event = {
+        "category": result["category"],
+        "confidence": result["confidence"],
+        "mode": config.MODE_LLM,
+        "label": result.get("label", ""),
+        "duration_ms": duration_ms,
+        "raw_response": result.get("raw_response", ""),
+    }
+    broadcast_sse("sort_event", event)
+    return jsonify(event)
 
 
 # ---------------------------------------------------------------------------
@@ -120,13 +170,11 @@ def api_camera():
 
 @app.route("/api/servos", methods=["GET"])
 def api_get_servos():
-    """Return current servo angle configuration."""
     return jsonify(database.get_servo_angles())
 
 
 @app.route("/api/servos", methods=["POST"])
 def api_set_servo():
-    """Update a servo angle for a category."""
     data = request.get_json(force=True)
     category = data.get("category", "")
     angle = data.get("angle", 0)
@@ -140,7 +188,6 @@ def api_set_servo():
 
 @app.route("/api/sort", methods=["POST"])
 def api_manual_sort():
-    """Trigger a manual sort (mock mode simulates it)."""
     if config.MOCK_MODE:
         event = mock_hardware.simulate_sort()
         broadcast_sse("sort_event", event)
@@ -150,9 +197,45 @@ def api_manual_sort():
 
 @app.route("/api/home", methods=["POST"])
 def api_home():
-    """Send servos to home position."""
     broadcast_sse("servo_home", {"status": "homed"})
     return jsonify({"status": "homed"})
+
+
+# ---------------------------------------------------------------------------
+# REST API - LLM Provider Settings
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/providers", methods=["GET"])
+def api_get_providers():
+    """Return all configured providers (API keys masked)."""
+    providers = database.get_providers()
+    # Attach available model lists from presets
+    for p in providers:
+        preset = llm.PROVIDER_PRESETS.get(p["id"], {})
+        p["available_models"] = preset.get("models", [])
+        # Don't send full API key to frontend
+        del p["api_key"]
+    return jsonify(providers)
+
+
+@app.route("/api/providers/<provider_id>", methods=["PATCH"])
+def api_update_provider(provider_id):
+    """Update a provider's settings."""
+    data = request.get_json(force=True)
+    try:
+        database.update_provider(
+            provider_id,
+            api_key=data.get("api_key"),
+            model=data.get("model"),
+            base_url=data.get("base_url"),
+            is_active=data.get("is_active"),
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    broadcast_sse("provider_update", {"provider_id": provider_id})
+    return jsonify({"status": "updated", "provider_id": provider_id})
 
 
 # ---------------------------------------------------------------------------
@@ -162,20 +245,17 @@ def api_home():
 
 @app.route("/api/events")
 def api_events():
-    """SSE stream for real-time dashboard updates."""
     q = queue.Queue(maxsize=64)
     _sse_clients.append(q)
 
     def stream():
         try:
-            # Send initial connection confirmation
             yield f"event: connected\ndata: {json.dumps({'time': time.time()})}\n\n"
             while True:
                 try:
                     message = q.get(timeout=15)
                     yield message
                 except queue.Empty:
-                    # Send keepalive comment to prevent timeout
                     yield ": keepalive\n\n"
         except GeneratorExit:
             pass
@@ -196,7 +276,6 @@ def api_events():
 
 
 def _on_mock_sort(event):
-    """Called by the mock sensor loop when a simulated sort happens."""
     broadcast_sse("sort_event", event)
 
 
@@ -204,7 +283,8 @@ def _on_mock_sort(event):
 # Entry point
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
+
+def main():
     database.init_db()
 
     if config.MOCK_MODE:
@@ -212,5 +292,9 @@ if __name__ == "__main__":
         sensor_loop = mock_hardware.MockSensorLoop(on_sort_callback=_on_mock_sort)
         sensor_loop.start()
 
-    print(f"[dashboard] Starting on http://localhost:{config.PORT}")
+    print(f"[dashboard] http://localhost:{config.PORT}")
     app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG, threaded=True)
+
+
+if __name__ == "__main__":
+    main()

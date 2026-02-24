@@ -1,7 +1,7 @@
 """
 AI Smart Bin - SQLite Database Layer
 
-Handles sorting history, statistics, and system state persistence.
+Handles sorting history, statistics, system state, and LLM provider settings.
 """
 
 import sqlite3
@@ -43,6 +43,15 @@ def init_db():
                 value TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS llm_providers (
+                id         TEXT PRIMARY KEY,
+                name       TEXT NOT NULL,
+                api_key    TEXT DEFAULT '',
+                base_url   TEXT DEFAULT '',
+                model      TEXT DEFAULT '',
+                is_active  INTEGER DEFAULT 0
+            );
+
             CREATE INDEX IF NOT EXISTS idx_sort_timestamp
                 ON sort_events(timestamp);
 
@@ -61,6 +70,23 @@ def init_db():
             conn.execute(
                 "INSERT OR IGNORE INTO system_state (key, value) VALUES (?, ?)",
                 (key, value),
+            )
+
+        # Seed default LLM providers
+        from llm import PROVIDER_PRESETS
+
+        for pid, preset in PROVIDER_PRESETS.items():
+            conn.execute(
+                """INSERT OR IGNORE INTO llm_providers
+                   (id, name, api_key, base_url, model, is_active)
+                   VALUES (?, ?, '', ?, ?, ?)""",
+                (
+                    pid,
+                    preset["name"],
+                    preset["base_url"],
+                    preset["default_model"],
+                    1 if pid == "openrouter" else 0,
+                ),
             )
 
 
@@ -168,3 +194,73 @@ def set_servo_angle(category, angle):
         raise ValueError(f"Invalid category: {category}")
     angle = max(0, min(360, int(angle)))
     set_state(f"pan_{category}", angle)
+
+
+# ---------------------------------------------------------------------------
+# LLM provider settings
+# ---------------------------------------------------------------------------
+
+
+def get_providers():
+    """Return all configured LLM providers."""
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT id, name, api_key, base_url, model, is_active FROM llm_providers"
+        ).fetchall()
+    providers = []
+    for r in rows:
+        d = dict(r)
+        # Mask API key for frontend display
+        d["api_key_set"] = bool(d["api_key"])
+        d["api_key_masked"] = (
+            d["api_key"][:4] + "..." + d["api_key"][-4:]
+            if len(d["api_key"]) > 8
+            else ""
+        )
+        providers.append(d)
+    return providers
+
+
+def get_active_provider():
+    """Return the currently active LLM provider (full details including key)."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, name, api_key, base_url, model FROM llm_providers WHERE is_active = 1"
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def update_provider(
+    provider_id, api_key=None, model=None, base_url=None, is_active=None
+):
+    """Update an LLM provider's settings."""
+    with get_db() as conn:
+        # Verify provider exists
+        exists = conn.execute(
+            "SELECT 1 FROM llm_providers WHERE id = ?", (provider_id,)
+        ).fetchone()
+        if not exists:
+            raise ValueError(f"Unknown provider: {provider_id}")
+
+        if api_key is not None:
+            conn.execute(
+                "UPDATE llm_providers SET api_key = ? WHERE id = ?",
+                (api_key, provider_id),
+            )
+        if model is not None:
+            conn.execute(
+                "UPDATE llm_providers SET model = ? WHERE id = ?",
+                (model, provider_id),
+            )
+        if base_url is not None:
+            conn.execute(
+                "UPDATE llm_providers SET base_url = ? WHERE id = ?",
+                (base_url, provider_id),
+            )
+        if is_active is not None and is_active:
+            # Deactivate all others, activate this one
+            conn.execute("UPDATE llm_providers SET is_active = 0")
+            conn.execute(
+                "UPDATE llm_providers SET is_active = 1 WHERE id = ?",
+                (provider_id,),
+            )
