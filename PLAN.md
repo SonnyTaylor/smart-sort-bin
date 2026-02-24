@@ -9,21 +9,22 @@
 ## 2. System Architecture
 
 ### Hardware Components (Low-Cost Focus)
-- **Compute:** Raspberry Pi 4 (or Pi 3B+) - Provides a good balance of cost and performance for running lightweight YOLO models locally without needing expensive cloud computing.
-- **Camera:** Standard Raspberry Pi Camera Module or a low-cost USB webcam.
+- **Compute:** Sipeed MaixCAM Pro (~$86.99 AUD) - Provides a built-in neural processing unit (NPU) for high frame-rate YOLO object detection, an integrated camera, and a touchscreen LCD to display what the AI "thinks" the rubbish is. Replaces the need for a separate Raspberry Pi, camera, and screen.
+- **Camera:** Integrated MaixCAM Pro Camera.
 - **Actuators:** 2x High-Torque Standard Servos (e.g., MG996R). These are cheap but provide enough torque to handle the tray and the weight of typical waste items.
 - **Sensors:** 
   - 1x Ultrasonic sensor (HC-SR04) or IR break-beam sensor to detect when an item is placed on the tray, triggering the camera and AI.
 - **Power:** 
-  - 5V Power supply for the Raspberry Pi.
+  - 5V Power supply for the MaixCAM Pro.
   - A separate buck converter or power supply for the servos to prevent voltage drops and brownouts on the Pi when the servos draw stall current.
 - **Structure:** Repurposed standard bin with internal partitions made from cheap materials (corrugated plastic, thin MDF, or 3D printed parts).
 
 ### Software Stack
-- **OS:** Raspberry Pi OS (Linux).
-- **Computer Vision:** Python, OpenCV.
-- **AI Model:** Custom-trained YOLOv11-nano. Nano models are essential for running at acceptable frame rates on edge devices like a Raspberry Pi without a dedicated TPU/GPU.
-- **Hardware Control:** Python libraries (`gpiozero` or `pigpio`) to manage servo PWM signals and read sensor inputs.
+- **OS:** Linux (MaixCAM OS).
+- **Computer Vision: Python, MaixPy, OpenCV.
+- **AI Model: Custom-trained YOLOv11-nano. The MaixCAM Pro's NPU allows for hardware-accelerated inference.
+- **Hardware Control: Python/MaixPy libraries to manage servo PWM signals and read sensor inputs.
+- **UI:** MaixPy display libraries to show the live camera feed and YOLO bounding boxes/confidence scores on the integrated screen.
 
 ## 3. Mechanism Design: Rotate & Tilt
 
@@ -37,7 +38,7 @@ The sorting mechanism operates on a two-axis system:
 1. **Data Collection:** Gather a diverse dataset of common waste items. *Crucially, take these photos on the actual tray under the lighting conditions the bin will experience.* This reduces domain shift.
 2. **Annotation:** Use a free tool like Roboflow to label the dataset into the 3 target classes.
 3. **Training:** Train a YOLOv11-nano model. This can be done for free using Google Colab.
-4. **Optimization:** Export the trained model to an optimized format (like NCNN, ONNX, or TFLite) to maximize inference speed on the Raspberry Pi's CPU.
+4. **Optimization:** Convert the trained YOLO model into the specific NPU model format supported by the MaixCAM Pro (using Sipeed's model conversion tools/MaixHub) to leverage hardware acceleration.
 
 ## 5. Project Phases & Timeline
 
@@ -54,7 +55,7 @@ The sorting mechanism operates on a two-axis system:
 ### Phase 3: AI Development
 - Set up the camera and gather the initial image dataset.
 - Annotate the dataset and train the first version of the YOLO model.
-- Test the model's accuracy and inference speed on the Raspberry Pi.
+- Test the model's accuracy and inference speed on the MaixCAM Pro. Develop UI code to display bounding boxes and text.
 
 ### Phase 4: System Integration
 - Assemble the electronics permanently.
