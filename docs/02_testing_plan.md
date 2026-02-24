@@ -3,7 +3,7 @@
 This document outlines how the integrated AI Smart Bin will be tested against the measurable parameters defined in the Design Brief (Section 6 & 7).
 
 ## 1. Classification Accuracy Testing (>90%)
-**Objective:** Verify the YOLO26 model and camera integration correctly identify waste types.
+**Objective:** Verify the YOLO11s model and camera integration correctly identify waste types.
 **Procedure:**
 1. Collect a test batch of 50 common waste items (15x plastic bottles/containers, 15x paper/cardboard, 20x general non-recyclable waste).
 2. Ensure the bin is placed under its standard operating LED lighting.

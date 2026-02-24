@@ -1,0 +1,61 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# =========================
+# AI / ML Models & Data
+# =========================
+*.onnx
+*.cvimodel
+*.mud
+*.pt
+*.pth
+*.tflite
+*.weights
+training/data/
+training/runs/
+
+# =========================
+# Binary & Media Assets
+# =========================
+*.pptx
+*.docx
+*.xlsx
+*.pdf
+*.zip
+*.tar.gz
+
+# =========================
+# IDE & Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# =========================
+# OS
+# =========================
+desktop.ini
+ehthumbs.db
+
+# =========================
+# Misc
+# =========================
+*.log
+.env
+.env.*

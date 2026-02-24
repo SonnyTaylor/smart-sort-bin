@@ -1,33 +1,69 @@
 # AI-Powered Smart Bin
 
-![Smart Bin Concept](https://img.shields.io/badge/Status-Prototyping-orange.svg)
-![VCE Systems Engineering](https://img.shields.io/badge/VCE-Systems_Engineering-blue.svg)
+![Status](https://img.shields.io/badge/Status-Prototyping-orange.svg)
+![VCE](https://img.shields.io/badge/VCE-Systems_Engineering_3%264-blue.svg)
+![Platform](https://img.shields.io/badge/Platform-MaixCAM_Pro-green.svg)
+![Budget](https://img.shields.io/badge/Budget-~%24150_AUD-lightgrey.svg)
 
-An AI-powered waste sorting system that eliminates recycling contamination at the point of disposal. Developed for VCE Systems Engineering Unit 3 & 4.
+An AI-powered waste sorting system that eliminates recycling contamination at the point of disposal. Uses edge AI object detection to classify waste and a two-axis servo mechanism to sort items into the correct bin partition -- entirely offline.
 
-## Core Features
-* **Automated Sorting:** Self-sorting mechanism using a 2-servo (Pan & Tilt) central tray.
-* **Edge AI Vision:** High-accuracy object detection using YOLO11s running entirely on the NPU.
-* **Cost Effective:** Achieves advanced AI capabilities for ~$150 AUD.
-* **Closed-Loop Control:** Uses computer vision to actively guide the mechanical actuators.
-
-## Hardware Stack
-* **Brain:** Sipeed MaixCAM Pro (RISC-V + NPU)
-* **Actuators:** 2x MG996R High-Torque Servos
-* **Sensors:** HC-SR04 Ultrasonic Distance Sensor
-* **Power:** 5V 5A Supply
-
-## Software Stack
-* MaixCAM OS (Linux)
-* Python + MaixPy
-* Ultralytics YOLO11
-* OpenCV
-
-## Project Structure
-* `/docs` - System design and VCE portfolio documentation
-* `/src` - Source code for MaixCAM AI and motor control (coming soon)
-* `/models` - YOLO11s trained weights and ONNX/.cvimodel conversions (coming soon)
-* `/cad` - 3D printable files for the mechanical tray assembly (coming soon)
+Developed for VCE Systems Engineering Unit 3 & 4. Inspired by the [Ameru AI Bin](https://www.ameru.com.au/).
 
 ---
-*Inspired by the Ameru AI Bin*
+
+## How It Works
+
+1. An item is placed on the central tray
+2. The ultrasonic sensor triggers the camera
+3. YOLO11s classifies the waste type on the NPU (~1 FPS, >90% accuracy)
+4. Servo 1 rotates the tray to the correct partition (General / Recycling / Compost)
+5. Servo 2 tilts the tray, dropping the item in
+6. Servos return to home position
+
+## Hardware
+
+| Component | Role |
+| :--- | :--- |
+| Sipeed MaixCAM Pro | AI compute, camera, LCD display (RISC-V + 1 TOPS NPU) |
+| 2x MG996R Servos | Pan & tilt actuation |
+| HC-SR04 Ultrasonic Sensor | Item detection trigger |
+| 5V 5A Power Supply | System power |
+
+## Software
+
+| Layer | Technology |
+| :--- | :--- |
+| OS | MaixCAM OS (Linux) |
+| AI Model | YOLO11s @ 416x416, INT8 quantised `.cvimodel` |
+| Language | Python + MaixPy |
+| Vision | OpenCV |
+| Training | Google Colab + Roboflow |
+
+## Project Structure
+
+```
+ai-smart-bin-SE/
+├── docs/               # VCE portfolio documentation
+│   ├── 01_risk_assessment.md
+│   ├── 02_testing_plan.md
+│   ├── 03_budget.md
+│   ├── 04_iteration_log.md
+│   └── 05_future_scope.md
+├── src/                # MaixCAM Python source code
+├── models/             # Trained YOLO weights (.onnx, .cvimodel)
+├── training/           # Colab notebooks and dataset config
+├── cad/                # Mechanical design files
+├── portfolio/          # Binary presentation files (.pptx)
+└── PLAN.md             # Master project plan
+```
+
+## Documentation
+
+See [`docs/README.md`](docs/README.md) for the full documentation index, or jump directly to:
+
+- [Project Plan](PLAN.md) -- System architecture, mechanism design, AI strategy, and project timeline
+- [Risk Assessment](docs/01_risk_assessment.md) -- Hardware and software risk analysis
+- [Testing Plan](docs/02_testing_plan.md) -- Evaluation procedures and success criteria
+- [Budget & BOM](docs/03_budget.md) -- Component list and cost breakdown (~$150 AUD)
+- [Iteration Log](docs/04_iteration_log.md) -- YOLO11n vs YOLO11s engineering iteration
+- [Future Scope](docs/05_future_scope.md) -- Cloud VLMs and open-source dataset alternatives

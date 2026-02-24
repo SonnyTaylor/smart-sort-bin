@@ -10,6 +10,6 @@
 ## Software & AI Risks
 | Hazard | Potential Harm | Risk Level | Control Measure / Mitigation |
 | :--- | :--- | :--- | :--- |
-| Model inference too slow | System fails < 3s sorting parameter, user frustration | High | Migrate from standard YOLOv11 to edge-optimized YOLO26. Leverage NPU hardware acceleration instead of CPU inference. |
+| Model inference too slow | System fails < 3s sorting parameter, user frustration | High | Use edge-optimized YOLO11s (Small) with INT8 quantization. Leverage NPU hardware acceleration instead of CPU inference. |
 | Misclassification of waste | Contaminated recycling streams, failing the >90% parameter | Medium | Train model on a highly specific dataset collected *inside* the actual bin under the final LED lighting conditions. |
 | Endless loop / sensor noise | Continuous mechanical actuation | Low | Implement software debounce on the ultrasonic sensor interrupt. Add timeout fail-safes in the main control loop. |
