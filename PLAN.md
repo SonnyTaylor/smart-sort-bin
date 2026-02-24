@@ -75,14 +75,13 @@ The sorting mechanism operates on a two-axis system:
 ## 6. Estimated Budget
 | Item | Estimated Cost (AUD) |
 | :--- | :--- |
-| Raspberry Pi 4 (Used/Older model) | ~$75.00 |
-| Camera Module / Webcam | ~$15.00 |
+| Sipeed MaixCAM Pro (AI + Camera + Screen) | ~$86.99 |
 | 2x MG996R Servos | ~$15.12 |
 | HC-SR04 Ultrasonic Sensor | ~$1.42 |
 | 5V 5A Power Supply | ~$11.29 |
 | Dupont Jumper Wires (40pin M-M & M-F) | ~$5.74 |
 | Structural Materials | ~$30.00 |
-| **Total Estimated Cost** | **~$153.57 AUD** |
+| **Total Estimated Cost** | **~$150.56 AUD** |
 
 ## 7. Engineering Iteration & Optimization (Portfolio Case Study)
 
