@@ -7,7 +7,7 @@ An AI-powered waste sorting system that eliminates recycling contamination at th
 
 ## Core Features
 * **Automated Sorting:** Self-sorting mechanism using a 2-servo (Pan & Tilt) central tray.
-* **Edge AI Vision:** Real-time object detection using YOLO26 running entirely on the device.
+* **Edge AI Vision:** High-accuracy object detection using YOLO11s running entirely on the NPU.
 * **Cost Effective:** Achieves advanced AI capabilities for ~$150 AUD.
 * **Closed-Loop Control:** Uses computer vision to actively guide the mechanical actuators.
 
@@ -20,13 +20,13 @@ An AI-powered waste sorting system that eliminates recycling contamination at th
 ## Software Stack
 * MaixCAM OS (Linux)
 * Python + MaixPy
-* Ultralytics YOLO26
+* Ultralytics YOLO11
 * OpenCV
 
 ## Project Structure
 * `/docs` - System design and VCE portfolio documentation
 * `/src` - Source code for MaixCAM AI and motor control (coming soon)
-* `/models` - YOLO26 trained weights and ONNX/Kmodel conversions (coming soon)
+* `/models` - YOLO11s trained weights and ONNX/.cvimodel conversions (coming soon)
 * `/cad` - 3D printable files for the mechanical tray assembly (coming soon)
 
 ---

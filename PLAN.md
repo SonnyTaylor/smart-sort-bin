@@ -1,7 +1,7 @@
 # Project Plan: AI-Powered Smart Bin (Systems Engineering 3&4)
 
 ## 1. Project Overview
-- **Objective:** Develop a low-cost, AI-powered smart bin capable of automatically sorting waste into three distinct categories using a custom-trained YOLO object detection model.
+- **Objective:** Develop a low-cost, AI-powered smart bin capable of automatically sorting waste into three distinct categories using a custom-trained YOLO11 object detection model.
 - **Inspiration:** Ameru AI Bin.
 - **Core Mechanism:** A rotating and tilting tray system driven by two servos to direct waste into one of the three internal partitions.
 - **Constraint:** Self-funded, requiring a strict focus on low-cost, high-value components.
@@ -22,7 +22,7 @@
 ### Software Stack
 - **OS:** Linux (MaixCAM OS).
 - **Computer Vision: Python, MaixPy, OpenCV.
-- **AI Model: Custom-trained YOLO26 (e.g., YOLO26-nano). YOLO26 is specifically engineered for edge computing, featuring end-to-end NMS-free inference and DFL removal, making it perfectly suited for the MaixCAM Pro's NPU for high-speed hardware-accelerated inference. The MaixCAM Pro's NPU allows for hardware-accelerated inference.
+- **AI Model:** Custom-trained YOLO11s (Small). Optimized for accuracy at 416x416 resolution, running via INT8 quantization on the MaixCAM Pro's 1 TOPS NPU. Since we only need ~1 FPS for the mechanical sort, the 'Small' model maximizes recognition capability without exceeding the board's 256MB RAM.
 - **Hardware Control: Python/MaixPy libraries to manage servo PWM signals and read sensor inputs.
 - **UI:** MaixPy display libraries to show the live camera feed and YOLO bounding boxes/confidence scores on the integrated screen.
 
@@ -46,8 +46,8 @@ To handle the bin bags cleanly without them interfering with the central servos:
 
 1. **Data Collection:** Gather a diverse dataset of common waste items. *Crucially, take these photos on the actual tray under the lighting conditions the bin will experience.* This reduces domain shift.
 2. **Annotation:** Use a free tool like Roboflow to label the dataset into the 3 target classes.
-3. **Training:** Train a YOLO26n (Nano) model. This can be done for free using Google Colab. YOLO26 is significantly faster (up to 43% faster CPU inference) and more accurate for small objects compared to previous YOLO versions.
-4. **Optimization:** Convert the trained YOLO model into the specific NPU model format supported by the MaixCAM Pro (using Sipeed's model conversion tools/MaixHub) to leverage hardware acceleration.
+3. **Training:** Train a YOLO11s (Small) model at 416x416 resolution using Google Colab. We avoid YOLO26 due to NPU toolchain operator incompatibility, and we choose the 's' variant over 'n' to ensure better feature extraction for visually similar waste items.
+4. **Optimization:** Export the model to ONNX (`opset=11`) and use Sipeed's MaixHub or Docker toolkit to convert it to an INT8 `.cvimodel` (or `.mud`) format.
 
 ## 5. Project Phases & Timeline
 
@@ -96,16 +96,16 @@ To handle the bin bags cleanly without them interfering with the central servos:
 
 *Note for VCE Portfolio: This section documents the iterative design process, demonstrating how testing led to modifications to meet the system parameters.*
 
-### Iteration 1: YOLOv11-nano (Initial Prototype)
-- **Implementation:** The initial AI vision subsystem was trained using the YOLOv11-nano model, as it was a standard lightweight model.
-- **Testing & Evaluation:** During hardware testing on the MaixCAM Pro, the model successfully classified waste, but the inference time was a bottleneck. The NMS (Non-Maximum Suppression) post-processing and DFL layers required by YOLOv11 caused processing delays (e.g., ~850ms inference latency). Combined with the mechanical servo actuation, the total system cycle time occasionally exceeded the **< 3 Seconds Sorting Time** parameter.
+### Iteration 1: YOLO11-nano at 224x224 (Initial Prototype)
+- **Implementation:** The initial AI vision subsystem was trained using the YOLO11n (Nano) model at 224x224 resolution to maximize FPS.
+- **Testing & Evaluation:** The model ran extremely fast (20-25 FPS), but struggled to distinguish visually similar items (e.g., crumpled paper vs. crumpled plastic film) due to the low resolution and low parameter count.
 
 ### Research & Modification
-- To meet the sorting time constraint without upgrading to a more expensive, power-hungry processor (which would violate the **< 15W Standby Power** and budget constraints), I researched newer edge-optimized architectures.
-- I identified **Ultralytics YOLO26**. Documentation revealed it features an "End-to-End NMS-Free Inference" design and DFL removal, specifically engineered to reduce latency on edge devices, boasting up to 43% faster inference.
+- The mechanical pan-and-tilt sorting process inherently takes 1-3 seconds. Therefore, running the AI at 20+ FPS is unnecessary. The new requirement was defined as ~1 FPS with maximized accuracy.
+- Research indicated that upgrading to YOLO11s (Small) at 416x416 resolution would drastically improve accuracy. However, larger models risk crashing the MaixCAM Pro's 256MB RAM if not properly quantized.
 
-### Iteration 2: YOLO26-nano (Final Implementation)
-- **Implementation:** I retrained the custom waste dataset using the `yolo26n.pt` base model and deployed the NPU-optimized format to the MaixCAM Pro.
+### Iteration 2: YOLO11s at 416x416 (Final Implementation)
+- **Implementation:** Retrained the dataset using `yolo11s.pt` with `imgsz=416`. Exported to ONNX (`opset=11`) and quantized to INT8 `.cvimodel`. Implemented a `time.sleep(1)` in the Python loop to reduce thermal load and battery draw.
 - **Testing & Results:** 
-  1. **Speed Improvement:** Inference latency dropped by approximately **~42%** (down to ~490ms). This eliminated the processing bottleneck, allowing the servos to actuate sooner and comfortably bringing the total sorting cycle under the 3-second target.
-  2. **Accuracy Boost:** Observed a noticeable improvement in detecting small objects (like bottle caps and crumpled receipts) due to YOLO26's targeted small-object loss functions (ProgLoss + STAL), helping secure the **> 90% Classification Accuracy** parameter.
+  1. **Accuracy Boost:** The higher parameter count (~3x more than Nano) and resolution allowed the model to successfully recognize complex waste geometries, securing the **> 90% Classification Accuracy** parameter.
+  2. **Resource Management:** By keeping the resolution at 416x416 (instead of 640x640) and using INT8 quantization, the model fit perfectly within the 256MB RAM constraint without Out-Of-Memory (OOM) errors.
