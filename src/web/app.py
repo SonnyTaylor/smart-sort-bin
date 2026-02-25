@@ -81,6 +81,12 @@ def api_clear_data():
     return jsonify({"status": "cleared"})
 
 
+@app.route("/api/stats/hourly")
+def api_stats_hourly():
+    """Return sort counts bucketed by hour for the last 24h."""
+    return jsonify(database.get_hourly_stats())
+
+
 # ---------------------------------------------------------------------------
 # REST API - Mode
 # ---------------------------------------------------------------------------
@@ -352,6 +358,76 @@ def api_dataset_clear():
                 if filename.endswith(".jpg"):
                     os.remove(os.path.join(cat_dir, filename))
     return jsonify({"status": "cleared"})
+
+
+@app.route("/api/dataset/images")
+def api_dataset_images():
+    """List all saved dataset images."""
+    images = []
+    for cat in config.CATEGORIES:
+        cat_dir = os.path.join(config.DATASET_DIR, cat)
+        if os.path.exists(cat_dir):
+            for filename in sorted(os.listdir(cat_dir), reverse=True):
+                if filename.endswith(".jpg"):
+                    images.append({
+                        "category": cat,
+                        "filename": filename,
+                        "url": f"/api/dataset/image/{cat}/{filename}",
+                    })
+    return jsonify(images)
+
+
+@app.route("/api/dataset/image/<category>/<filename>")
+def api_dataset_image(category, filename):
+    """Serve a single dataset image. Validates inputs to prevent path traversal."""
+    if category not in config.CATEGORIES:
+        return jsonify({"error": "Invalid category"}), 400
+    if "/" in filename or "\\" in filename or ".." in filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    filepath = os.path.join(config.DATASET_DIR, category, filename)
+    if not os.path.isfile(filepath):
+        return jsonify({"error": "Not found"}), 404
+    return send_file(filepath, mimetype="image/jpeg")
+
+
+@app.route("/api/providers/<provider_id>/test", methods=["POST"])
+def api_test_provider(provider_id):
+    """Test an LLM provider connection with a minimal text-only request."""
+    providers = database.get_providers()
+    provider = next((p for p in providers if p["id"] == provider_id), None)
+    if not provider:
+        return jsonify({"error": f"Unknown provider: {provider_id}"}), 404
+    if not provider["api_key"]:
+        return jsonify({"error": "No API key configured"}), 400
+
+    from llm import PROVIDER_PRESETS
+    import httpx
+
+    preset = PROVIDER_PRESETS.get(provider_id, PROVIDER_PRESETS["custom"])
+    url = provider["base_url"] or preset["base_url"]
+    if not url:
+        return jsonify({"error": "No API URL configured"}), 400
+
+    headers = {
+        "Content-Type": "application/json",
+        preset["auth_header"]: f"{preset['auth_prefix']}{provider['api_key']}",
+    }
+    payload = {
+        "model": provider["model"],
+        "messages": [{"role": "user", "content": "Respond with only the word OK."}],
+        "max_tokens": 5,
+        "temperature": 0,
+    }
+
+    try:
+        with httpx.Client(timeout=10.0) as client:
+            resp = client.post(url, headers=headers, json=payload)
+            resp.raise_for_status()
+        return jsonify({"status": "ok", "message": "Connection successful"})
+    except httpx.HTTPStatusError as e:
+        return jsonify({"error": f"HTTP {e.response.status_code}: {e.response.text[:200]}"}), 502
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
 
 
 # ---------------------------------------------------------------------------

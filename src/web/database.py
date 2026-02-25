@@ -145,6 +145,25 @@ def get_stats():
     }
 
 
+def get_hourly_stats(hours=24):
+    """Return sort counts bucketed by hour for the last N hours."""
+    cutoff = time.time() - (hours * 3600)
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT
+                   CAST(strftime('%%H', timestamp, 'unixepoch', 'localtime') AS INTEGER) AS hour,
+                   COUNT(*) AS count
+               FROM sort_events
+               WHERE timestamp >= ?
+               GROUP BY hour
+               ORDER BY hour""",
+            (cutoff,),
+        ).fetchall()
+    # Fill all 24 hours
+    data = {r["hour"]: r["count"] for r in rows}
+    return [{"hour": h, "count": data.get(h, 0)} for h in range(24)]
+
+
 def clear_sort_history():
     """Delete all sort events from the database."""
     with get_db() as conn:

@@ -12,8 +12,14 @@ All components are sourced with a strict focus on low-cost, high-value parts. Th
 | HC-SR04 Ultrasonic Sensor | 1 | ~$1.42 | Item detection trigger |
 | 5V 5A Power Supply | 1 | ~$11.29 | Main system power |
 | Dupont Jumper Wires (40-pin M-M & M-F) | 1 | ~$5.74 | Wiring harness |
-| Structural Materials (acrylic, MDF, clips, bin) | -- | ~$30.00 | Bin housing and top plate |
-| **Total** | | **~$155.06 AUD** | |
+| Willow 60L Black Dome Bin (Base Only) | 1 | $15.99 | Bunnings (I/N: 9300621035605) |
+| Laser Cutting Material (MDF/Acrylic) | -- | ~$15.00 | Top plate and camera arch |
+| Fasteners (M3 standoffs, nuts, bolts) | 1 | ~$5.00 | Mounting boards and servos |
+| Aluminium Pan/Tilt Servo Bracket Set | 1 | $17.99 | For MG996R (Amazon AU) |
+| 5V LED Strip / Ring Light | 1 | ~$5.00 | Consistent illumination for AI |
+| DC Barrel Jack Terminal & Perfboard | 1 | ~$4.00 | Power distribution and stable ESP32 wiring |
+| Bulldog Clips & Bin Bags | -- | ~$5.00 | Securing the 3 internal partitions |
+| **Total** | | **~$175.05 AUD** | |
 
 ## Sourcing Notes
 

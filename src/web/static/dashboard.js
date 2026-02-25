@@ -1,20 +1,23 @@
 /*
- * AI Smart Bin - Dashboard JS (Alpine.js)
+ * AI Smart Bin – Dashboard JS (Alpine.js + Chart.js)
  *
  * Reactive dashboard with webcam, LLM classification, SSE updates,
- * and batched settings save.
+ * Chart.js visualisations, image gallery, and batched settings save.
  */
 
 let _activityId = 0;
 
 document.addEventListener("alpine:init", () => {
   Alpine.data("dashboard", () => ({
-    // UI state
+    // ── UI state ──
     tab: "dashboard",
     mockMode: true,
     sseConnected: false,
+    loaded: false,
+    currentTime: "",
+    dangerExpanded: false,
 
-    // Data
+    // ── Data ──
     stats: {
       total_sorted: 0,
       breakdown: { general: 0, recycling: 0, compost: 0 },
@@ -32,8 +35,20 @@ document.addEventListener("alpine:init", () => {
     servos: { general: 0, recycling: 120, compost: 240 },
     activity: [],
     providers: [],
+    hourlyStats: [],
 
-    // Camera
+    // Animated values
+    animatedTotal: 0,
+    _totalAnimFrame: null,
+
+    // Activity filter
+    activityFilter: "all",
+
+    // Charts
+    _donutChart: null,
+    _hourlyChart: null,
+
+    // ── Camera ──
     cameraSource: "browser",
     deviceCameraUrl: "",
     deviceCameraError: false,
@@ -43,30 +58,57 @@ document.addEventListener("alpine:init", () => {
     lastResult: null,
     classifyError: "",
     capturedImage: null,
+    classificationHistory: [],
 
-    // Dataset
+    // ── Dataset ──
     datasetStats: { general: 0, recycling: 0, compost: 0, total: 0 },
     datasetSaveStatus: "",
     selectedDatasetCategory: "general",
+    datasetImages: [],
+    galleryFilter: "all",
+    lightboxImage: null,
 
-    // Settings
+    // ── Settings ──
     selectedProvider: "",
-    pendingSettings: {}, // { providerId: { api_key, model, base_url } }
+    pendingSettings: {},
     settingsDirty: false,
     settingsToast: "",
     settingsToastError: false,
     clearingData: false,
+    testingProvider: null,
+    testResult: "",
+    testResultError: false,
     _toastTimer: null,
 
-    // Computed-ish
+    // ── Getters ──
+
     get activeProviderName() {
       const active = this.providers.find((p) => p.is_active);
       return active ? active.name : "None";
     },
 
-    // ---- Init ----
+    get filteredActivity() {
+      if (this.activityFilter === "all") return this.activity;
+      return this.activity.filter((a) => a.category === this.activityFilter);
+    },
+
+    get filteredGalleryImages() {
+      if (this.galleryFilter === "all") return this.datasetImages;
+      return this.datasetImages.filter(
+        (img) => img.category === this.galleryFilter,
+      );
+    },
+
+    // ══════════════════════════════════════════════════════════════
+    // INIT
+    // ══════════════════════════════════════════════════════════════
 
     async init() {
+      // Kick off clock
+      this._tickClock();
+      setInterval(() => this._tickClock(), 1000);
+
+      // Load all data in parallel
       await Promise.all([
         this.loadStats(),
         this.loadMode(),
@@ -75,12 +117,32 @@ document.addEventListener("alpine:init", () => {
         this.loadHistory(),
         this.loadProviders(),
         this.loadDatasetStats(),
+        this.loadHourlyStats(),
       ]);
+
+      this.loaded = true;
       this.connectSSE();
       setInterval(() => this.loadHealth(), 5000);
+
+      // Render charts after Alpine tick so refs exist
+      this.$nextTick(() => {
+        this.renderDonutChart();
+        this.renderHourlyChart();
+      });
     },
 
-    // ---- API helpers ----
+    _tickClock() {
+      const now = new Date();
+      this.currentTime = now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+    },
+
+    // ══════════════════════════════════════════════════════════════
+    // API HELPERS
+    // ══════════════════════════════════════════════════════════════
 
     async api(endpoint, options = {}) {
       const res = await fetch(`/api/${endpoint}`, {
@@ -90,10 +152,13 @@ document.addEventListener("alpine:init", () => {
       return res.json();
     },
 
-    // ---- Data loading ----
+    // ══════════════════════════════════════════════════════════════
+    // DATA LOADING
+    // ══════════════════════════════════════════════════════════════
 
     async loadStats() {
       this.stats = await this.api("stats");
+      this._animateTotal(this.stats.total_sorted);
     },
 
     async loadMode() {
@@ -110,20 +175,185 @@ document.addEventListener("alpine:init", () => {
     },
 
     async loadHistory() {
-      const events = await this.api("history?limit=30");
+      const events = await this.api("history?limit=50");
       this.activity = events.map((e) => ({ ...e, _id: ++_activityId }));
     },
 
     async loadProviders() {
       this.providers = await this.api("providers");
-      // Auto-select first provider if none selected
       if (!this.selectedProvider && this.providers.length > 0) {
         const active = this.providers.find((p) => p.is_active);
         this.selectedProvider = active ? active.id : this.providers[0].id;
       }
     },
 
-    // ---- Mode ----
+    async loadHourlyStats() {
+      try {
+        this.hourlyStats = await this.api("stats/hourly");
+      } catch (e) {
+        console.error("Failed to load hourly stats", e);
+      }
+    },
+
+    // ══════════════════════════════════════════════════════════════
+    // ANIMATED COUNT-UP
+    // ══════════════════════════════════════════════════════════════
+
+    _animateTotal(target) {
+      if (this._totalAnimFrame) cancelAnimationFrame(this._totalAnimFrame);
+      const start = this.animatedTotal;
+      const diff = target - start;
+      if (diff === 0) return;
+      const duration = 600; // ms
+      const t0 = performance.now();
+      const step = (now) => {
+        const elapsed = now - t0;
+        const progress = Math.min(elapsed / duration, 1);
+        // ease-out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        this.animatedTotal = Math.round(start + diff * eased);
+        if (progress < 1) {
+          this._totalAnimFrame = requestAnimationFrame(step);
+        }
+      };
+      this._totalAnimFrame = requestAnimationFrame(step);
+    },
+
+    // ══════════════════════════════════════════════════════════════
+    // CHARTS (Chart.js)
+    // ══════════════════════════════════════════════════════════════
+
+    renderDonutChart() {
+      const canvas = this.$refs.donutChart;
+      if (!canvas) return;
+
+      if (this._donutChart) this._donutChart.destroy();
+
+      const bd = this.stats.breakdown;
+      this._donutChart = new Chart(canvas, {
+        type: "doughnut",
+        data: {
+          labels: ["General", "Recycling", "Compost"],
+          datasets: [
+            {
+              data: [bd.general || 0, bd.recycling || 0, bd.compost || 0],
+              backgroundColor: ["#ef4444", "#3b82f6", "#22c55e"],
+              borderColor: "#18181b",
+              borderWidth: 3,
+              hoverOffset: 6,
+            },
+          ],
+        },
+        options: {
+          cutout: "68%",
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "#18181b",
+              titleColor: "#e4e4e7",
+              bodyColor: "#a1a1aa",
+              borderColor: "#27272a",
+              borderWidth: 1,
+              padding: 10,
+              cornerRadius: 8,
+            },
+          },
+        },
+      });
+    },
+
+    renderHourlyChart() {
+      const canvas = this.$refs.hourlyChart;
+      if (!canvas) return;
+
+      if (this._hourlyChart) this._hourlyChart.destroy();
+
+      const labels = this.hourlyStats.map((h) => h.hour);
+      const data = this.hourlyStats.map((h) => h.count);
+
+      this._hourlyChart = new Chart(canvas, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Sorts",
+              data,
+              borderColor: "#6366f1",
+              backgroundColor: "rgba(99,102,241,0.08)",
+              fill: true,
+              tension: 0.4,
+              pointRadius: 0,
+              pointHoverRadius: 5,
+              pointHoverBackgroundColor: "#6366f1",
+              borderWidth: 2,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          scales: {
+            x: {
+              grid: { color: "rgba(39,39,42,0.5)" },
+              ticks: { color: "#71717a", font: { size: 10 }, maxRotation: 0 },
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: "rgba(39,39,42,0.3)" },
+              ticks: {
+                color: "#71717a",
+                font: { size: 10 },
+                stepSize: 1,
+                precision: 0,
+              },
+            },
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "#18181b",
+              titleColor: "#e4e4e7",
+              bodyColor: "#a1a1aa",
+              borderColor: "#27272a",
+              borderWidth: 1,
+              padding: 10,
+              cornerRadius: 8,
+            },
+          },
+        },
+      });
+    },
+
+    _updateCharts() {
+      // Update donut
+      if (this._donutChart) {
+        const bd = this.stats.breakdown;
+        this._donutChart.data.datasets[0].data = [
+          bd.general || 0,
+          bd.recycling || 0,
+          bd.compost || 0,
+        ];
+        this._donutChart.update("none");
+      }
+      // Re-fetch hourly and update
+      this.loadHourlyStats().then(() => {
+        if (this._hourlyChart) {
+          this._hourlyChart.data.labels = this.hourlyStats.map((h) => h.hour);
+          this._hourlyChart.data.datasets[0].data = this.hourlyStats.map(
+            (h) => h.count,
+          );
+          this._hourlyChart.update("none");
+        }
+      });
+    },
+
+    // ══════════════════════════════════════════════════════════════
+    // MODE
+    // ══════════════════════════════════════════════════════════════
 
     async setMode(mode) {
       await this.api("mode", {
@@ -133,7 +363,9 @@ document.addEventListener("alpine:init", () => {
       this.mode = mode;
     },
 
-    // ---- Servos ----
+    // ══════════════════════════════════════════════════════════════
+    // SERVOS
+    // ══════════════════════════════════════════════════════════════
 
     async setServoAngle(cat, val) {
       await this.api("servos", {
@@ -150,7 +382,9 @@ document.addEventListener("alpine:init", () => {
       await this.api("home", { method: "POST" });
     },
 
-    // ---- Webcam ----
+    // ══════════════════════════════════════════════════════════════
+    // WEBCAM / CLASSIFY
+    // ══════════════════════════════════════════════════════════════
 
     handleCameraSourceChange() {
       if (this.webcamActive) {
@@ -187,7 +421,6 @@ document.addEventListener("alpine:init", () => {
           this.classifyError = "Could not access webcam: " + err.message;
         }
       } else {
-        // Device camera logic (mocking MJPEG stream or static image)
         this.deviceCameraUrl = "/api/camera/stream?" + Date.now();
         this.webcamActive = true;
       }
@@ -227,9 +460,8 @@ document.addEventListener("alpine:init", () => {
         this.capturedImage = dataUrl;
         requestBody = { image: dataUrl };
       } else {
-        // For the device camera, we assume the backend takes the photo directly from its hardware
         requestBody = { source: "device" };
-        this.capturedImage = null; // Backend might return it, but clear for now
+        this.capturedImage = null;
       }
 
       try {
@@ -246,11 +478,23 @@ document.addEventListener("alpine:init", () => {
           this.lastResult = data;
           this.datasetSaveStatus = "";
           this.selectedDatasetCategory = data.category || "general";
+
           if (data.image) {
             this.capturedImage = "data:image/jpeg;base64," + data.image;
           } else if (this.cameraSource === "device") {
-            // Fallback snapshot if backend doesn't return the captured frame
             this.capturedImage = this.deviceCameraUrl;
+          }
+
+          // Push to classification history (sidebar)
+          this.classificationHistory.unshift({
+            ts: Date.now(),
+            category: data.category,
+            label: data.label || data.category,
+            confidence: data.confidence || 0,
+            thumb: this.capturedImage,
+          });
+          if (this.classificationHistory.length > 10) {
+            this.classificationHistory.pop();
           }
         }
       } catch (err) {
@@ -260,7 +504,19 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    // ---- Dataset ----
+    toggleFullscreen() {
+      const el = this.$refs.cameraContainer;
+      if (!el) return;
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        el.requestFullscreen().catch(() => {});
+      }
+    },
+
+    // ══════════════════════════════════════════════════════════════
+    // DATASET
+    // ══════════════════════════════════════════════════════════════
 
     async loadDatasetStats() {
       try {
@@ -311,21 +567,38 @@ document.addEventListener("alpine:init", () => {
       try {
         await fetch("/api/dataset/clear", { method: "POST" });
         await this.loadDatasetStats();
+        this.datasetImages = [];
       } catch (err) {
         console.error("Failed to clear dataset", err);
       }
     },
 
-    // ---- Provider settings ----
+    async loadDatasetImages() {
+      try {
+        const data = await this.api("dataset/images");
+        this.datasetImages = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error("Failed to load dataset images", err);
+      }
+    },
+
+    openLightbox(img) {
+      this.lightboxImage = img;
+    },
+
+    closeLightbox() {
+      this.lightboxImage = null;
+    },
+
+    // ══════════════════════════════════════════════════════════════
+    // PROVIDER SETTINGS
+    // ══════════════════════════════════════════════════════════════
 
     selectProvider(id) {
       this.selectedProvider = id;
+      this.testResult = "";
     },
 
-    /**
-     * Track a pending change for a provider field.
-     * Changes are NOT sent to the server until Save is clicked.
-     */
     setPending(providerId, field, value) {
       if (!this.pendingSettings[providerId]) {
         this.pendingSettings[providerId] = {};
@@ -334,23 +607,16 @@ document.addEventListener("alpine:init", () => {
       this.settingsDirty = true;
     },
 
-    /**
-     * Check whether a provider has unsaved changes.
-     */
     hasProviderChanges(providerId) {
       const pending = this.pendingSettings[providerId];
       if (!pending) return false;
       return Object.values(pending).some((v) => v !== "" && v !== undefined);
     },
 
-    /**
-     * Save all pending changes for a specific provider via PATCH.
-     */
     async saveProviderSettings(providerId) {
       const pending = this.pendingSettings[providerId];
       if (!pending) return;
 
-      // Build payload with only non-empty fields
       const payload = {};
       if (pending.api_key) payload.api_key = pending.api_key;
       if (pending.model !== undefined && pending.model !== "")
@@ -370,7 +636,6 @@ document.addEventListener("alpine:init", () => {
           return;
         }
 
-        // Clear pending state for this provider
         delete this.pendingSettings[providerId];
         this.settingsDirty = Object.keys(this.pendingSettings).some((k) =>
           this.hasProviderChanges(k),
@@ -392,9 +657,31 @@ document.addEventListener("alpine:init", () => {
       this.showToast("Provider activated");
     },
 
-    /**
-     * Return a placeholder hint for the model input based on provider.
-     */
+    async testProvider(providerId) {
+      this.testingProvider = providerId;
+      this.testResult = "";
+      this.testResultError = false;
+      try {
+        const res = await fetch(`/api/providers/${providerId}/test`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json();
+        if (data.error) {
+          this.testResult = "Error: " + data.error;
+          this.testResultError = true;
+        } else {
+          this.testResult = "\u2713 Connection successful!";
+          this.testResultError = false;
+        }
+      } catch (err) {
+        this.testResult = "Request failed: " + err.message;
+        this.testResultError = true;
+      } finally {
+        this.testingProvider = null;
+      }
+    },
+
     getModelPlaceholder(providerId) {
       const hints = {
         openrouter: "e.g. meta-llama/llama-4-scout",
@@ -405,9 +692,10 @@ document.addEventListener("alpine:init", () => {
       return hints[providerId] || "Model ID";
     },
 
-    /**
-     * Show a temporary toast notification.
-     */
+    // ══════════════════════════════════════════════════════════════
+    // TOAST
+    // ══════════════════════════════════════════════════════════════
+
     showToast(message, isError = false) {
       this.settingsToast = message;
       this.settingsToastError = isError;
@@ -417,17 +705,18 @@ document.addEventListener("alpine:init", () => {
       }, 3000);
     },
 
-    /**
-     * Clear all sort history from the database.
-     */
+    // ══════════════════════════════════════════════════════════════
+    // DANGER ZONE
+    // ══════════════════════════════════════════════════════════════
+
     async clearData() {
       if (
         !confirm(
           "Are you sure you want to clear all sort history? This cannot be undone.",
         )
-      ) {
+      )
         return;
-      }
+
       this.clearingData = true;
       try {
         const res = await this.api("data/clear", { method: "POST" });
@@ -436,6 +725,7 @@ document.addEventListener("alpine:init", () => {
         } else {
           this.activity = [];
           await this.loadStats();
+          this._updateCharts();
           this.showToast("All data cleared");
         }
       } catch (err) {
@@ -445,7 +735,31 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    // ---- SSE ----
+    // ══════════════════════════════════════════════════════════════
+    // ACTIVITY FEED
+    // ══════════════════════════════════════════════════════════════
+
+    exportActivityCSV() {
+      if (this.activity.length === 0) return;
+      const header = "timestamp,category,label,confidence,duration_ms\n";
+      const rows = this.activity
+        .map(
+          (a) =>
+            `${new Date(a.timestamp * 1000).toISOString()},${a.category},${(a.label || "").replace(/,/g, ";")},${a.confidence},${a.duration_ms || ""}`,
+        )
+        .join("\n");
+      const blob = new Blob([header + rows], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `smartbin_activity_${Date.now()}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    },
+
+    // ══════════════════════════════════════════════════════════════
+    // SSE
+    // ══════════════════════════════════════════════════════════════
 
     connectSSE() {
       const evtSource = new EventSource("/api/events");
@@ -461,6 +775,7 @@ document.addEventListener("alpine:init", () => {
         this.activity.unshift(event);
         if (this.activity.length > 100) this.activity.pop();
         this.loadStats();
+        this._updateCharts();
       });
 
       evtSource.addEventListener("mode_change", (e) => {
@@ -481,7 +796,9 @@ document.addEventListener("alpine:init", () => {
       };
     },
 
-    // ---- Utils ----
+    // ══════════════════════════════════════════════════════════════
+    // UTILITIES
+    // ══════════════════════════════════════════════════════════════
 
     formatUptime(s) {
       if (!s) return "--";
@@ -496,6 +813,21 @@ document.addEventListener("alpine:init", () => {
     formatTime(ts) {
       if (!ts) return "";
       return new Date(ts * 1000).toLocaleTimeString();
+    },
+
+    formatTimeRelative(ts) {
+      if (!ts) return "";
+      const diff = Math.floor(Date.now() / 1000 - ts);
+      if (diff < 5) return "just now";
+      if (diff < 60) return diff + "s ago";
+      if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+      if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+      return Math.floor(diff / 86400) + "d ago";
+    },
+
+    formatTimeFull(ts) {
+      if (!ts) return "";
+      return new Date(ts * 1000).toLocaleString();
     },
   }));
 });
