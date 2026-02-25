@@ -1,471 +1,854 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Smart Bin</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        bg:        '#0a0a0b',
-                        raised:    '#111114',
-                        surface:   '#18181b',
-                        surface2:  '#1e1e22',
-                        border:    '#27272a',
-                        borderlt:  '#3f3f46',
-                        dim:       '#71717a',
-                        muted:     '#a1a1aa',
-                        accent:    '#6366f1',
-                        accentho:  '#818cf8',
-                        cat: {
-                            general:   '#ef4444',
-                            recycling: '#3b82f6',
-                            compost:   '#22c55e',
-                        },
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                    },
-                },
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              bg: "#0a0a0b",
+              raised: "#111114",
+              surface: "#18181b",
+              surface2: "#1e1e22",
+              border: "#27272a",
+              borderlt: "#3f3f46",
+              dim: "#71717a",
+              muted: "#a1a1aa",
+              accent: "#6366f1",
+              accentho: "#818cf8",
+              cat: {
+                general: "#ef4444",
+                recycling: "#3b82f6",
+                compost: "#22c55e",
+              },
             },
-        }
+            fontFamily: {
+              sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+            },
+          },
+        },
+      };
     </script>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body class="bg-bg text-zinc-100 font-sans min-h-screen antialiased">
-    <div class="max-w-[1360px] mx-auto px-5 pb-10" x-data="dashboard" x-init="init()">
-
-        <!-- ============================================================ -->
-        <!-- Header -->
-        <!-- ============================================================ -->
-        <header class="flex items-center justify-between py-4 border-b border-border mb-6">
-            <div class="flex items-center gap-3">
-                <h1 class="text-lg font-semibold tracking-tight">AI Smart Bin</h1>
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-medium"
-                      :class="mockMode
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body class="bg-bg text-zinc-100 font-sans min-h-screen antialiased">
+    <div
+      class="max-w-[1360px] mx-auto px-5 pb-10"
+      x-data="dashboard"
+      x-init="init()"
+    >
+      <!-- ============================================================ -->
+      <!-- Header -->
+      <!-- ============================================================ -->
+      <header
+        class="flex items-center justify-between py-4 border-b border-border mb-6"
+      >
+        <div class="flex items-center gap-3">
+          <h1 class="text-lg font-semibold tracking-tight">AI Smart Bin</h1>
+          <span
+            class="text-xs px-2.5 py-0.5 rounded-full font-medium"
+            :class="mockMode
                           ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
                           : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'"
-                      x-text="mockMode ? 'Mock' : 'Live'"></span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full"
-                     :class="sseConnected ? 'bg-emerald-400 shadow-[0_0_8px_theme(colors.emerald.400)]' : 'bg-red-400 shadow-[0_0_8px_theme(colors.red.400)]'"></div>
-                <span class="text-xs text-muted" x-text="sseConnected ? 'Connected' : 'Disconnected'"></span>
-            </div>
-        </header>
-
-        <!-- ============================================================ -->
-        <!-- Tabs -->
-        <!-- ============================================================ -->
-        <div class="flex gap-1 bg-surface border border-border rounded-xl p-1 mb-6 w-fit">
-            <button class="px-5 py-2 rounded-lg text-sm font-medium transition-all"
-                    :class="tab === 'dashboard' ? 'bg-accent text-white shadow-md' : 'text-dim hover:text-muted'"
-                    @click="tab = 'dashboard'">Dashboard</button>
-            <button class="px-5 py-2 rounded-lg text-sm font-medium transition-all"
-                    :class="tab === 'camera' ? 'bg-accent text-white shadow-md' : 'text-dim hover:text-muted'"
-                    @click="tab = 'camera'">Camera</button>
-            <button class="px-5 py-2 rounded-lg text-sm font-medium transition-all"
-                    :class="tab === 'settings' ? 'bg-accent text-white shadow-md' : 'text-dim hover:text-muted'"
-                    @click="tab = 'settings'">Settings</button>
+            x-text="mockMode ? 'Mock' : 'Live'"
+          ></span>
         </div>
+        <div class="flex items-center gap-2">
+          <div
+            class="w-2 h-2 rounded-full"
+            :class="sseConnected ? 'bg-emerald-400 shadow-[0_0_8px_theme(colors.emerald.400)]' : 'bg-red-400 shadow-[0_0_8px_theme(colors.red.400)]'"
+          ></div>
+          <span
+            class="text-xs text-muted"
+            x-text="sseConnected ? 'Connected' : 'Disconnected'"
+          ></span>
+        </div>
+      </header>
 
-        <!-- ============================================================ -->
-        <!-- TAB: Dashboard -->
-        <!-- ============================================================ -->
-        <div x-show="tab === 'dashboard'" x-cloak>
+      <!-- ============================================================ -->
+      <!-- Tabs -->
+      <!-- ============================================================ -->
+      <div
+        class="flex gap-1 bg-surface border border-border rounded-xl p-1 mb-6 w-fit"
+      >
+        <button
+          class="px-5 py-2 rounded-lg text-sm font-medium transition-all"
+          :class="tab === 'dashboard' ? 'bg-accent text-white shadow-md' : 'text-dim hover:text-muted'"
+          @click="tab = 'dashboard'"
+        >
+          Dashboard
+        </button>
+        <button
+          class="px-5 py-2 rounded-lg text-sm font-medium transition-all"
+          :class="tab === 'camera' ? 'bg-accent text-white shadow-md' : 'text-dim hover:text-muted'"
+          @click="tab = 'camera'"
+        >
+          Camera
+        </button>
+        <button
+          class="px-5 py-2 rounded-lg text-sm font-medium transition-all"
+          :class="tab === 'dataset' ? 'bg-accent text-white shadow-md' : 'text-dim hover:text-muted'"
+          @click="tab = 'dataset'"
+        >
+          Dataset
+        </button>
+        <button
+          class="px-5 py-2 rounded-lg text-sm font-medium transition-all"
+          :class="tab === 'settings' ? 'bg-accent text-white shadow-md' : 'text-dim hover:text-muted'"
+          @click="tab = 'settings'"
+        >
+          Settings
+        </button>
+      </div>
 
-            <!-- Row 1: Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <!-- Total Sorted -->
-                <div class="bg-surface border border-border rounded-xl p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">Total Sorted</span>
-                    </div>
-                    <div class="text-4xl font-bold tracking-tight tabular-nums" x-text="stats.total_sorted"></div>
-                    <div class="text-xs text-dim mt-1">items classified</div>
-                </div>
+      <!-- ============================================================ -->
+      <!-- TAB: Dashboard -->
+      <!-- ============================================================ -->
+      <div x-show="tab === 'dashboard'" x-cloak>
+        <!-- Row 1: Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <!-- Total Sorted -->
+          <div class="bg-surface border border-border rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >Total Sorted</span
+              >
+            </div>
+            <div
+              class="text-4xl font-bold tracking-tight tabular-nums"
+              x-text="stats.total_sorted"
+            ></div>
+            <div class="text-xs text-dim mt-1">items classified</div>
+          </div>
 
-                <!-- Breakdown -->
-                <div class="bg-surface border border-border rounded-xl p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">Breakdown</span>
-                    </div>
-                    <template x-for="cat in ['general', 'recycling', 'compost']" :key="cat">
-                        <div class="grid grid-cols-[72px_1fr_36px] items-center gap-2.5 mb-2.5">
-                            <span class="text-sm text-muted capitalize" x-text="cat"></span>
-                            <div class="h-5 bg-bg rounded-md overflow-hidden">
-                                <div class="h-full rounded-md transition-all duration-500 min-w-[3px]"
-                                     :class="{
+          <!-- Breakdown -->
+          <div class="bg-surface border border-border rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >Breakdown</span
+              >
+            </div>
+            <template
+              x-for="cat in ['general', 'recycling', 'compost']"
+              :key="cat"
+            >
+              <div
+                class="grid grid-cols-[72px_1fr_36px] items-center gap-2.5 mb-2.5"
+              >
+                <span class="text-sm text-muted capitalize" x-text="cat"></span>
+                <div class="h-5 bg-bg rounded-md overflow-hidden">
+                  <div
+                    class="h-full rounded-md transition-all duration-500 min-w-[3px]"
+                    :class="{
                                          'bg-gradient-to-r from-red-500 to-red-400': cat === 'general',
                                          'bg-gradient-to-r from-blue-500 to-blue-400': cat === 'recycling',
                                          'bg-gradient-to-r from-emerald-500 to-emerald-400': cat === 'compost',
                                      }"
-                                     :style="`width: ${stats.total_sorted > 0 ? ((stats.breakdown[cat] || 0) / stats.total_sorted * 100) : 0}%`"></div>
-                            </div>
-                            <span class="text-sm text-right font-semibold tabular-nums" x-text="stats.breakdown[cat] || 0"></span>
-                        </div>
-                    </template>
+                    :style="`width: ${stats.total_sorted > 0 ? ((stats.breakdown[cat] || 0) / stats.total_sorted * 100) : 0}%`"
+                  ></div>
                 </div>
+                <span
+                  class="text-sm text-right font-semibold tabular-nums"
+                  x-text="stats.breakdown[cat] || 0"
+                ></span>
+              </div>
+            </template>
+          </div>
 
-                <!-- Mode -->
-                <div class="bg-surface border border-border rounded-xl p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">Mode</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full font-medium"
-                              :class="mode === 'yolo' ? 'bg-blue-500/15 text-blue-400' : 'bg-violet-500/15 text-violet-400'"
-                              x-text="mode === 'yolo' ? 'LOCAL' : 'CLOUD'"></span>
-                    </div>
-                    <div class="flex gap-1.5 bg-bg rounded-lg p-1">
-                        <button class="flex-1 py-2.5 px-3 rounded-md text-sm font-medium transition-all"
-                                :class="mode === 'yolo' ? 'bg-surface2 text-zinc-100 shadow' : 'text-dim'"
-                                @click="setMode('yolo')">YOLO</button>
-                        <button class="flex-1 py-2.5 px-3 rounded-md text-sm font-medium transition-all"
-                                :class="mode === 'llm' ? 'bg-surface2 text-zinc-100 shadow' : 'text-dim'"
-                                @click="setMode('llm')">LLM</button>
-                    </div>
-                    <p class="text-xs text-dim mt-2.5 text-center"
-                       x-text="mode === 'yolo' ? 'Offline edge AI on NPU' : 'Cloud VLM via ' + activeProviderName"></p>
-                </div>
+          <!-- Mode -->
+          <div class="bg-surface border border-border rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >Mode</span
+              >
+              <span
+                class="text-xs px-2 py-0.5 rounded-full font-medium"
+                :class="mode === 'yolo' ? 'bg-blue-500/15 text-blue-400' : 'bg-violet-500/15 text-violet-400'"
+                x-text="mode === 'yolo' ? 'LOCAL' : 'CLOUD'"
+              ></span>
             </div>
-
-            <!-- Row 2: Health + Controls -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <!-- System Health -->
-                <div class="bg-surface border border-border rounded-xl p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">System Health</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-400">Live</span>
-                    </div>
-                    <table class="w-full">
-                        <tbody>
-                            <tr class="border-b border-border">
-                                <td class="py-2 text-sm text-muted">CPU Temp</td>
-                                <td class="py-2 text-sm text-right font-semibold tabular-nums"
-                                    :class="health.cpu_temp_c > 60 ? 'text-amber-400' : 'text-emerald-400'"
-                                    x-text="health.cpu_temp_c + ' &deg;C'"></td>
-                            </tr>
-                            <tr class="border-b border-border">
-                                <td class="py-2 text-sm text-muted">Uptime</td>
-                                <td class="py-2 text-sm text-right font-semibold tabular-nums" x-text="formatUptime(health.uptime_seconds)"></td>
-                            </tr>
-                            <tr class="border-b border-border">
-                                <td class="py-2 text-sm text-muted">Inference</td>
-                                <td class="py-2 text-sm text-right font-semibold tabular-nums" x-text="health.inference_ms + ' ms'"></td>
-                            </tr>
-                            <tr class="border-b border-border">
-                                <td class="py-2 text-sm text-muted">UART</td>
-                                <td class="py-2 text-sm text-right font-semibold"
-                                    :class="health.uart_connected ? 'text-emerald-400' : 'text-red-400'"
-                                    x-text="health.uart_connected ? 'Connected' : 'Disconnected'"></td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 text-sm text-muted">Wi-Fi</td>
-                                <td class="py-2 text-sm text-right font-semibold"
-                                    :class="health.wifi_connected ? 'text-emerald-400' : 'text-red-400'"
-                                    x-text="health.wifi_connected ? 'Connected' : 'Disconnected'"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Controls -->
-                <div class="bg-surface border border-border rounded-xl p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">Controls</span>
-                    </div>
-                    <div class="flex gap-2 mb-5">
-                        <button class="px-4 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-                                @click="manualSort()">Trigger Sort</button>
-                        <button class="px-4 py-2 bg-surface2 text-muted border border-border rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-                                @click="homeServos()">Home Servos</button>
-                    </div>
-                    <template x-for="cat in ['general', 'recycling', 'compost']" :key="cat">
-                        <div class="mb-3">
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-muted capitalize" x-text="cat"></span>
-                                <span class="font-semibold tabular-nums" x-text="servos[cat] + '&deg;'"></span>
-                            </div>
-                            <input type="range" min="0" max="360"
-                                   class="range-slider w-full"
-                                   :value="servos[cat]"
-                                   @input="servos[cat] = parseInt($event.target.value)"
-                                   @change="setServoAngle(cat, $event.target.value)">
-                        </div>
-                    </template>
-                </div>
+            <div class="flex gap-1.5 bg-bg rounded-lg p-1">
+              <button
+                class="flex-1 py-2.5 px-3 rounded-md text-sm font-medium transition-all"
+                :class="mode === 'yolo' ? 'bg-surface2 text-zinc-100 shadow' : 'text-dim'"
+                @click="setMode('yolo')"
+              >
+                YOLO
+              </button>
+              <button
+                class="flex-1 py-2.5 px-3 rounded-md text-sm font-medium transition-all"
+                :class="mode === 'llm' ? 'bg-surface2 text-zinc-100 shadow' : 'text-dim'"
+                @click="setMode('llm')"
+              >
+                LLM
+              </button>
             </div>
+            <p
+              class="text-xs text-dim mt-2.5 text-center"
+              x-text="mode === 'yolo' ? 'Offline edge AI on NPU' : 'Cloud VLM via ' + activeProviderName"
+            ></p>
+          </div>
+        </div>
 
-            <!-- Row 3: Activity -->
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-dim">Recent Activity</span>
-                    <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-400"
-                          x-show="activity.length > 0"
-                          x-text="activity.length + ' events'"></span>
+        <!-- Row 2: Health + Controls -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <!-- System Health -->
+          <div class="bg-surface border border-border rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >System Health</span
+              >
+              <span
+                class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-400"
+                >Live</span
+              >
+            </div>
+            <table class="w-full">
+              <tbody>
+                <tr class="border-b border-border">
+                  <td class="py-2 text-sm text-muted">CPU Temp</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold tabular-nums"
+                    :class="health.cpu_temp_c > 60 ? 'text-amber-400' : 'text-emerald-400'"
+                    x-text="health.cpu_temp_c + ' &deg;C'"
+                  ></td>
+                </tr>
+                <tr class="border-b border-border">
+                  <td class="py-2 text-sm text-muted">Uptime</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold tabular-nums"
+                    x-text="formatUptime(health.uptime_seconds)"
+                  ></td>
+                </tr>
+                <tr class="border-b border-border">
+                  <td class="py-2 text-sm text-muted">Inference</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold tabular-nums"
+                    x-text="health.inference_ms + ' ms'"
+                  ></td>
+                </tr>
+                <tr class="border-b border-border">
+                  <td class="py-2 text-sm text-muted">UART</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold"
+                    :class="health.uart_connected ? 'text-emerald-400' : 'text-red-400'"
+                    x-text="health.uart_connected ? 'Connected' : 'Disconnected'"
+                  ></td>
+                </tr>
+                <tr>
+                  <td class="py-2 text-sm text-muted">Wi-Fi</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold"
+                    :class="health.wifi_connected ? 'text-emerald-400' : 'text-red-400'"
+                    x-text="health.wifi_connected ? 'Connected' : 'Disconnected'"
+                  ></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Controls -->
+          <div class="bg-surface border border-border rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >Controls</span
+              >
+            </div>
+            <div class="flex gap-2 mb-5">
+              <button
+                class="px-4 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
+                @click="manualSort()"
+              >
+                Trigger Sort
+              </button>
+              <button
+                class="px-4 py-2 bg-surface2 text-muted border border-border rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
+                @click="homeServos()"
+              >
+                Home Servos
+              </button>
+            </div>
+            <template
+              x-for="cat in ['general', 'recycling', 'compost']"
+              :key="cat"
+            >
+              <div class="mb-3">
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-muted capitalize" x-text="cat"></span>
+                  <span
+                    class="font-semibold tabular-nums"
+                    x-text="servos[cat] + '&deg;'"
+                  ></span>
                 </div>
-                <div class="max-h-[360px] overflow-y-auto">
-                    <p class="text-center text-dim py-8 text-sm" x-show="activity.length === 0">
-                        No sort events yet. Activity will appear here when items are classified.
-                    </p>
-                    <template x-for="item in activity" :key="item._id">
-                        <div class="flex items-center gap-3 py-2.5 border-b border-border last:border-b-0 activity-item">
-                            <span class="w-1.5 h-1.5 rounded-full shrink-0"
-                                  :class="{
+                <input
+                  type="range"
+                  min="0"
+                  max="360"
+                  class="range-slider w-full"
+                  :value="servos[cat]"
+                  @input="servos[cat] = parseInt($event.target.value)"
+                  @change="setServoAngle(cat, $event.target.value)"
+                />
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Row 3: Activity -->
+        <div class="bg-surface border border-border rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <span
+              class="text-xs font-semibold uppercase tracking-wider text-dim"
+              >Recent Activity</span
+            >
+            <span
+              class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-400"
+              x-show="activity.length > 0"
+              x-text="activity.length + ' events'"
+            ></span>
+          </div>
+          <div class="max-h-[360px] overflow-y-auto">
+            <p
+              class="text-center text-dim py-8 text-sm"
+              x-show="activity.length === 0"
+            >
+              No sort events yet. Activity will appear here when items are
+              classified.
+            </p>
+            <template x-for="item in activity" :key="item._id">
+              <div
+                class="flex items-center gap-3 py-2.5 border-b border-border last:border-b-0 activity-item"
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full shrink-0"
+                  :class="{
                                       'bg-red-400': item.category === 'general',
                                       'bg-blue-400': item.category === 'recycling',
                                       'bg-emerald-400': item.category === 'compost',
-                                  }"></span>
-                            <span class="text-sm font-semibold capitalize min-w-[72px]" x-text="item.category"></span>
-                            <span class="text-sm text-dim flex-1 truncate" x-text="item.label || item.category"></span>
-                            <span class="text-sm tabular-nums text-muted min-w-[42px] text-right"
-                                  x-text="Math.round(item.confidence * 100) + '%'"></span>
-                            <span class="text-xs text-dim min-w-[54px] text-right" x-text="formatTime(item.timestamp)"></span>
-                        </div>
-                    </template>
-                </div>
-            </div>
+                                  }"
+                ></span>
+                <span
+                  class="text-sm font-semibold capitalize min-w-[72px]"
+                  x-text="item.category"
+                ></span>
+                <span
+                  class="text-sm text-dim flex-1 truncate"
+                  x-text="item.label || item.category"
+                ></span>
+                <span
+                  class="text-sm tabular-nums text-muted min-w-[42px] text-right"
+                  x-text="Math.round(item.confidence * 100) + '%'"
+                ></span>
+                <span
+                  class="text-xs text-dim min-w-[54px] text-right"
+                  x-text="formatTime(item.timestamp)"
+                ></span>
+              </div>
+            </template>
+          </div>
         </div>
+      </div>
 
-        <!-- ============================================================ -->
-        <!-- TAB: Camera -->
-        <!-- ============================================================ -->
-        <div x-show="tab === 'camera'" x-cloak>
-            <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-                <!-- Webcam -->
-                <div class="bg-surface border border-border rounded-xl p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">Webcam</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full font-medium"
-                              :class="webcamActive ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'"
-                              x-text="webcamActive ? 'Live' : 'Off'"></span>
-                    </div>
-                    <div class="bg-bg rounded-lg overflow-hidden aspect-[4/3] relative">
-                        <video x-ref="webcamVideo" autoplay playsinline x-show="webcamActive"
-                               class="w-full h-full object-cover block"></video>
-                        <canvas x-ref="webcamCanvas" class="hidden"></canvas>
-                        <div class="flex flex-col items-center justify-center h-full text-dim gap-2" x-show="!webcamActive">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                <circle cx="12" cy="13" r="4"/>
-                            </svg>
-                            <span class="text-sm">Camera not started</span>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 mt-3">
-                        <button class="px-4 py-2 bg-surface2 text-muted border border-border rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-                                @click="toggleWebcam()"
-                                x-text="webcamActive ? 'Stop Camera' : 'Start Camera'"></button>
-                        <button class="px-4 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                                @click="captureAndClassify()" :disabled="!webcamActive || classifying">
-                            <span x-show="!classifying">Capture & Classify</span>
-                            <span x-show="classifying">Classifying...</span>
-                        </button>
-                    </div>
-                </div>
+      <!-- ============================================================ -->
+      <!-- TAB: Camera -->
+      <!-- ============================================================ -->
+      <div x-show="tab === 'camera'" x-cloak>
+        <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+          <!-- Webcam -->
+          <div class="bg-surface border border-border rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >Camera View</span
+              >
+              <div class="flex items-center gap-3">
+                <select
+                  class="bg-surface2 border border-border text-xs text-zinc-100 rounded-md px-2 py-1 outline-none focus:border-accent"
+                  x-model="cameraSource"
+                  @change="handleCameraSourceChange()"
+                >
+                  <option value="browser">Browser Webcam</option>
+                  <option value="device">Device Camera (Hardware)</option>
+                </select>
+                <span
+                  class="text-xs px-2 py-0.5 rounded-full font-medium"
+                  :class="webcamActive ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'"
+                  x-text="webcamActive ? 'Live' : 'Off'"
+                ></span>
+              </div>
+            </div>
+            <div class="bg-bg rounded-lg overflow-hidden aspect-[4/3] relative">
+              <!-- Browser Webcam Video -->
+              <video
+                x-ref="webcamVideo"
+                autoplay
+                playsinline
+                x-show="webcamActive && cameraSource === 'browser'"
+                class="w-full h-full object-cover block"
+              ></video>
+              <canvas x-ref="webcamCanvas" class="hidden"></canvas>
 
-                <!-- Result -->
-                <div class="bg-surface border border-border rounded-xl p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">Result</span>
-                    </div>
+              <!-- Device Camera Stream (MJPEG or Polled) -->
+              <img
+                x-show="webcamActive && cameraSource === 'device'"
+                class="w-full h-full object-cover block"
+                :src="deviceCameraUrl"
+                @error="deviceCameraError = true"
+                alt="Device Camera Stream"
+              />
 
-                    <!-- Empty state -->
-                    <div x-show="!lastResult && !classifyError">
-                        <p class="text-center text-dim py-8 text-sm">Take a photo to classify</p>
-                    </div>
+              <div
+                class="flex flex-col items-center justify-center h-full text-dim gap-2 absolute inset-0 bg-bg/80"
+                x-show="(!webcamActive) || (webcamActive && cameraSource === 'device' && deviceCameraError)"
+              >
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                  />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <span
+                  class="text-sm"
+                  x-text="(webcamActive && cameraSource === 'device' && deviceCameraError) ? 'Device camera unavailable' : 'Camera not started'"
+                ></span>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button
+                class="px-4 py-2 bg-surface2 text-muted border border-border rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
+                @click="toggleWebcam()"
+                x-text="webcamActive ? 'Stop Camera' : 'Start Camera'"
+              ></button>
+              <button
+                class="px-4 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                @click="captureAndClassify()"
+                :disabled="!webcamActive || classifying || (cameraSource === 'device' && deviceCameraError)"
+              >
+                <span x-show="!classifying">Capture & Classify</span>
+                <span x-show="classifying">Classifying...</span>
+              </button>
+            </div>
+          </div>
 
-                    <!-- Result display -->
-                    <div x-show="lastResult" class="bg-bg rounded-lg p-4 space-y-3">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full"
-                                  :class="{
+          <!-- Result -->
+          <div class="bg-surface border border-border rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >Result</span
+              >
+            </div>
+
+            <!-- Empty state -->
+            <div x-show="!lastResult && !classifyError">
+              <p class="text-center text-dim py-8 text-sm">
+                Take a photo to classify
+              </p>
+            </div>
+
+            <!-- Result display -->
+            <div x-show="lastResult" class="bg-bg rounded-lg p-4 space-y-3">
+              <div class="flex items-center gap-2">
+                <span
+                  class="w-2.5 h-2.5 rounded-full"
+                  :class="{
                                       'bg-red-400': lastResult?.category === 'general',
                                       'bg-blue-400': lastResult?.category === 'recycling',
                                       'bg-emerald-400': lastResult?.category === 'compost',
-                                  }"></span>
-                            <span class="text-lg font-bold capitalize" x-text="lastResult?.category"></span>
-                        </div>
-                        <div class="text-sm text-muted" x-text="lastResult?.label || ''"></div>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div class="bg-surface rounded-md px-3 py-2">
-                                <div class="text-xs text-dim">Confidence</div>
-                                <div class="font-semibold tabular-nums" x-text="Math.round((lastResult?.confidence || 0) * 100) + '%'"></div>
-                            </div>
-                            <div class="bg-surface rounded-md px-3 py-2">
-                                <div class="text-xs text-dim">Duration</div>
-                                <div class="font-semibold tabular-nums" x-text="(lastResult?.duration_ms || 0) + ' ms'"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Error display -->
-                    <div x-show="classifyError" class="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mt-3">
-                        <span class="text-sm text-red-400" x-text="classifyError"></span>
-                    </div>
-
-                    <!-- Captured image preview -->
-                    <div x-show="capturedImage" class="mt-4">
-                        <div class="text-xs font-semibold uppercase tracking-wider text-dim mb-2">Last Capture</div>
-                        <div class="bg-bg rounded-lg overflow-hidden aspect-[4/3]">
-                            <img :src="capturedImage" x-show="capturedImage" class="w-full h-full object-cover block">
-                        </div>
-                    </div>
+                                  }"
+                ></span>
+                <span
+                  class="text-lg font-bold capitalize"
+                  x-text="lastResult?.category"
+                ></span>
+              </div>
+              <div
+                class="text-sm text-muted"
+                x-text="lastResult?.label || ''"
+              ></div>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <div class="bg-surface rounded-md px-3 py-2">
+                  <div class="text-xs text-dim">Confidence</div>
+                  <div
+                    class="font-semibold tabular-nums"
+                    x-text="Math.round((lastResult?.confidence || 0) * 100) + '%'"
+                  ></div>
                 </div>
+                <div class="bg-surface rounded-md px-3 py-2">
+                  <div class="text-xs text-dim">Duration</div>
+                  <div
+                    class="font-semibold tabular-nums"
+                    x-text="(lastResult?.duration_ms || 0) + ' ms'"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Save to Dataset -->
+              <div class="mt-4 pt-4 border-t border-border">
+                <div
+                  class="text-xs font-semibold uppercase tracking-wider text-dim mb-2"
+                >
+                  Save to Dataset
+                </div>
+                <div class="flex gap-2 items-center">
+                  <select
+                    x-model="selectedDatasetCategory"
+                    class="bg-surface2 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent flex-1"
+                  >
+                    <option value="general">General</option>
+                    <option value="recycling">Recycling</option>
+                    <option value="compost">Compost</option>
+                  </select>
+                  <button
+                    class="px-4 py-2 bg-surface2 text-muted border border-border rounded-lg text-sm font-semibold hover:bg-accent hover:text-white hover:border-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    @click="saveToDataset()"
+                    :disabled="datasetSaveStatus === 'saving' || datasetSaveStatus === 'saved'"
+                  >
+                    <span x-show="datasetSaveStatus === ''">Save Image</span>
+                    <span x-show="datasetSaveStatus === 'saving'"
+                      >Saving...</span
+                    >
+                    <span
+                      x-show="datasetSaveStatus === 'saved'"
+                      class="text-emerald-400"
+                      >Saved!</span
+                    >
+                    <span
+                      x-show="datasetSaveStatus === 'error'"
+                      class="text-red-400"
+                      >Error</span
+                    >
+                  </button>
+                </div>
+              </div>
             </div>
+
+            <!-- Error display -->
+            <div
+              x-show="classifyError"
+              class="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mt-3"
+            >
+              <span class="text-sm text-red-400" x-text="classifyError"></span>
+            </div>
+
+            <!-- Captured image preview -->
+            <div x-show="capturedImage" class="mt-4">
+              <div
+                class="text-xs font-semibold uppercase tracking-wider text-dim mb-2"
+              >
+                Last Capture
+              </div>
+              <div class="bg-bg rounded-lg overflow-hidden aspect-[4/3]">
+                <img
+                  :src="capturedImage"
+                  x-show="capturedImage"
+                  class="w-full h-full object-cover block"
+                />
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <!-- ============================================================ -->
-        <!-- TAB: Settings -->
-        <!-- ============================================================ -->
-        <div x-show="tab === 'settings'" x-cloak>
+      <!-- ============================================================ -->
+      <!-- TAB: Dataset -->
+      <!-- ============================================================ -->
+      <div x-show="tab === 'dataset'" x-cloak>
+        <div
+          class="bg-surface border border-border rounded-xl p-6 max-w-2xl mx-auto"
+        >
+          <h2 class="text-lg font-semibold mb-2">Dataset Assembly</h2>
+          <p class="text-sm text-dim mb-6">
+            Collect images to train custom YOLO models. Images are saved into
+            category folders, ready to be exported and uploaded to Roboflow.
+          </p>
 
-            <!-- Toast notification -->
-            <div x-show="settingsToast" x-transition
-                 class="fixed top-6 right-6 z-50 px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg"
-                 :class="settingsToastError ? 'bg-red-500/90 text-white' : 'bg-emerald-500/90 text-white'"
-                 x-text="settingsToast"></div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <template
+              x-for="cat in ['general', 'recycling', 'compost']"
+              :key="cat"
+            >
+              <div
+                class="bg-bg border border-border rounded-lg p-4 text-center"
+              >
+                <div
+                  class="text-xs font-semibold uppercase tracking-wider text-dim mb-1"
+                  x-text="cat"
+                ></div>
+                <div
+                  class="text-3xl font-bold tabular-nums"
+                  x-text="datasetStats[cat] || 0"
+                ></div>
+              </div>
+            </template>
+          </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-                <!-- Provider Configuration -->
-                <div class="bg-surface border border-border rounded-xl p-5">
-                    <div class="flex items-center justify-between mb-5">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">LLM Providers</span>
-                        <span class="text-xs text-dim" x-show="settingsDirty">Unsaved changes</span>
-                    </div>
+          <div
+            class="flex items-center justify-between pt-6 border-t border-border"
+          >
+            <div class="text-sm">
+              <span class="text-dim">Total Images:</span>
+              <span
+                class="font-semibold ml-1"
+                x-text="datasetStats.total || 0"
+              ></span>
+            </div>
+            <div class="flex gap-3">
+              <button
+                class="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-semibold hover:bg-red-500/20 transition-colors"
+                @click="clearDataset()"
+                :disabled="datasetStats.total === 0"
+              >
+                Clear Dataset
+              </button>
+              <button
+                class="px-4 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shadow-md"
+                @click="exportDataset()"
+                :disabled="datasetStats.total === 0"
+              >
+                Download ZIP
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                    <!-- Provider tabs -->
-                    <div class="flex gap-1 bg-bg rounded-lg p-1 mb-5">
-                        <template x-for="provider in providers" :key="provider.id">
-                            <button class="flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all truncate"
-                                    :class="selectedProvider === provider.id
+      <!-- ============================================================ -->
+      <!-- TAB: Settings -->
+      <!-- ============================================================ -->
+      <div x-show="tab === 'settings'" x-cloak>
+        <!-- Toast notification -->
+        <div
+          x-show="settingsToast"
+          x-transition
+          class="fixed top-6 right-6 z-50 px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg"
+          :class="settingsToastError ? 'bg-red-500/90 text-white' : 'bg-emerald-500/90 text-white'"
+          x-text="settingsToast"
+        ></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+          <!-- Provider Configuration -->
+          <div class="bg-surface border border-border rounded-xl p-5">
+            <div class="flex items-center justify-between mb-5">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >LLM Providers</span
+              >
+              <span class="text-xs text-dim" x-show="settingsDirty"
+                >Unsaved changes</span
+              >
+            </div>
+
+            <!-- Provider tabs -->
+            <div class="flex gap-1 bg-bg rounded-lg p-1 mb-5">
+              <template x-for="provider in providers" :key="provider.id">
+                <button
+                  class="flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all truncate"
+                  :class="selectedProvider === provider.id
                                         ? 'bg-surface2 text-zinc-100 shadow'
                                         : 'text-dim hover:text-muted'"
-                                    @click="selectProvider(provider.id)"
-                                    x-text="provider.name"></button>
-                        </template>
-                    </div>
+                  @click="selectProvider(provider.id)"
+                  x-text="provider.name"
+                ></button>
+              </template>
+            </div>
 
-                    <!-- Selected provider config -->
-                    <template x-for="provider in providers" :key="'cfg-' + provider.id">
-                        <div x-show="selectedProvider === provider.id" class="space-y-4">
+            <!-- Selected provider config -->
+            <template x-for="provider in providers" :key="'cfg-' + provider.id">
+              <div x-show="selectedProvider === provider.id" class="space-y-4">
+                <!-- Active badge -->
+                <div class="flex items-center gap-2">
+                  <span
+                    class="text-sm font-semibold"
+                    x-text="provider.name"
+                  ></span>
+                  <span
+                    class="text-xs px-2 py-0.5 rounded-full bg-accent/15 text-accent font-medium"
+                    x-show="provider.is_active"
+                    >Active</span
+                  >
+                </div>
 
-                            <!-- Active badge -->
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm font-semibold" x-text="provider.name"></span>
-                                <span class="text-xs px-2 py-0.5 rounded-full bg-accent/15 text-accent font-medium"
-                                      x-show="provider.is_active">Active</span>
-                            </div>
+                <!-- API Key -->
+                <div>
+                  <label
+                    class="block text-xs text-dim uppercase tracking-wider font-medium mb-1.5"
+                    >API Key</label
+                  >
+                  <input
+                    type="password"
+                    class="w-full px-3 py-2 bg-bg border border-border rounded-lg text-sm text-zinc-100 outline-none focus:border-accent transition-colors"
+                    :placeholder="provider.api_key_set ? provider.api_key_masked : 'Enter API key...'"
+                    :value="pendingSettings[provider.id]?.api_key || ''"
+                    @input="setPending(provider.id, 'api_key', $event.target.value)"
+                  />
+                </div>
 
-                            <!-- API Key -->
-                            <div>
-                                <label class="block text-xs text-dim uppercase tracking-wider font-medium mb-1.5">API Key</label>
-                                <input type="password" class="w-full px-3 py-2 bg-bg border border-border rounded-lg text-sm text-zinc-100 outline-none focus:border-accent transition-colors"
-                                       :placeholder="provider.api_key_set ? provider.api_key_masked : 'Enter API key...'"
-                                       :value="pendingSettings[provider.id]?.api_key || ''"
-                                       @input="setPending(provider.id, 'api_key', $event.target.value)">
-                            </div>
+                <!-- Model ID -->
+                <div>
+                  <label
+                    class="block text-xs text-dim uppercase tracking-wider font-medium mb-1.5"
+                    >Model ID</label
+                  >
+                  <input
+                    type="text"
+                    class="w-full px-3 py-2 bg-bg border border-border rounded-lg text-sm text-zinc-100 outline-none focus:border-accent transition-colors font-mono"
+                    :placeholder="getModelPlaceholder(provider.id)"
+                    :value="pendingSettings[provider.id]?.model ?? provider.model"
+                    @input="setPending(provider.id, 'model', $event.target.value)"
+                  />
+                </div>
 
-                            <!-- Model ID -->
-                            <div>
-                                <label class="block text-xs text-dim uppercase tracking-wider font-medium mb-1.5">Model ID</label>
-                                <input type="text" class="w-full px-3 py-2 bg-bg border border-border rounded-lg text-sm text-zinc-100 outline-none focus:border-accent transition-colors font-mono"
-                                       :placeholder="getModelPlaceholder(provider.id)"
-                                       :value="pendingSettings[provider.id]?.model ?? provider.model"
-                                       @input="setPending(provider.id, 'model', $event.target.value)">
-                            </div>
+                <!-- API URL (custom + all providers) -->
+                <div x-show="provider.id === 'custom'">
+                  <label
+                    class="block text-xs text-dim uppercase tracking-wider font-medium mb-1.5"
+                    >API URL</label
+                  >
+                  <input
+                    type="text"
+                    class="w-full px-3 py-2 bg-bg border border-border rounded-lg text-sm text-zinc-100 outline-none focus:border-accent transition-colors font-mono"
+                    placeholder="https://api.example.com/v1/chat/completions"
+                    :value="pendingSettings[provider.id]?.base_url ?? provider.base_url"
+                    @input="setPending(provider.id, 'base_url', $event.target.value)"
+                  />
+                </div>
 
-                            <!-- API URL (custom + all providers) -->
-                            <div x-show="provider.id === 'custom'">
-                                <label class="block text-xs text-dim uppercase tracking-wider font-medium mb-1.5">API URL</label>
-                                <input type="text" class="w-full px-3 py-2 bg-bg border border-border rounded-lg text-sm text-zinc-100 outline-none focus:border-accent transition-colors font-mono"
-                                       placeholder="https://api.example.com/v1/chat/completions"
-                                       :value="pendingSettings[provider.id]?.base_url ?? provider.base_url"
-                                       @input="setPending(provider.id, 'base_url', $event.target.value)">
-                            </div>
-
-                            <!-- Action buttons -->
-                            <div class="flex gap-2 pt-2 border-t border-border">
-                                <button class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-                                        :class="provider.is_active
+                <!-- Action buttons -->
+                <div class="flex gap-2 pt-2 border-t border-border">
+                  <button
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    :class="provider.is_active
                                             ? 'bg-emerald-500/15 text-emerald-400 cursor-default'
                                             : 'bg-surface2 text-muted border border-border hover:border-accent hover:text-accent'"
-                                        @click="setActiveProvider(provider.id)"
-                                        :disabled="provider.is_active"
-                                        x-text="provider.is_active ? 'Active' : 'Set Active'"></button>
+                    @click="setActiveProvider(provider.id)"
+                    :disabled="provider.is_active"
+                    x-text="provider.is_active ? 'Active' : 'Set Active'"
+                  ></button>
 
-                                <button class="px-4 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                                        :disabled="!hasProviderChanges(provider.id)"
-                                        @click="saveProviderSettings(provider.id)">
-                                    Save Changes
-                                </button>
-                            </div>
-                        </div>
-                    </template>
+                  <button
+                    class="px-4 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                    :disabled="!hasProviderChanges(provider.id)"
+                    @click="saveProviderSettings(provider.id)"
+                  >
+                    Save Changes
+                  </button>
                 </div>
+              </div>
+            </template>
+          </div>
 
-                <!-- System Info -->
-                <div class="bg-surface border border-border rounded-xl p-5 h-fit">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">System Info</span>
-                    </div>
-                    <table class="w-full">
-                        <tbody>
-                            <tr class="border-b border-border">
-                                <td class="py-2 text-sm text-muted">Mode</td>
-                                <td class="py-2 text-sm text-right font-semibold" x-text="mode === 'yolo' ? 'YOLO (Local)' : 'LLM (Cloud)'"></td>
-                            </tr>
-                            <tr class="border-b border-border">
-                                <td class="py-2 text-sm text-muted">Active Provider</td>
-                                <td class="py-2 text-sm text-right font-semibold" x-text="activeProviderName"></td>
-                            </tr>
-                            <tr class="border-b border-border">
-                                <td class="py-2 text-sm text-muted">Total Sorted</td>
-                                <td class="py-2 text-sm text-right font-semibold tabular-nums" x-text="stats.total_sorted"></td>
-                            </tr>
-                            <tr class="border-b border-border">
-                                <td class="py-2 text-sm text-muted">Avg Confidence</td>
-                                <td class="py-2 text-sm text-right font-semibold tabular-nums" x-text="stats.average_confidence + '%'"></td>
-                            </tr>
-                            <tr class="border-b border-border">
-                                <td class="py-2 text-sm text-muted">Avg Sort Time</td>
-                                <td class="py-2 text-sm text-right font-semibold tabular-nums" x-text="stats.average_duration_ms + ' ms'"></td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 text-sm text-muted">Mock Mode</td>
-                                <td class="py-2 text-sm text-right font-semibold"
-                                    :class="mockMode ? 'text-amber-400' : 'text-emerald-400'"
-                                    x-text="mockMode ? 'Yes' : 'No'"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <!-- Data Management -->
-                    <div class="mt-5 pt-4 border-t border-border">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-dim">Data Management</span>
-                        <p class="text-xs text-dim mt-2 mb-3">Clear all sort history and statistics from the database.</p>
-                        <button class="w-full px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-semibold hover:bg-red-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                :disabled="clearingData"
-                                @click="clearData()">
-                            <span x-show="!clearingData">Clear All Data</span>
-                            <span x-show="clearingData">Clearing...</span>
-                        </button>
-                    </div>
-                </div>
+          <!-- System Info -->
+          <div class="bg-surface border border-border rounded-xl p-5 h-fit">
+            <div class="flex items-center justify-between mb-4">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >System Info</span
+              >
             </div>
-        </div>
+            <table class="w-full">
+              <tbody>
+                <tr class="border-b border-border">
+                  <td class="py-2 text-sm text-muted">Mode</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold"
+                    x-text="mode === 'yolo' ? 'YOLO (Local)' : 'LLM (Cloud)'"
+                  ></td>
+                </tr>
+                <tr class="border-b border-border">
+                  <td class="py-2 text-sm text-muted">Active Provider</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold"
+                    x-text="activeProviderName"
+                  ></td>
+                </tr>
+                <tr class="border-b border-border">
+                  <td class="py-2 text-sm text-muted">Total Sorted</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold tabular-nums"
+                    x-text="stats.total_sorted"
+                  ></td>
+                </tr>
+                <tr class="border-b border-border">
+                  <td class="py-2 text-sm text-muted">Avg Confidence</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold tabular-nums"
+                    x-text="stats.average_confidence + '%'"
+                  ></td>
+                </tr>
+                <tr class="border-b border-border">
+                  <td class="py-2 text-sm text-muted">Avg Sort Time</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold tabular-nums"
+                    x-text="stats.average_duration_ms + ' ms'"
+                  ></td>
+                </tr>
+                <tr>
+                  <td class="py-2 text-sm text-muted">Mock Mode</td>
+                  <td
+                    class="py-2 text-sm text-right font-semibold"
+                    :class="mockMode ? 'text-amber-400' : 'text-emerald-400'"
+                    x-text="mockMode ? 'Yes' : 'No'"
+                  ></td>
+                </tr>
+              </tbody>
+            </table>
 
-        <!-- Footer -->
-        <footer class="text-center py-5 text-dim text-xs border-t border-border mt-6">
-            AI Smart Bin &middot; VCE Systems Engineering 3&amp;4
-        </footer>
+            <!-- Data Management -->
+            <div class="mt-5 pt-4 border-t border-border">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-dim"
+                >Data Management</span
+              >
+              <p class="text-xs text-dim mt-2 mb-3">
+                Clear all sort history and statistics from the database.
+              </p>
+              <button
+                class="w-full px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-semibold hover:bg-red-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                :disabled="clearingData"
+                @click="clearData()"
+              >
+                <span x-show="!clearingData">Clear All Data</span>
+                <span x-show="clearingData">Clearing...</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer
+        class="text-center py-5 text-dim text-xs border-t border-border mt-6"
+      >
+        AI Smart Bin &middot; VCE Systems Engineering 3&amp;4
+      </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"
+      defer
+    ></script>
     <script src="/static/dashboard.js"></script>
-</body>
+  </body>
 </html>

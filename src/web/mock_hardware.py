@@ -8,12 +8,21 @@ Note: Mock auto-sort was removed — in mock mode the dashboard
 shows an empty activity feed and static health placeholders.
 """
 
+import base64
 import random
 import time
 
 # Simulated system health
 _start_time = time.time()
 _mock_temp = 42.0
+
+# 1x1 transparent JPEG or similar placeholder
+# We use a solid gray 10x10 JPEG for mock camera stream
+_MOCK_JPEG_B64 = (
+    "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP////////////////////////////////////"
+    "//////////////////////////////////////////////////wgALCAAKAAoBAREA/8QA"
+    "FBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA="
+)
 
 
 def get_system_health():
@@ -43,3 +52,8 @@ def get_camera_frame():
         "message": "Mock mode - no camera connected",
         "last_capture_time": time.time(),
     }
+
+
+def get_camera_jpeg_bytes() -> bytes:
+    """Return raw JPEG bytes for the MJPEG stream or classification."""
+    return base64.b64decode(_MOCK_JPEG_B64)

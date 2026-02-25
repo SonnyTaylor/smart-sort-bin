@@ -8,8 +8,13 @@ Run with: uv run app.py
 import json
 import queue
 import time
+import os
+import shutil
+import io
+import zipfile
+import base64
 
-from flask import Flask, Response, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request, send_file
 
 import config
 import database
@@ -17,6 +22,10 @@ import llm
 import mock_hardware
 
 app = Flask(__name__)
+
+# Ensure dataset directories exist
+for cat in config.CATEGORIES:
+    os.makedirs(os.path.join(config.DATASET_DIR, cat), exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # SSE (Server-Sent Events) infrastructure
@@ -114,14 +123,39 @@ def api_camera():
     return jsonify(mock_hardware.get_camera_frame())
 
 
+@app.route("/api/camera/stream")
+def api_camera_stream():
+    """Stream MJPEG frames from the physical camera. (Mocked)"""
+
+    def generate():
+        while True:
+            # On real hardware this fetches the MaixCAM's active buffer
+            frame_bytes = mock_hardware.get_camera_jpeg_bytes()
+            yield (
+                b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
+            )
+            time.sleep(1.0)  # Mock 1fps stream
+
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+
 @app.route("/api/classify", methods=["POST"])
 def api_classify():
     """
     Classify a webcam photo via the active LLM provider.
     Expects JSON: {"image": "<base64 jpeg data>"}
+    OR {"source": "device"} to use internal camera
     """
     data = request.get_json(force=True)
-    image_b64 = data.get("image", "")
+
+    if data.get("source") == "device":
+        # Capture from hardware (mocked here)
+        raw_jpeg = mock_hardware.get_camera_jpeg_bytes()
+        import base64
+
+        image_b64 = base64.b64encode(raw_jpeg).decode("utf-8")
+    else:
+        image_b64 = data.get("image", "")
 
     if not image_b64:
         return jsonify({"error": "No image data provided"}), 400
@@ -167,7 +201,13 @@ def api_classify():
         "raw_response": result.get("raw_response", ""),
     }
     broadcast_sse("sort_event", event)
-    return jsonify(event)
+
+    # Return the full payload to the caller, including image if needed
+    response_data = dict(event)
+    if data.get("source") == "device":
+        response_data["image"] = image_b64
+
+    return jsonify(response_data)
 
 
 # ---------------------------------------------------------------------------
@@ -240,6 +280,78 @@ def api_update_provider(provider_id):
 
     broadcast_sse("provider_update", {"provider_id": provider_id})
     return jsonify({"status": "updated", "provider_id": provider_id})
+
+
+# ---------------------------------------------------------------------------
+# Dataset Endpoints
+# ---------------------------------------------------------------------------
+
+@app.route("/api/dataset/save", methods=["POST"])
+def api_dataset_save():
+    data = request.get_json(force=True)
+    image_b64 = data.get("image", "")
+    category = data.get("category", "")
+
+    if not image_b64 or not category:
+        return jsonify({"error": "Missing image or category"}), 400
+
+    if category not in config.CATEGORIES:
+        return jsonify({"error": f"Invalid category: {category}"}), 400
+
+    if "," in image_b64:
+        image_b64 = image_b64.split(",", 1)[1]
+
+    try:
+        image_data = base64.b64decode(image_b64)
+        filename = f"{int(time.time() * 1000)}.jpg"
+        filepath = os.path.join(config.DATASET_DIR, category, filename)
+        
+        with open(filepath, "wb") as f:
+            f.write(image_data)
+            
+        return jsonify({"status": "saved", "filename": filename, "category": category})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/dataset/stats", methods=["GET"])
+def api_dataset_stats():
+    stats = {"total": 0}
+    for cat in config.CATEGORIES:
+        cat_dir = os.path.join(config.DATASET_DIR, cat)
+        count = len([f for f in os.listdir(cat_dir) if f.endswith(".jpg")]) if os.path.exists(cat_dir) else 0
+        stats[cat] = count
+        stats["total"] += count
+    return jsonify(stats)
+
+@app.route("/api/dataset/export", methods=["GET"])
+def api_dataset_export():
+    memory_file = io.BytesIO()
+    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for cat in config.CATEGORIES:
+            cat_dir = os.path.join(config.DATASET_DIR, cat)
+            if os.path.exists(cat_dir):
+                for filename in os.listdir(cat_dir):
+                    if filename.endswith(".jpg"):
+                        filepath = os.path.join(cat_dir, filename)
+                        zf.write(filepath, arcname=os.path.join(cat, filename))
+    
+    memory_file.seek(0)
+    return send_file(
+        memory_file,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name="dataset.zip"
+    )
+
+@app.route("/api/dataset/clear", methods=["POST"])
+def api_dataset_clear():
+    for cat in config.CATEGORIES:
+        cat_dir = os.path.join(config.DATASET_DIR, cat)
+        if os.path.exists(cat_dir):
+            for filename in os.listdir(cat_dir):
+                if filename.endswith(".jpg"):
+                    os.remove(os.path.join(cat_dir, filename))
+    return jsonify({"status": "cleared"})
 
 
 # ---------------------------------------------------------------------------

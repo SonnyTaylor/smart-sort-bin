@@ -9,6 +9,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Database
 DATABASE_PATH = os.path.join(BASE_DIR, "smartbin.db")
 
+# Dataset
+DATASET_DIR = os.path.join(BASE_DIR, "dataset")
+
 # Server
 HOST = "0.0.0.0"
 PORT = 8080
