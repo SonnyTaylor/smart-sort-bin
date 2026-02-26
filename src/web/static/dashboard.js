@@ -159,6 +159,7 @@ document.addEventListener("alpine:init", () => {
     // Charts
     _donutChart: null,
     _hourlyChart: null,
+    _chartsDirty: false,
 
     // ── Camera ──
     cameraSource: "browser",
@@ -242,6 +243,13 @@ document.addEventListener("alpine:init", () => {
       this.$nextTick(() => {
         this.renderDonutChart();
         this.renderHourlyChart();
+      });
+
+      // Flush deferred chart updates when switching back to the dashboard tab
+      this.$watch('tab', (val) => {
+        if (val === 'dashboard' && this._chartsDirty) {
+          this.$nextTick(() => this._updateCharts());
+        }
       });
     },
 
@@ -443,6 +451,13 @@ document.addEventListener("alpine:init", () => {
     },
 
     _updateCharts() {
+      // Charts crash when their canvas is hidden (display:none on other tabs).
+      // Defer updates until the dashboard tab is visible.
+      if (this.tab !== 'dashboard') {
+        this._chartsDirty = true;
+        return;
+      }
+
       // Update donut
       if (this._donutChart) {
         const bd = this.stats.breakdown;
@@ -463,6 +478,8 @@ document.addEventListener("alpine:init", () => {
           this._hourlyChart.update("none");
         }
       });
+
+      this._chartsDirty = false;
     },
 
     // ══════════════════════════════════════════════════════════════
