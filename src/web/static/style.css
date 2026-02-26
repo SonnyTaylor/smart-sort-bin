@@ -318,6 +318,59 @@ body::before {
   box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
 }
 
+/* ---- Item Icon (Iconify) ---- */
+
+.item-icon-container {
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted, #a1a1aa);
+}
+
+.item-icon-general {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+}
+.item-icon-recycling {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+}
+.item-icon-compost {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+}
+
+.item-icon-svg svg {
+  width: 40px;
+  height: 40px;
+  display: block;
+}
+
+.item-icon-placeholder {
+  opacity: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-icon-svg {
+  animation: iconFadeIn 0.3s ease-out;
+}
+
+@keyframes iconFadeIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 /* ---- Category badge ---- */
 
 .cat-badge {

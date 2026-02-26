@@ -365,11 +365,25 @@
                 </div>
               </div>
               <div x-show="lastResult" class="space-y-3">
-                <div class="flex items-center gap-3">
-                  <span class="w-3 h-3 rounded-full" :class="lastResult ? 'cat-dot-' + lastResult.category : ''"></span>
-                  <span class="text-2xl font-extrabold capitalize" x-text="lastResult?.category"></span>
+                <!-- Item Icon -->
+                <div class="flex items-center gap-4">
+                  <div class="item-icon-container" :class="lastResult ? 'item-icon-' + lastResult.category : ''">
+                    <div x-show="itemIconLoading" class="item-icon-placeholder">
+                      <svg class="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                    </div>
+                    <div x-show="itemIconSvg && !itemIconLoading" x-html="itemIconSvg" class="item-icon-svg"></div>
+                    <div x-show="!itemIconSvg && !itemIconLoading" class="item-icon-placeholder">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 7L6.82 21M21 7H6.82M21 7v14.18M3 17l5-5M3 17h5m-5 0v-5"/></svg>
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="w-3 h-3 rounded-full" :class="lastResult ? 'cat-dot-' + lastResult.category : ''"></span>
+                      <span class="text-2xl font-extrabold capitalize" x-text="lastResult?.category"></span>
+                    </div>
+                    <div class="text-sm text-muted mt-0.5" x-text="lastResult?.label || ''"></div>
+                  </div>
                 </div>
-                <div class="text-sm text-muted" x-text="lastResult?.label || ''"></div>
                 <div class="grid grid-cols-2 gap-2 text-sm">
                   <div class="bg-bg/60 rounded-lg px-3 py-2.5">
                     <div class="text-xs text-dim">Confidence</div>

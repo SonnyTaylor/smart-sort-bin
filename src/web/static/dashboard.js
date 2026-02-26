@@ -7,6 +7,118 @@
 
 let _activityId = 0;
 
+/* ── Item Icon Mapping (Iconify) ──
+ * Curated map of common waste item labels → Iconify icon IDs.
+ * Used to display a vector graphic of the classified item.
+ * Falls back to Iconify search API, then to a generic category icon.
+ */
+const ITEM_ICONS = {
+  // ── Recycling ──
+  'plastic bottle': 'lucide-lab:bottle-plastic',
+  'water bottle': 'lucide-lab:bottle-plastic',
+  'drink bottle': 'lucide-lab:bottle-plastic',
+  'pet bottle': 'lucide-lab:bottle-plastic',
+  'bottle': 'lucide-lab:bottle-plastic',
+  'aluminium can': 'hugeicons:soda-can',
+  'aluminum can': 'hugeicons:soda-can',
+  'soda can': 'hugeicons:soda-can',
+  'beer can': 'hugeicons:soda-can',
+  'tin can': 'hugeicons:soda-can',
+  'metal can': 'hugeicons:soda-can',
+  'steel can': 'hugeicons:soda-can',
+  'can': 'hugeicons:soda-can',
+  'glass bottle': 'game-icons:wine-bottle',
+  'wine bottle': 'game-icons:wine-bottle',
+  'beer bottle': 'game-icons:wine-bottle',
+  'glass jar': 'game-icons:wine-bottle',
+  'jar': 'game-icons:wine-bottle',
+  'cardboard box': 'game-icons:cardboard-box',
+  'cardboard': 'game-icons:cardboard-box',
+  'newspaper': 'mdi:newspaper',
+  'paper': 'mdi:newspaper',
+  'magazine': 'mdi:newspaper',
+  'milk carton': 'mdi:cup-water',
+  'juice box': 'mdi:cup-water',
+  'cereal box': 'game-icons:cardboard-box-closed',
+  'envelope': 'mdi:email-outline',
+
+  // ── Compost ──
+  'banana peel': 'game-icons:banana-peel',
+  'banana': 'game-icons:banana-peeled',
+  'apple core': 'mingcute:apple-fruit-fill',
+  'apple': 'mingcute:apple-fruit-fill',
+  'food scraps': 'mdi:food-drumstick',
+  'food waste': 'mdi:food-drumstick',
+  'coffee grounds': 'iconoir:coffee-cup',
+  'coffee cup': 'iconoir:coffee-cup',
+  'tea bag': 'game-icons:tea',
+  'tea': 'game-icons:tea',
+  'egg shell': 'mdi:egg-outline',
+  'egg shells': 'mdi:egg-outline',
+  'egg': 'mdi:egg-outline',
+  'vegetable scraps': 'game-icons:carrot',
+  'vegetables': 'game-icons:carrot',
+  'carrot': 'game-icons:carrot',
+  'fruit peel': 'mingcute:apple-fruit-line',
+  'fruit': 'mingcute:apple-fruit-line',
+  'bread': 'game-icons:sliced-bread',
+  'leaves': 'mdi:leaf',
+  'leaf': 'mdi:leaf',
+  'grass clippings': 'mdi:grass',
+  'grass': 'mdi:grass',
+  'orange peel': 'mingcute:apple-fruit-line',
+  'potato peel': 'game-icons:potato',
+
+  // ── General Waste ──
+  'plastic bag': 'mdi:shopping-outline',
+  'chip packet': 'game-icons:potato-chips',
+  'chips packet': 'game-icons:potato-chips',
+  'chips': 'game-icons:potato-chips',
+  'snack wrapper': 'mdi:candy-outline',
+  'candy wrapper': 'mdi:candy-outline',
+  'wrapper': 'mdi:candy-outline',
+  'styrofoam': 'mdi:package-variant',
+  'foam': 'mdi:package-variant',
+  'diaper': 'mdi:baby-buggy',
+  'nappy': 'mdi:baby-buggy',
+  'cigarette butt': 'mdi:smoking',
+  'cigarette': 'mdi:smoking',
+  'plastic wrap': 'mdi:package-variant-closed',
+  'cling wrap': 'mdi:package-variant-closed',
+  'tissue': 'mdi:paper-roll-outline',
+  'tissues': 'mdi:paper-roll-outline',
+  'paper towel': 'mdi:paper-roll-outline',
+  'light bulb': 'mdi:lightbulb-outline',
+  'battery': 'mdi:battery',
+  'batteries': 'mdi:battery',
+  'pen': 'mdi:pen',
+  'straw': 'mdi:cup-water',
+  'cutlery': 'mdi:silverware-fork-knife',
+  'utensils': 'mdi:silverware-fork-knife',
+  'fork': 'mdi:silverware-fork-knife',
+  'spoon': 'mdi:silverware-fork-knife',
+  'knife': 'mdi:silverware-fork-knife',
+  'pizza box': 'mdi:pizza',
+  'takeaway container': 'mdi:package-variant',
+  'foam container': 'mdi:package-variant',
+  'cup': 'mdi:cup',
+  'plastic cup': 'mdi:cup',
+  'paper cup': 'mdi:cup',
+  'toothbrush': 'mdi:toothbrush',
+  'razor': 'mdi:razor-double-edge',
+  'sponge': 'game-icons:sponge',
+  'clothes': 'mdi:tshirt-crew-outline',
+  'clothing': 'mdi:tshirt-crew-outline',
+  'shoe': 'mdi:shoe-formal',
+  'shoes': 'mdi:shoe-formal',
+};
+
+const CATEGORY_FALLBACK_ICONS = {
+  general: 'mdi:trash-can-outline',
+  recycling: 'mdi:recycle',
+  compost: 'mdi:compost',
+};
+
 document.addEventListener("alpine:init", () => {
   Alpine.data("dashboard", () => ({
     // ── UI state ──
@@ -59,6 +171,8 @@ document.addEventListener("alpine:init", () => {
     classifyError: "",
     capturedImage: null,
     classificationHistory: [],
+    itemIconSvg: null,
+    itemIconLoading: false,
 
     // ── Dataset ──
     datasetStats: { general: 0, recycling: 0, compost: 0, total: 0 },
@@ -446,6 +560,8 @@ document.addEventListener("alpine:init", () => {
       this.classifying = true;
       this.classifyError = "";
       this.lastResult = null;
+      this.itemIconSvg = null;
+      this.itemIconLoading = false;
 
       let requestBody = {};
 
@@ -485,6 +601,9 @@ document.addEventListener("alpine:init", () => {
             this.capturedImage = this.deviceCameraUrl;
           }
 
+          // Fetch item icon from Iconify
+          this.fetchItemIcon(data.label, data.category);
+
           // Push to classification history (sidebar)
           this.classificationHistory.unshift({
             ts: Date.now(),
@@ -501,6 +620,70 @@ document.addEventListener("alpine:init", () => {
         this.classifyError = "Request failed: " + err.message;
       } finally {
         this.classifying = false;
+      }
+    },
+
+    /**
+     * Resolve an item icon SVG from the VLM label.
+     * Tier 1: Curated ITEM_ICONS map (instant, no network).
+     * Tier 2: Iconify search API fallback.
+     * Tier 3: Generic category icon.
+     */
+    async fetchItemIcon(label, category) {
+      this.itemIconSvg = null;
+      this.itemIconLoading = true;
+
+      const normalised = (label || '').toLowerCase().trim();
+      let iconId = null;
+
+      // Tier 1 – exact match in curated map
+      if (ITEM_ICONS[normalised]) {
+        iconId = ITEM_ICONS[normalised];
+      } else {
+        // Try partial matching: check if any key is contained in the label or vice-versa
+        for (const [key, id] of Object.entries(ITEM_ICONS)) {
+          if (normalised.includes(key) || key.includes(normalised)) {
+            iconId = id;
+            break;
+          }
+        }
+      }
+
+      // Tier 2 – Iconify search API
+      if (!iconId) {
+        try {
+          const searchRes = await fetch(
+            `https://api.iconify.design/search?query=${encodeURIComponent(normalised)}&limit=1`
+          );
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            if (searchData.icons && searchData.icons.length > 0) {
+              iconId = searchData.icons[0];
+            }
+          }
+        } catch (_) {
+          // Network error – fall through to category fallback
+        }
+      }
+
+      // Tier 3 – generic category fallback
+      if (!iconId) {
+        iconId = CATEGORY_FALLBACK_ICONS[category] || CATEGORY_FALLBACK_ICONS.general;
+      }
+
+      // Fetch the SVG from Iconify
+      try {
+        const [prefix, name] = iconId.split(':');
+        const svgRes = await fetch(
+          `https://api.iconify.design/${prefix}/${name}.svg?height=64`
+        );
+        if (svgRes.ok) {
+          this.itemIconSvg = await svgRes.text();
+        }
+      } catch (_) {
+        this.itemIconSvg = null;
+      } finally {
+        this.itemIconLoading = false;
       }
     },
 
