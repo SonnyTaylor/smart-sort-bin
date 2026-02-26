@@ -171,8 +171,8 @@ document.addEventListener("alpine:init", () => {
     classifyError: "",
     capturedImage: null,
     classificationHistory: [],
-    itemIconSvg: null,
-    itemIconLoading: false,
+    itemIcons: [],
+    itemIconsLoading: false,
 
     // ── Dataset ──
     datasetStats: { general: 0, recycling: 0, compost: 0, total: 0 },
@@ -560,8 +560,8 @@ document.addEventListener("alpine:init", () => {
       this.classifying = true;
       this.classifyError = "";
       this.lastResult = null;
-      this.itemIconSvg = null;
-      this.itemIconLoading = false;
+      this.itemIcons = [];
+      this.itemIconsLoading = false;
 
       let requestBody = {};
 
@@ -591,29 +591,42 @@ document.addEventListener("alpine:init", () => {
         if (data.error) {
           this.classifyError = data.error;
         } else {
-          this.lastResult = data;
-          this.datasetSaveStatus = "";
-          this.selectedDatasetCategory = data.category || "general";
+          const items = data.items || [];
 
-          if (data.image) {
-            this.capturedImage = "data:image/jpeg;base64," + data.image;
-          } else if (this.cameraSource === "device") {
-            this.capturedImage = this.deviceCameraUrl;
-          }
+          if (items.length === 0) {
+            // No waste items detected (e.g. only person visible)
+            this.lastResult = { items: [], duration_ms: data.duration_ms || 0 };
+            this.datasetSaveStatus = "";
+          } else {
+            // Sort by confidence descending — primary item is first
+            items.sort((a, b) => b.confidence - a.confidence);
+            data.items = items;
+            this.lastResult = data;
+            this.datasetSaveStatus = "";
+            this.selectedDatasetCategory = items[0].category || "general";
 
-          // Fetch item icon from Iconify
-          this.fetchItemIcon(data.label, data.category);
+            if (data.image) {
+              this.capturedImage = "data:image/jpeg;base64," + data.image;
+            } else if (this.cameraSource === "device") {
+              this.capturedImage = this.deviceCameraUrl;
+            }
 
-          // Push to classification history (sidebar)
-          this.classificationHistory.unshift({
-            ts: Date.now(),
-            category: data.category,
-            label: data.label || data.category,
-            confidence: data.confidence || 0,
-            thumb: this.capturedImage,
-          });
-          if (this.classificationHistory.length > 10) {
-            this.classificationHistory.pop();
+            // Fetch icons for all detected items
+            this.fetchItemIcons(items);
+
+            // Push to classification history (sidebar)
+            this.classificationHistory.unshift({
+              ts: Date.now(),
+              items: items,
+              category: items[0].category,
+              label: items[0].label || items[0].category,
+              confidence: items[0].confidence || 0,
+              itemCount: items.length,
+              thumb: this.capturedImage,
+            });
+            if (this.classificationHistory.length > 10) {
+              this.classificationHistory.pop();
+            }
           }
         }
       } catch (err) {
@@ -624,15 +637,10 @@ document.addEventListener("alpine:init", () => {
     },
 
     /**
-     * Resolve an item icon SVG from the VLM label.
-     * Tier 1: Curated ITEM_ICONS map (instant, no network).
-     * Tier 2: Iconify search API fallback.
-     * Tier 3: Generic category icon.
+     * Resolve an icon ID from a label using the curated map + Iconify search.
+     * Returns the Iconify icon ID string (e.g. "mdi:newspaper").
      */
-    async fetchItemIcon(label, category) {
-      this.itemIconSvg = null;
-      this.itemIconLoading = true;
-
+    async _resolveIconId(label, category) {
       const normalised = (label || '').toLowerCase().trim();
       let iconId = null;
 
@@ -640,7 +648,7 @@ document.addEventListener("alpine:init", () => {
       if (ITEM_ICONS[normalised]) {
         iconId = ITEM_ICONS[normalised];
       } else {
-        // Try partial matching: check if any key is contained in the label or vice-versa
+        // Try partial matching
         for (const [key, id] of Object.entries(ITEM_ICONS)) {
           if (normalised.includes(key) || key.includes(normalised)) {
             iconId = id;
@@ -661,9 +669,7 @@ document.addEventListener("alpine:init", () => {
               iconId = searchData.icons[0];
             }
           }
-        } catch (_) {
-          // Network error – fall through to category fallback
-        }
+        } catch (_) {}
       }
 
       // Tier 3 – generic category fallback
@@ -671,19 +677,43 @@ document.addEventListener("alpine:init", () => {
         iconId = CATEGORY_FALLBACK_ICONS[category] || CATEGORY_FALLBACK_ICONS.general;
       }
 
-      // Fetch the SVG from Iconify
+      return iconId;
+    },
+
+    /**
+     * Fetch an SVG string from an Iconify icon ID.
+     */
+    async _fetchIconSvg(iconId) {
       try {
         const [prefix, name] = iconId.split(':');
         const svgRes = await fetch(
           `https://api.iconify.design/${prefix}/${name}.svg?height=64`
         );
-        if (svgRes.ok) {
-          this.itemIconSvg = await svgRes.text();
-        }
+        if (svgRes.ok) return await svgRes.text();
+      } catch (_) {}
+      return null;
+    },
+
+    /**
+     * Resolve item icon SVGs for all detected items in parallel.
+     */
+    async fetchItemIcons(items) {
+      this.itemIcons = [];
+      this.itemIconsLoading = true;
+
+      try {
+        const results = await Promise.all(
+          items.map(async (item) => {
+            const iconId = await this._resolveIconId(item.label, item.category);
+            const svg = await this._fetchIconSvg(iconId);
+            return svg;
+          })
+        );
+        this.itemIcons = results;
       } catch (_) {
-        this.itemIconSvg = null;
+        this.itemIcons = items.map(() => null);
       } finally {
-        this.itemIconLoading = false;
+        this.itemIconsLoading = false;
       }
     },
 
@@ -953,10 +983,23 @@ document.addEventListener("alpine:init", () => {
 
       evtSource.addEventListener("sort_event", (e) => {
         const event = JSON.parse(e.data);
-        event._id = ++_activityId;
-        if (!event.timestamp) event.timestamp = Date.now() / 1000;
-        this.activity.unshift(event);
-        if (this.activity.length > 100) this.activity.pop();
+        const ts = event.timestamp || Date.now() / 1000;
+        const items = event.items || [];
+        // Expand each item into an individual activity entry
+        for (const item of items) {
+          const entry = {
+            _id: ++_activityId,
+            timestamp: ts,
+            category: item.category,
+            label: item.label || item.category,
+            confidence: item.confidence || 0,
+            duration_ms: event.duration_ms || 0,
+          };
+          this.activity.unshift(entry);
+        }
+        if (this.activity.length > 100) {
+          this.activity.length = 100;
+        }
         this.loadStats();
         this._updateCharts();
       });

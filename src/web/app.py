@@ -189,20 +189,21 @@ def api_classify():
     if result.get("error"):
         return jsonify(result), 502
 
-    # Log the sort event
-    database.log_sort(
-        category=result["category"],
-        confidence=result["confidence"],
-        mode=config.MODE_LLM,
-        label=result.get("label", ""),
-        duration_ms=duration_ms,
-    )
+    items = result.get("items", [])
+
+    # Log each detected item as a separate sort event
+    for item in items:
+        database.log_sort(
+            category=item["category"],
+            confidence=item["confidence"],
+            mode=config.MODE_LLM,
+            label=item.get("label", ""),
+            duration_ms=duration_ms,
+        )
 
     event = {
-        "category": result["category"],
-        "confidence": result["confidence"],
+        "items": items,
         "mode": config.MODE_LLM,
-        "label": result.get("label", ""),
         "duration_ms": duration_ms,
         "raw_response": result.get("raw_response", ""),
     }
@@ -292,6 +293,7 @@ def api_update_provider(provider_id):
 # Dataset Endpoints
 # ---------------------------------------------------------------------------
 
+
 @app.route("/api/dataset/save", methods=["POST"])
 def api_dataset_save():
     data = request.get_json(force=True)
@@ -311,28 +313,34 @@ def api_dataset_save():
         image_data = base64.b64decode(image_b64)
         filename = f"{int(time.time() * 1000)}.jpg"
         filepath = os.path.join(config.DATASET_DIR, category, filename)
-        
+
         with open(filepath, "wb") as f:
             f.write(image_data)
-            
+
         return jsonify({"status": "saved", "filename": filename, "category": category})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/api/dataset/stats", methods=["GET"])
 def api_dataset_stats():
     stats = {"total": 0}
     for cat in config.CATEGORIES:
         cat_dir = os.path.join(config.DATASET_DIR, cat)
-        count = len([f for f in os.listdir(cat_dir) if f.endswith(".jpg")]) if os.path.exists(cat_dir) else 0
+        count = (
+            len([f for f in os.listdir(cat_dir) if f.endswith(".jpg")])
+            if os.path.exists(cat_dir)
+            else 0
+        )
         stats[cat] = count
         stats["total"] += count
     return jsonify(stats)
 
+
 @app.route("/api/dataset/export", methods=["GET"])
 def api_dataset_export():
     memory_file = io.BytesIO()
-    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(memory_file, "w", zipfile.ZIP_DEFLATED) as zf:
         for cat in config.CATEGORIES:
             cat_dir = os.path.join(config.DATASET_DIR, cat)
             if os.path.exists(cat_dir):
@@ -340,14 +348,15 @@ def api_dataset_export():
                     if filename.endswith(".jpg"):
                         filepath = os.path.join(cat_dir, filename)
                         zf.write(filepath, arcname=os.path.join(cat, filename))
-    
+
     memory_file.seek(0)
     return send_file(
         memory_file,
         mimetype="application/zip",
         as_attachment=True,
-        download_name="dataset.zip"
+        download_name="dataset.zip",
     )
+
 
 @app.route("/api/dataset/clear", methods=["POST"])
 def api_dataset_clear():
@@ -369,11 +378,13 @@ def api_dataset_images():
         if os.path.exists(cat_dir):
             for filename in sorted(os.listdir(cat_dir), reverse=True):
                 if filename.endswith(".jpg"):
-                    images.append({
-                        "category": cat,
-                        "filename": filename,
-                        "url": f"/api/dataset/image/{cat}/{filename}",
-                    })
+                    images.append(
+                        {
+                            "category": cat,
+                            "filename": filename,
+                            "url": f"/api/dataset/image/{cat}/{filename}",
+                        }
+                    )
     return jsonify(images)
 
 
@@ -425,7 +436,9 @@ def api_test_provider(provider_id):
             resp.raise_for_status()
         return jsonify({"status": "ok", "message": "Connection successful"})
     except httpx.HTTPStatusError as e:
-        return jsonify({"error": f"HTTP {e.response.status_code}: {e.response.text[:200]}"}), 502
+        return jsonify(
+            {"error": f"HTTP {e.response.status_code}: {e.response.text[:200]}"}
+        ), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 502
 

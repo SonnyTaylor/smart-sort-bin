@@ -42,17 +42,24 @@ PROVIDER_PRESETS = {
 }
 
 SYSTEM_PROMPT = """You are a waste classification AI inside a smart recycling bin operating in Australia.
-You will receive a photo of a waste item placed on a sorting tray.
+You will receive a photo that may contain one or more waste items. A person may be holding the items or they may be placed on a sorting tray.
 
-Classify the item into exactly ONE of these categories following strict Australian guidelines:
+IMPORTANT: Only classify actual waste items. Completely IGNORE:
+- People, hands, arms, fingers, or any body parts
+- The sorting tray, table, or background surfaces
+- Clothing or accessories being worn (not discarded)
+
+Identify ALL distinct waste items visible and classify each into one of these categories following strict Australian guidelines:
 - general (Red bin: non-recyclable waste, soft plastics, plastic wrap, chip packets, styrofoam/polystyrene, broken glass, heavily soiled or greasy items like greasy pizza boxes and food-contaminated plastics)
 - recycling (Yellow bin: clean and empty rigid plastics, aluminium/steel cans, clean glass bottles/jars, clean paper and cardboard. MUST be clean and unspoiled)
 - compost (Green FOGO bin: organic waste, food scraps, fruit peels, coffee grounds, garden waste. Do NOT include compostable plastics unless explicitly marked FOGO safe)
 
-Pay close attention to the condition of the item. If a recyclable item (like a pizza box or plastic container) is greasy, heavily soiled with food, or contaminated, it MUST go to 'general' or 'compost' (if fully organic), NEVER 'recycling'. Only clean items can be recycled.
+Pay close attention to the condition of each item. If a recyclable item (like a pizza box or plastic container) is greasy, heavily soiled with food, or contaminated, it MUST go to 'general' or 'compost' (if fully organic), NEVER 'recycling'. Only clean items can be recycled.
 
-Respond with ONLY a JSON object in this exact format:
-{"category": "<general|recycling|compost>", "label": "<specific item name>", "confidence": <0.0-1.0>}
+Respond with ONLY a JSON object containing an "items" array. Each element represents one waste item:
+{"items": [{"category": "<general|recycling|compost>", "label": "<specific item name>", "confidence": <0.0-1.0>}]}
+
+If multiple items are visible, include one object per item. If no waste items are visible (e.g. only a person or empty background), return: {"items": []}
 
 Do not include any other text, explanation, or formatting. Just the JSON object."""
 
@@ -77,7 +84,7 @@ def classify_image(
         timeout: Request timeout in seconds.
 
     Returns:
-        dict with keys: category, label, confidence, raw_response
+        dict with keys: items (list of {category, label, confidence}), raw_response
     """
     preset = PROVIDER_PRESETS.get(provider_id, PROVIDER_PRESETS["custom"])
     url = base_url or preset["base_url"]
@@ -104,7 +111,7 @@ def classify_image(
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "Classify this waste item:"},
+                    {"type": "text", "text": "Classify the waste items in this image:"},
                     {
                         "type": "image_url",
                         "image_url": {
@@ -114,8 +121,9 @@ def classify_image(
                 ],
             },
         ],
-        "max_tokens": 100,
+        "max_tokens": 300,
         "temperature": 0.1,
+        "response_format": {"type": "json_object"},
     }
 
     raw_text = ""
@@ -147,7 +155,7 @@ def classify_image(
         if not content:
             return {
                 "error": "Model returned empty content. It may not support vision or the image was rejected.",
-                "category": None,
+                "items": [],
             }
 
         raw_text = content.strip()
@@ -162,16 +170,38 @@ def classify_image(
 
         result = json.loads(cleaned)
 
-        # Validate category
+        # Normalise: accept {"items": [...]}, bare [...], or a single {...}
+        if isinstance(result, dict) and "items" in result:
+            raw_items = result["items"]
+        elif isinstance(result, list):
+            raw_items = result
+        elif isinstance(result, dict):
+            # Single-item legacy format
+            raw_items = [result]
+        else:
+            raw_items = []
+
+        # Validate each item
         valid_categories = {"general", "recycling", "compost"}
-        category = result.get("category", "general").lower()
-        if category not in valid_categories:
-            category = "general"
+        items = []
+        for item in raw_items:
+            if not isinstance(item, dict):
+                continue
+            category = item.get("category", "general").lower()
+            if category not in valid_categories:
+                category = "general"
+            items.append(
+                {
+                    "category": category,
+                    "label": item.get("label", "Unknown item"),
+                    "confidence": min(
+                        1.0, max(0.0, float(item.get("confidence", 0.8)))
+                    ),
+                }
+            )
 
         return {
-            "category": category,
-            "label": result.get("label", "Unknown item"),
-            "confidence": min(1.0, max(0.0, float(result.get("confidence", 0.8)))),
+            "items": items,
             "raw_response": raw_text,
         }
 
@@ -179,7 +209,7 @@ def classify_image(
         return {
             "error": f"Request to {provider_id} timed out after {timeout}s. "
             "Try a faster model or increase the timeout.",
-            "category": None,
+            "items": [],
         }
     except httpx.HTTPStatusError as e:
         status = e.response.status_code
@@ -193,19 +223,19 @@ def classify_image(
         hint = hints.get(status, "")
         return {
             "error": f"API error {status}: {hint} {detail}".strip(),
-            "category": None,
+            "items": [],
         }
     except json.JSONDecodeError as e:
         return {
             "error": f"Model response was not valid JSON: {str(e)}",
-            "category": None,
+            "items": [],
             "raw_response": locals().get("raw_text", ""),
         }
     except (KeyError, IndexError) as e:
         return {
             "error": f"Unexpected response structure: {str(e)}",
-            "category": None,
+            "items": [],
             "raw_response": locals().get("raw_text", ""),
         }
     except Exception as e:
-        return {"error": f"Unexpected error: {str(e)}", "category": None}
+        return {"error": f"Unexpected error: {str(e)}", "items": []}

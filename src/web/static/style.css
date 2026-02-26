@@ -371,6 +371,34 @@ body::before {
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* ---- Multi-item result rows ---- */
+
+.item-icon-sm {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 12px;
+}
+
+.item-icon-sm .item-icon-svg svg {
+  width: 28px;
+  height: 28px;
+}
+
+.item-result-row {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  animation: itemSlideIn 0.3s ease-out both;
+}
+.item-result-row:last-child {
+  border-bottom: none;
+}
+
+@keyframes itemSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ---- Category badge ---- */
 
 .cat-badge {
