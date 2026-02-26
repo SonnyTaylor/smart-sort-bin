@@ -27,7 +27,7 @@ hole_x = 32;
 hole_y = 15;
 wall_t = 4;              // Thickness of the skeletonized block walls
 
-module ameru_tray() {
+module ameru_tray(solid_block = false) {
     difference() {
         // --------------------------------------------------------
         // 1. ADDITIVE PHASE: Create the solid outer bounds
@@ -69,10 +69,12 @@ module ameru_tray() {
         translate([-tray_width, -tray_length, 0])
         cube([tray_width*2, tray_length*2, smile_radius]);
         
-        // Skeletonize the mounting block from the BOTTOM ONLY
-        // We stop hollowing it out at `riser_height - wall_t` so the tray above stays solid
-        translate([-block_w/2 + wall_t, -block_l/2 + wall_t, -1])
-        cube([block_w - wall_t*2, block_l - wall_t*2, riser_height - wall_t + 1]);
+        if (!solid_block) {
+            // Skeletonize the mounting block from the BOTTOM ONLY
+            // We stop hollowing it out at `riser_height - wall_t` so the tray above stays solid
+            translate([-block_w/2 + wall_t, -block_l/2 + wall_t, -1])
+            cube([block_w - wall_t*2, block_l - wall_t*2, riser_height - wall_t + 1]);
+        }
         
         // Drill the 4 bolt holes through the entire assembly
         for(x = [-hole_x/2, hole_x/2]) {
@@ -84,5 +86,11 @@ module ameru_tray() {
     }
 }
 
-// Render the final object
-ameru_tray();
+// --- Render Selection ---
+// Uncomment the version you want to view/export to STL:
+
+// Version 1: Hollowed-out mounting block (Saves material & time, lightweight)
+ameru_tray(solid_block = false);
+
+// Version 2: Solid mounting block (Maximum strength, heavier)
+// ameru_tray(solid_block = true);
