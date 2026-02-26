@@ -408,21 +408,24 @@ def api_test_provider(provider_id):
     provider = next((p for p in providers if p["id"] == provider_id), None)
     if not provider:
         return jsonify({"error": f"Unknown provider: {provider_id}"}), 404
-    if not provider["api_key"]:
-        return jsonify({"error": "No API key configured"}), 400
 
     from llm import PROVIDER_PRESETS
     import httpx
 
     preset = PROVIDER_PRESETS.get(provider_id, PROVIDER_PRESETS["custom"])
+    requires_key = bool(preset["auth_header"])
+
+    if requires_key and not provider["api_key"]:
+        return jsonify({"error": "No API key configured"}), 400
+
     url = provider["base_url"] or preset["base_url"]
     if not url:
         return jsonify({"error": "No API URL configured"}), 400
 
-    headers = {
-        "Content-Type": "application/json",
-        preset["auth_header"]: f"{preset['auth_prefix']}{provider['api_key']}",
-    }
+    headers = {"Content-Type": "application/json"}
+    if requires_key and provider["api_key"]:
+        headers[preset["auth_header"]] = f"{preset['auth_prefix']}{provider['api_key']}"
+
     payload = {
         "model": provider["model"],
         "messages": [{"role": "user", "content": "Respond with only the word OK."}],
@@ -430,8 +433,11 @@ def api_test_provider(provider_id):
         "temperature": 0,
     }
 
+    # Local models may need longer to cold-start
+    test_timeout = 30.0 if provider_id == "ollama" else 10.0
+
     try:
-        with httpx.Client(timeout=10.0) as client:
+        with httpx.Client(timeout=test_timeout) as client:
             resp = client.post(url, headers=headers, json=payload)
             resp.raise_for_status()
         return jsonify({"status": "ok", "message": "Connection successful"})
@@ -439,6 +445,14 @@ def api_test_provider(provider_id):
         return jsonify(
             {"error": f"HTTP {e.response.status_code}: {e.response.text[:200]}"}
         ), 502
+    except httpx.ConnectError:
+        if provider_id == "ollama":
+            return jsonify(
+                {
+                    "error": "Cannot connect to Ollama. Is it running? Check that Ollama is started and listening on the configured URL."
+                }
+            ), 502
+        return jsonify({"error": "Connection refused. Check the API URL."}), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 502
 

@@ -156,7 +156,7 @@
                 :class="mode === 'llm' ? 'bg-gradient-to-r from-violet-600 to-violet-500 text-white shadow-lg shadow-violet-500/20' : 'text-dim hover:text-muted'"
                 @click="setMode('llm')">LLM</button>
             </div>
-            <p class="text-xs text-dim mt-2 text-center" x-text="mode === 'yolo' ? 'Offline edge AI on NPU' : 'Cloud VLM via ' + activeProviderName"></p>
+            <p class="text-xs text-dim mt-2 text-center" x-text="mode === 'yolo' ? 'Offline edge AI on NPU' : (activeProviderName.includes('Local') ? 'Local VLM via ' + activeProviderName : 'Cloud VLM via ' + activeProviderName)"></p>
           </div>
         </div>
 
@@ -570,8 +570,8 @@
                   @click="selectProvider(provider.id)">
                   <span x-text="provider.name"></span>
                   <span class="text-[10px] opacity-60 truncate max-w-full"
-                    :class="provider.api_key_set ? 'text-emerald-400' : 'text-red-400'"
-                    x-text="provider.api_key_set ? '\u2713 Key Set' : '\u2717 No Key'"></span>
+                    :class="provider.id === 'ollama' ? 'text-blue-400' : (provider.api_key_set ? 'text-emerald-400' : 'text-red-400')"
+                    x-text="provider.id === 'ollama' ? '\u25cb Local' : (provider.api_key_set ? '\u2713 Key Set' : '\u2717 No Key')"></span>
                 </button>
               </template>
             </div>
@@ -580,11 +580,12 @@
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-bold" x-text="provider.name"></span>
                   <span class="text-xs px-2 py-0.5 rounded-full bg-accent/15 text-accent font-medium" x-show="provider.is_active">Active</span>
-                  <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                  <span x-show="provider.id === 'ollama'" class="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-500/15 text-blue-400">Local</span>
+                  <span x-show="provider.id !== 'ollama'" class="text-xs px-2 py-0.5 rounded-full font-medium"
                     :class="provider.api_key_set ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'"
                     x-text="provider.api_key_set ? 'Key Set' : 'No Key'"></span>
                 </div>
-                <div>
+                <div x-show="provider.id !== 'ollama'">
                   <label class="block text-xs text-dim uppercase tracking-wider font-medium mb-1.5">API Key</label>
                   <input type="password" class="w-full px-3 py-2.5 bg-bg/60 border border-border rounded-lg text-sm text-zinc-100 transition-colors"
                     :placeholder="provider.api_key_set ? provider.api_key_masked : 'Enter API key...'"
@@ -598,10 +599,10 @@
                     :value="pendingSettings[provider.id]?.model ?? provider.model"
                     @input="setPending(provider.id, 'model', $event.target.value)" />
                 </div>
-                <div x-show="provider.id === 'custom'">
+                <div x-show="provider.id === 'custom' || provider.id === 'ollama'">
                   <label class="block text-xs text-dim uppercase tracking-wider font-medium mb-1.5">API URL</label>
                   <input type="text" class="w-full px-3 py-2.5 bg-bg/60 border border-border rounded-lg text-sm text-zinc-100 font-mono transition-colors"
-                    placeholder="https://api.example.com/v1/chat/completions"
+                    :placeholder="provider.id === 'ollama' ? 'http://localhost:11434/v1/chat/completions' : 'https://api.example.com/v1/chat/completions'"
                     :value="pendingSettings[provider.id]?.base_url ?? provider.base_url"
                     @input="setPending(provider.id, 'base_url', $event.target.value)" />
                 </div>

@@ -32,6 +32,13 @@ PROVIDER_PRESETS = {
         "auth_header": "Authorization",
         "auth_prefix": "Bearer ",
     },
+    "ollama": {
+        "name": "Ollama (Local)",
+        "base_url": "http://localhost:11434/v1/chat/completions",
+        "default_model": "gemma3:4b",
+        "auth_header": "",
+        "auth_prefix": "",
+    },
     "custom": {
         "name": "Custom (OpenAI-compatible)",
         "base_url": "",
@@ -90,16 +97,18 @@ def classify_image(
     """
     preset = PROVIDER_PRESETS.get(provider_id, PROVIDER_PRESETS["custom"])
     url = base_url or preset["base_url"]
+    requires_key = bool(preset["auth_header"])
 
     if not url:
         return {"error": "No API URL configured for this provider"}
-    if not api_key:
+    if requires_key and not api_key:
         return {"error": "No API key configured"}
 
-    headers = {
-        "Content-Type": "application/json",
-        preset["auth_header"]: f"{preset['auth_prefix']}{api_key}",
-    }
+    headers = {"Content-Type": "application/json"}
+
+    # Only add auth header for providers that need it
+    if requires_key and api_key:
+        headers[preset["auth_header"]] = f"{preset['auth_prefix']}{api_key}"
 
     # Add OpenRouter-specific headers
     if provider_id == "openrouter":
@@ -125,8 +134,15 @@ def classify_image(
         ],
         "max_tokens": 300,
         "temperature": 0.1,
-        "response_format": {"type": "json_object"},
     }
+
+    # JSON mode — skip for Ollama as not all local models support it
+    if provider_id != "ollama":
+        payload["response_format"] = {"type": "json_object"}
+
+    # Local models (Ollama) need more time, especially on first load
+    if provider_id == "ollama" and timeout <= 10.0:
+        timeout = 60.0
 
     raw_text = ""
     try:

@@ -917,6 +917,7 @@ document.addEventListener("alpine:init", () => {
         openrouter: "e.g. meta-llama/llama-4-scout",
         openai: "e.g. gpt-4o-mini",
         google: "e.g. gemini-2.5-flash",
+        ollama: "e.g. gemma3:4b, llava:7b, moondream",
         custom: "e.g. my-model-name",
       };
       return hints[providerId] || "Model ID";
