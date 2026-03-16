@@ -255,6 +255,16 @@ def get_active_provider():
     return dict(row) if row else None
 
 
+def get_provider_by_id(provider_id):
+    """Return a single LLM provider by ID (full details including key)."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, name, api_key, base_url, model FROM llm_providers WHERE id = ?",
+            (provider_id,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def update_provider(
     provider_id, api_key=None, model=None, base_url=None, is_active=None
 ):

@@ -65,7 +65,7 @@
 
       <!-- DESKTOP TABS -->
       <div class="hidden md:flex gap-1 bg-surface/60 backdrop-blur border border-border rounded-xl p-1 mb-6 w-fit">
-        <template x-for="t in [{id:'dashboard',label:'Dashboard',icon:'\ud83d\udcca'},{id:'camera',label:'Camera',icon:'\ud83d\udcf7'},{id:'dataset',label:'Dataset',icon:'\ud83d\uddc2\ufe0f'},{id:'settings',label:'Settings',icon:'\u2699\ufe0f'}]" :key="t.id">
+        <template x-for="t in [{id:'dashboard',label:'Dashboard',icon:'\ud83d\udcca'},{id:'camera',label:'Camera',icon:'\ud83d\udcf7'},{id:'compare',label:'Compare',icon:'\u2696\ufe0f'},{id:'dataset',label:'Dataset',icon:'\ud83d\uddc2\ufe0f'},{id:'settings',label:'Settings',icon:'\u2699\ufe0f'}]" :key="t.id">
           <button class="px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
             :class="tab === t.id ? 'bg-gradient-to-r from-accent to-purple-500 text-white shadow-lg shadow-accent/20' : 'text-dim hover:text-muted hover:bg-surface2/50'"
             @click="tab = t.id">
@@ -457,6 +457,226 @@
         </div>
       </div>
 
+      <!-- TAB: COMPARE -->
+      <div x-show="tab === 'compare'" x-cloak class="tab-enter">
+        <div class="max-w-5xl mx-auto space-y-6">
+
+          <!-- Header -->
+          <div class="glass-card gradient-border p-6">
+            <div class="flex items-center gap-3 mb-2">
+              <span class="text-xl">&#x2696;&#xfe0f;</span>
+              <h2 class="text-lg font-bold">Model Comparison</h2>
+            </div>
+            <p class="text-sm text-dim">Capture one image and classify it with two models side-by-side. Compare answers, confidence, and speed.</p>
+          </div>
+
+          <!-- Camera + Controls -->
+          <div class="glass-card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-semibold uppercase tracking-wider text-dim">Camera</span>
+              <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                :class="compareWebcamActive ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'"
+                x-text="compareWebcamActive ? 'Live' : 'Off'"></span>
+            </div>
+            <div class="bg-bg rounded-xl overflow-hidden aspect-[16/9] max-h-[320px] relative mx-auto" style="max-width:640px;">
+              <video x-ref="compareVideo" autoplay playsinline x-show="compareWebcamActive" class="w-full h-full object-cover block"></video>
+              <canvas x-ref="compareCanvas" class="hidden"></canvas>
+              <div class="flex flex-col items-center justify-center h-full text-dim gap-3 absolute inset-0 bg-bg/80" x-show="!compareWebcamActive">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="opacity-40">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <span class="text-sm">Start camera to begin</span>
+              </div>
+            </div>
+
+            <!-- Model selectors -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <div class="space-y-2">
+                <label class="block text-xs text-dim uppercase tracking-wider font-medium">Model A</label>
+                <select x-model="compareProviderA" class="w-full bg-bg/60 border border-border rounded-lg px-3 py-2.5 text-sm text-zinc-100">
+                  <template x-for="p in providers" :key="'cmp-a-' + p.id">
+                    <option :value="p.id" x-text="p.name"></option>
+                  </template>
+                </select>
+                <input type="text" x-model="compareModelA" class="w-full px-3 py-2.5 bg-bg/60 border border-border rounded-lg text-sm text-zinc-100 font-mono transition-colors"
+                  :placeholder="getModelPlaceholder(compareProviderA)" />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-xs text-dim uppercase tracking-wider font-medium">Model B</label>
+                <select x-model="compareProviderB" class="w-full bg-bg/60 border border-border rounded-lg px-3 py-2.5 text-sm text-zinc-100">
+                  <template x-for="p in providers" :key="'cmp-b-' + p.id">
+                    <option :value="p.id" x-text="p.name"></option>
+                  </template>
+                </select>
+                <input type="text" x-model="compareModelB" class="w-full px-3 py-2.5 bg-bg/60 border border-border rounded-lg text-sm text-zinc-100 font-mono transition-colors"
+                  :placeholder="getModelPlaceholder(compareProviderB)" />
+              </div>
+            </div>
+
+            <div class="flex gap-2 mt-4">
+              <button class="btn-secondary" @click="toggleCompareWebcam()" x-text="compareWebcamActive ? 'Stop Camera' : 'Start Camera'"></button>
+              <button class="btn-primary flex-1" @click="runComparison()" :disabled="!compareWebcamActive || comparing">
+                <span x-show="!comparing" class="flex items-center justify-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  Capture &amp; Compare
+                </span>
+                <span x-show="comparing" class="flex items-center justify-center gap-2">
+                  <svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                  Comparing...
+                </span>
+              </button>
+            </div>
+            <div x-show="compareError" class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-3">
+              <span class="text-sm text-red-400" x-text="compareError"></span>
+            </div>
+          </div>
+
+          <!-- Captured Image -->
+          <div x-show="compareCapturedImage" class="glass-card p-4">
+            <div class="text-xs font-semibold uppercase tracking-wider text-dim mb-2">Captured Image</div>
+            <div class="bg-bg rounded-lg overflow-hidden mx-auto" style="max-width:480px;">
+              <img :src="compareCapturedImage" class="w-full block rounded-lg" />
+            </div>
+          </div>
+
+          <!-- Side-by-side Results -->
+          <div x-show="compareResultA || compareResultB" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Model A Result -->
+            <div class="glass-card p-5" :class="compareResultA && !compareResultA.error ? 'glow-recycling' : ''">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <span class="text-xs font-semibold uppercase tracking-wider text-dim">Model A</span>
+                  <div class="text-sm font-bold mt-0.5" x-text="compareResultA?.provider_name || ''"></div>
+                  <div class="text-xs text-dim font-mono" x-text="compareResultA?.model || ''"></div>
+                </div>
+                <div x-show="compareResultA && !compareResultA.error" class="text-right">
+                  <div class="text-2xl font-extrabold tabular-nums" x-text="(compareResultA?.duration_ms || 0) + ' ms'"></div>
+                  <div class="text-[10px] text-dim uppercase">response time</div>
+                </div>
+              </div>
+              <div x-show="compareResultA && compareResultA.error" class="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                <span class="text-sm text-red-400" x-text="compareResultA?.error"></span>
+              </div>
+              <div x-show="compareResultA && !compareResultA.error && compareResultA.items && compareResultA.items.length === 0" class="text-center py-6">
+                <span class="text-2xl block mb-2">&#x1f50d;</span>
+                <p class="text-sm text-dim">No items detected</p>
+              </div>
+              <div x-show="compareResultA && !compareResultA.error && compareResultA.items && compareResultA.items.length > 0" class="space-y-2">
+                <template x-for="(item, idx) in (compareResultA?.items || [])" :key="'a-' + idx">
+                  <div class="flex items-center gap-3 py-2 border-b border-border/40 last:border-b-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="'cat-dot-' + item.category"></span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-bold capitalize" x-text="item.category"></div>
+                      <div class="text-xs text-dim truncate" x-text="item.label || ''"></div>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <div class="text-sm font-bold tabular-nums" x-text="Math.round((item.confidence || 0) * 100) + '%'"></div>
+                      <div class="text-[10px] text-dim">conf</div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Model B Result -->
+            <div class="glass-card p-5" :class="compareResultB && !compareResultB.error ? 'glow-compost' : ''">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <span class="text-xs font-semibold uppercase tracking-wider text-dim">Model B</span>
+                  <div class="text-sm font-bold mt-0.5" x-text="compareResultB?.provider_name || ''"></div>
+                  <div class="text-xs text-dim font-mono" x-text="compareResultB?.model || ''"></div>
+                </div>
+                <div x-show="compareResultB && !compareResultB.error" class="text-right">
+                  <div class="text-2xl font-extrabold tabular-nums" x-text="(compareResultB?.duration_ms || 0) + ' ms'"></div>
+                  <div class="text-[10px] text-dim uppercase">response time</div>
+                </div>
+              </div>
+              <div x-show="compareResultB && compareResultB.error" class="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                <span class="text-sm text-red-400" x-text="compareResultB?.error"></span>
+              </div>
+              <div x-show="compareResultB && !compareResultB.error && compareResultB.items && compareResultB.items.length === 0" class="text-center py-6">
+                <span class="text-2xl block mb-2">&#x1f50d;</span>
+                <p class="text-sm text-dim">No items detected</p>
+              </div>
+              <div x-show="compareResultB && !compareResultB.error && compareResultB.items && compareResultB.items.length > 0" class="space-y-2">
+                <template x-for="(item, idx) in (compareResultB?.items || [])" :key="'b-' + idx">
+                  <div class="flex items-center gap-3 py-2 border-b border-border/40 last:border-b-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="'cat-dot-' + item.category"></span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-bold capitalize" x-text="item.category"></div>
+                      <div class="text-xs text-dim truncate" x-text="item.label || ''"></div>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <div class="text-sm font-bold tabular-nums" x-text="Math.round((item.confidence || 0) * 100) + '%'"></div>
+                      <div class="text-[10px] text-dim">conf</div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Speed comparison bar -->
+          <div x-show="compareResultA && compareResultB && !compareResultA.error && !compareResultB.error" class="glass-card p-5">
+            <div class="text-xs font-semibold uppercase tracking-wider text-dim mb-4">Speed Comparison</div>
+            <div class="space-y-3">
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-muted" x-text="compareResultA?.model || ''"></span>
+                  <span class="font-bold tabular-nums" x-text="(compareResultA?.duration_ms || 0) + ' ms'"></span>
+                </div>
+                <div class="h-3 bg-bg rounded-full overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 progress-animated transition-all duration-500"
+                    :style="'width:' + Math.min(100, ((compareResultA?.duration_ms || 0) / Math.max(compareResultA?.duration_ms || 1, compareResultB?.duration_ms || 1)) * 100) + '%'"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-muted" x-text="compareResultB?.model || ''"></span>
+                  <span class="font-bold tabular-nums" x-text="(compareResultB?.duration_ms || 0) + ' ms'"></span>
+                </div>
+                <div class="h-3 bg-bg rounded-full overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 progress-animated transition-all duration-500"
+                    :style="'width:' + Math.min(100, ((compareResultB?.duration_ms || 0) / Math.max(compareResultA?.duration_ms || 1, compareResultB?.duration_ms || 1)) * 100) + '%'"></div>
+                </div>
+              </div>
+              <div class="text-center pt-2">
+                <span class="text-sm font-semibold"
+                  :class="(compareResultA?.duration_ms || 0) < (compareResultB?.duration_ms || 0) ? 'text-blue-400' : (compareResultA?.duration_ms || 0) > (compareResultB?.duration_ms || 0) ? 'text-emerald-400' : 'text-muted'"
+                  x-text="(compareResultA?.duration_ms || 0) < (compareResultB?.duration_ms || 0)
+                    ? (compareResultA?.model || 'Model A') + ' was ' + Math.abs((compareResultB?.duration_ms || 0) - (compareResultA?.duration_ms || 0)) + ' ms faster'
+                    : (compareResultA?.duration_ms || 0) > (compareResultB?.duration_ms || 0)
+                      ? (compareResultB?.model || 'Model B') + ' was ' + Math.abs((compareResultA?.duration_ms || 0) - (compareResultB?.duration_ms || 0)) + ' ms faster'
+                      : 'Both took the same time'"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agreement check -->
+          <div x-show="compareResultA && compareResultB && !compareResultA.error && !compareResultB.error
+                        && compareResultA.items && compareResultA.items.length > 0
+                        && compareResultB.items && compareResultB.items.length > 0" class="glass-card p-5">
+            <div class="text-xs font-semibold uppercase tracking-wider text-dim mb-3">Agreement</div>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                :class="compareResultA?.items?.[0]?.category === compareResultB?.items?.[0]?.category
+                  ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'"
+                x-text="compareResultA?.items?.[0]?.category === compareResultB?.items?.[0]?.category ? '\u2713' : '\u2717'"></div>
+              <div>
+                <div class="text-sm font-bold"
+                  x-text="compareResultA?.items?.[0]?.category === compareResultB?.items?.[0]?.category
+                    ? 'Models agree on primary classification' : 'Models disagree on primary classification'"></div>
+                <div class="text-xs text-dim"
+                  x-text="'Model A: ' + (compareResultA?.items?.[0]?.category || '-') + ' (' + (compareResultA?.items?.[0]?.label || '-') + ')  |  Model B: ' + (compareResultB?.items?.[0]?.category || '-') + ' (' + (compareResultB?.items?.[0]?.label || '-') + ')'"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- TAB: DATASET -->
       <div x-show="tab === 'dataset'" x-cloak class="tab-enter">
         <div class="max-w-4xl mx-auto space-y-6">
@@ -687,6 +907,11 @@
           @click="document.querySelector('[x-data=dashboard]').__x.$data.tab = 'camera'">
           <span class="text-lg">&#x1f4f7;</span>
           <span class="text-[10px] font-medium">Camera</span>
+        </button>
+        <button class="flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors text-dim"
+          @click="document.querySelector('[x-data=dashboard]').__x.$data.tab = 'compare'">
+          <span class="text-lg">&#x2696;&#xfe0f;</span>
+          <span class="text-[10px] font-medium">Compare</span>
         </button>
         <button class="flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors text-dim"
           @click="document.querySelector('[x-data=dashboard]').__x.$data.tab = 'dataset'">

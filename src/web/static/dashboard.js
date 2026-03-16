@@ -183,6 +183,19 @@ document.addEventListener("alpine:init", () => {
     galleryFilter: "all",
     lightboxImage: null,
 
+    // ── Compare ──
+    compareProviderA: localStorage.getItem("cmp_providerA") || "",
+    compareProviderB: localStorage.getItem("cmp_providerB") || "",
+    compareModelA: localStorage.getItem("cmp_modelA") || "",
+    compareModelB: localStorage.getItem("cmp_modelB") || "",
+    compareWebcamActive: false,
+    compareWebcamStream: null,
+    comparing: false,
+    compareError: "",
+    compareCapturedImage: null,
+    compareResultA: null,
+    compareResultB: null,
+
     // ── Settings ──
     selectedProvider: "",
     pendingSettings: {},
@@ -245,6 +258,12 @@ document.addEventListener("alpine:init", () => {
         this.renderHourlyChart();
       });
 
+      // Persist compare settings to localStorage
+      this.$watch('compareProviderA', (v) => localStorage.setItem('cmp_providerA', v));
+      this.$watch('compareProviderB', (v) => localStorage.setItem('cmp_providerB', v));
+      this.$watch('compareModelA', (v) => localStorage.setItem('cmp_modelA', v));
+      this.$watch('compareModelB', (v) => localStorage.setItem('cmp_modelB', v));
+
       // Flush deferred chart updates when switching back to the dashboard tab
       this.$watch('tab', (val) => {
         if (val === 'dashboard' && this._chartsDirty) {
@@ -306,6 +325,16 @@ document.addEventListener("alpine:init", () => {
       if (!this.selectedProvider && this.providers.length > 0) {
         const active = this.providers.find((p) => p.is_active);
         this.selectedProvider = active ? active.id : this.providers[0].id;
+      }
+      // Default compare provider selections (only if not restored from localStorage)
+      const validIds = this.providers.map((p) => p.id);
+      if ((!this.compareProviderA || !validIds.includes(this.compareProviderA)) && this.providers.length > 0) {
+        this.compareProviderA = this.providers[0].id;
+      }
+      if ((!this.compareProviderB || !validIds.includes(this.compareProviderB)) && this.providers.length > 1) {
+        this.compareProviderB = this.providers[1].id;
+      } else if ((!this.compareProviderB || !validIds.includes(this.compareProviderB)) && this.providers.length > 0) {
+        this.compareProviderB = this.providers[0].id;
       }
     },
 
@@ -741,6 +770,83 @@ document.addEventListener("alpine:init", () => {
         document.exitFullscreen();
       } else {
         el.requestFullscreen().catch(() => {});
+      }
+    },
+
+    // ══════════════════════════════════════════════════════════════
+    // MODEL COMPARISON
+    // ══════════════════════════════════════════════════════════════
+
+    async toggleCompareWebcam() {
+      if (this.compareWebcamActive) {
+        this.stopCompareWebcam();
+      } else {
+        await this.startCompareWebcam();
+      }
+    },
+
+    async startCompareWebcam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false,
+        });
+        this.compareWebcamStream = stream;
+        this.$refs.compareVideo.srcObject = stream;
+        this.compareWebcamActive = true;
+      } catch (err) {
+        this.compareError = "Could not access webcam: " + err.message;
+      }
+    },
+
+    stopCompareWebcam() {
+      if (this.compareWebcamStream) {
+        this.compareWebcamStream.getTracks().forEach((t) => t.stop());
+        this.compareWebcamStream = null;
+      }
+      this.compareWebcamActive = false;
+    },
+
+    async runComparison() {
+      if (!this.compareWebcamActive || this.comparing) return;
+
+      this.comparing = true;
+      this.compareError = "";
+      this.compareResultA = null;
+      this.compareResultB = null;
+
+      const video = this.$refs.compareVideo;
+      const canvas = this.$refs.compareCanvas;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      this.compareCapturedImage = dataUrl;
+
+      try {
+        const res = await fetch("/api/compare", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: dataUrl,
+            provider_a: this.compareProviderA,
+            provider_b: this.compareProviderB,
+            model_a: this.compareModelA || "",
+            model_b: this.compareModelB || "",
+          }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          this.compareError = data.error;
+        } else {
+          this.compareResultA = data.a;
+          this.compareResultB = data.b;
+        }
+      } catch (err) {
+        this.compareError = "Request failed: " + err.message;
+      } finally {
+        this.comparing = false;
       }
     },
 

@@ -13,6 +13,7 @@ import shutil
 import io
 import zipfile
 import base64
+from concurrent.futures import ThreadPoolExecutor
 
 from flask import Flask, Response, jsonify, render_template, request, send_file
 
@@ -215,6 +216,84 @@ def api_classify():
         response_data["image"] = image_b64
 
     return jsonify(response_data)
+
+
+# ---------------------------------------------------------------------------
+# REST API - Model Comparison
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/compare", methods=["POST"])
+def api_compare():
+    """
+    Classify the same image with two different providers in parallel.
+    Expects JSON: {"image": "<base64 jpeg>", "provider_a": "<id>", "provider_b": "<id>"}
+    """
+    data = request.get_json(force=True)
+
+    image_b64 = data.get("image", "")
+    provider_a_id = data.get("provider_a", "")
+    provider_b_id = data.get("provider_b", "")
+
+    if not image_b64:
+        return jsonify({"error": "No image data provided"}), 400
+    if not provider_a_id or not provider_b_id:
+        return jsonify({"error": "Two provider IDs are required"}), 400
+
+    if "," in image_b64:
+        image_b64 = image_b64.split(",", 1)[1]
+
+    provider_a = database.get_provider_by_id(provider_a_id)
+    provider_b = database.get_provider_by_id(provider_b_id)
+
+    if not provider_a:
+        return jsonify({"error": f"Provider not found: {provider_a_id}"}), 400
+    if not provider_b:
+        return jsonify({"error": f"Provider not found: {provider_b_id}"}), 400
+
+    from llm import PROVIDER_PRESETS
+
+    preset_a = PROVIDER_PRESETS.get(provider_a_id, PROVIDER_PRESETS["custom"])
+    preset_b = PROVIDER_PRESETS.get(provider_b_id, PROVIDER_PRESETS["custom"])
+    requires_key_a = bool(preset_a["auth_header"])
+    requires_key_b = bool(preset_b["auth_header"])
+
+    if requires_key_a and not provider_a["api_key"]:
+        return jsonify({"error": f"No API key set for {provider_a['name']}"}), 400
+    if requires_key_b and not provider_b["api_key"]:
+        return jsonify({"error": f"No API key set for {provider_b['name']}"}), 400
+
+    # Allow model ID overrides from the request
+    model_a_override = data.get("model_a", "").strip()
+    model_b_override = data.get("model_b", "").strip()
+    if model_a_override:
+        provider_a = dict(provider_a, model=model_a_override)
+    if model_b_override:
+        provider_b = dict(provider_b, model=model_b_override)
+
+    def run_classify(provider):
+        start = time.time()
+        result = llm.classify_image(
+            image_b64=image_b64,
+            provider_id=provider["id"],
+            api_key=provider["api_key"],
+            model=provider["model"],
+            base_url=provider["base_url"],
+        )
+        duration_ms = int((time.time() - start) * 1000)
+        result["duration_ms"] = duration_ms
+        result["provider_id"] = provider["id"]
+        result["provider_name"] = provider["name"]
+        result["model"] = provider["model"]
+        return result
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_a = executor.submit(run_classify, provider_a)
+        future_b = executor.submit(run_classify, provider_b)
+        result_a = future_a.result()
+        result_b = future_b.result()
+
+    return jsonify({"a": result_a, "b": result_b})
 
 
 # ---------------------------------------------------------------------------
