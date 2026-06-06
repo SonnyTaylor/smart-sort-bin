@@ -1,172 +1,1712 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Bin Pi</title>
+  <title>Smart Bin — Control Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗑️</text></svg>">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: { 50: '#f8fafc', 100: '#f1f5f9', 800: '#1e293b', 900: '#0f172a', 950: '#020617' },
+            general: { DEFAULT: '#ef4444', light: '#fca5a5', dark: '#991b1b' },
+            recycling: { DEFAULT: '#3b82f6', light: '#93c5fd', dark: '#1e3a8a' },
+            compost: { DEFAULT: '#22c55e', light: '#86efac', dark: '#166534' },
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- HTMX (used for future form enhancements) -->
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; max-width: 960px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
-    h1 { margin: 0 0 20px; font-size: 24px; }
-    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
-    img { width: 100%; border-radius: 6px; border: 1px solid #ddd; background: #222; min-height: 200px; }
-    button { font-size: 18px; padding: 12px 20px; margin: 4px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; }
-    button:hover { background: #eee; }
-    button.primary { background: #111; color: #fff; border-color: #111; }
-    button.primary:hover { background: #333; }
-    .d-pad { display: inline-block; text-align: center; }
-    .d-pad button { width: 60px; height: 50px; }
-    .result { padding: 15px; border-radius: 6px; margin-top: 10px; font-weight: bold; }
-    .result.general { background: #fee; border: 2px solid #c00; color: #600; }
-    .result.recycling { background: #eef; border: 2px solid #06c; color: #036; }
-    .result.compost { background: #efe; border: 2px solid #080; color: #040; }
-    .result.waiting { background: #eee; border: 2px solid #999; color: #555; }
-    #log { max-height: 200px; overflow-y: auto; background: #fafafa; border: 1px solid #ddd; border-radius: 6px; padding: 10px; font-size: 13px; }
-    .log-item { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #eee; }
-    input[type="password"], input[type="text"] { font-size: 14px; padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 4px; }
-    label { font-size: 14px; }
+    /* Smooth transitions */
+    .card { transition: all 0.2s ease; }
+    .card:hover { border-color: rgba(99, 102, 241, 0.3); }
+
+    /* Custom range slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 8px;
+      border-radius: 4px;
+      background: #334155;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #6366f1;
+      cursor: pointer;
+      border: 2px solid #818cf8;
+      transition: transform 0.1s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #6366f1;
+      cursor: pointer;
+      border: 2px solid #818cf8;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+    /* Pulse animation for live indicators */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+
+    /* D-pad button */
+    .dpad-btn {
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.1s;
+    }
+    .dpad-btn:active { transform: scale(0.92); }
+
+    /* LED color swatch */
+    .led-swatch {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.15s;
+    }
+    .led-swatch:hover { transform: scale(1.1); }
+    .led-swatch.active { border-color: white; box-shadow: 0 0 12px currentColor; }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 9999;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: #166534; color: #bbf7d0; border: 1px solid #22c55e; }
+    .toast.error { background: #991b1b; color: #fecaca; border: 1px solid #ef4444; }
+    .toast.info { background: #1e3a8a; color: #bfdbfe; border: 1px solid #3b82f6; }
+
+    /* Stat card glow on hover */
+    .stat-card { transition: all 0.2s; }
+    .stat-card:hover { box-shadow: 0 0 20px rgba(99, 102, 241, 0.15); }
+
+    /* Category badge colors */
+    .cat-general { background: #991b1b; color: #fecaca; }
+    .cat-recycling { background: #1e3a8a; color: #bfdbfe; }
+    .cat-compost { background: #166534; color: #bbf7d0; }
   </style>
 </head>
-<body>
-  <h1>🗑️ Smart Bin Pi Prototype</h1>
 
-  <div class="grid">
-    <div class="card">
-      <h2>Camera</h2>
-      <img id="stream" src="/api/camera/stream" alt="camera stream">
-      <br><br>
-      <button class="primary" onclick="sort()" id="snapBtn">📸 SNAP & SORT</button>
-    </div>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-sans">
 
-    <div class="card">
-      <h2>Pan / Tilt</h2>
-      <div class="d-pad">
-        <div><button onclick="move('tilt', 0.2)">⬆️</button></div>
+  <!-- Toast container -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Header -->
+  <header class="border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50">
+    <div class="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🗑️</span>
         <div>
-          <button onclick="move('pan', -0.2)">⬅️</button>
-          <button onclick="home()">●</button>
-          <button onclick="move('pan', 0.2)">➡️</button>
+          <h1 class="text-lg font-bold text-white leading-tight">Smart Bin</h1>
+          <p class="text-xs text-gray-400">Control Dashboard</p>
         </div>
-        <div><button onclick="move('tilt', -0.2)">⬇️</button></div>
       </div>
-      <p style="font-size: 12px; color: #666; margin-top: 10px;">
-        Pan value: <span id="panVal">0.0</span> | Tilt value: <span id="tiltVal">0.0</span>
-      </p>
-      <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
-      <h3>Result</h3>
-      <div id="result" class="result waiting">Press SNAP & SORT to classify</div>
+      <div class="flex items-center gap-4">
+        <!-- Connection status -->
+        <div class="flex items-center gap-2 text-sm">
+          <span id="sseStatus" class="w-2 h-2 rounded-full bg-yellow-500 pulse-dot"></span>
+          <span id="sseLabel" class="text-gray-400">Connecting…</span>
+        </div>
+        <!-- Pi health pill -->
+        <div id="healthPill" class="hidden sm:flex items-center gap-2 bg-gray-800 rounded-full px-3 py-1.5 text-xs">
+          <span class="text-gray-400">CPU</span>
+          <span id="cpuTemp" class="font-mono text-white">--°C</span>
+          <span class="text-gray-600">|</span>
+          <span id="uptime" class="text-gray-400 font-mono">--</span>
+        </div>
+      </div>
     </div>
-  </div>
+  </header>
 
-  <div class="card">
-    <h2>Settings</h2>
-    <label>OpenRouter API Key: <input type="password" id="key" placeholder="sk-or-..."></label>
-    <button onclick="saveKey()">Save Key</button>
-    <span id="keyStatus" style="font-size: 12px; color: #666; margin-left: 10px;"></span>
-  </div>
+  <!-- Main Content -->
+  <main class="max-w-[1600px] mx-auto px-4 py-6">
 
-  <div class="card">
-    <h2>Recent Sorts</h2>
-    <div id="log">Loading...</div>
-  </div>
+    <!-- Stats Row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="statsRow">
+      <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">Total Sorted</div>
+        <div class="text-2xl font-bold text-white" id="statTotal">0</div>
+      </div>
+      <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">General</div>
+        <div class="text-2xl font-bold text-general" id="statGeneral">0</div>
+      </div>
+      <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">Recycling</div>
+        <div class="text-2xl font-bold text-recycling" id="statRecycling">0</div>
+      </div>
+      <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">Compost</div>
+        <div class="text-2xl font-bold text-compost" id="statCompost">0</div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left Column: Camera + Classification -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- Camera Card -->
+        <div class="card bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📷</span>
+              <h2 class="font-semibold">Camera</h2>
+            </div>
+            <div class="flex items-center gap-3">
+              <select id="providerSelect" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Loading providers…</option>
+              </select>
+              <button onclick="captureSnapshot()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm transition-colors">
+                📸 Snapshot
+              </button>
+            </div>
+          </div>
+          <div class="relative bg-black">
+            <img id="stream" src="/api/camera/stream" alt="Camera Stream"
+                 class="w-full aspect-video object-contain bg-black"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 480%22><rect fill=%22%23111%22 width=%22640%22 height=%22480%22/><text x=%22320%22 y=%22240%22 text-anchor=%22middle%22 fill=%22%23555%22 font-size=%2220%22>No Camera</text></svg>'">
+            <!-- Classification result overlay -->
+            <div id="classOverlay" class="hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
+              <div id="classResult" class="text-lg font-bold"></div>
+              <div id="classDetail" class="text-sm text-gray-300"></div>
+              <div id="classTime" class="text-xs text-gray-500 mt-1"></div>
+            </div>
+          </div>
+          <div class="px-5 py-4 flex items-center gap-4">
+            <button onclick="sort()" id="sortBtn"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+              <span class="text-xl">🎯</span>
+              <span>SNAP & SORT</span>
+            </button>
+            <button onclick="classifyFromStream()" id="classifyBtn"
+                    class="bg-gray-800 hover:bg-gray-700 border border-gray-700 font-medium py-3 px-5 rounded-xl transition-colors">
+              🔍 Classify Only
+            </button>
+          </div>
+        </div>
+
+        <!-- Servo Control Card -->
+        <div class="card bg-gray-900 border border-gray-800 rounded-xl">
+          <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">⚙️</span>
+              <h2 class="font-semibold">Servo Control</h2>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Gamepad status -->
+              <div id="gamepadStatus" class="flex items-center gap-1.5 text-xs">
+                <span class="w-2 h-2 rounded-full bg-gray-600" id="gamepadDot"></span>
+                <span class="text-gray-500" id="gamepadLabel">No Gamepad</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span>Pan: <span id="panDisplay" class="font-mono text-white">0.00</span></span>
+                <span class="text-gray-700">|</span>
+                <span>Tilt: <span id="tiltDisplay" class="font-mono text-white">0.00</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="p-5">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              <!-- Column 1: D-Pad + Keyboard -->
+              <div>
+                <div class="text-xs text-gray-500 uppercase tracking-wider mb-3">Direction Pad</div>
+                <div class="flex flex-col items-center gap-1">
+                  <button class="dpad-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg"
+                          onclick="nudge('tilt', 0.1)">▲</button>
+                  <div class="flex gap-1">
+                    <button class="dpad-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg"
+                            onclick="nudge('pan', -0.1)">◀</button>
+                    <button class="dpad-btn bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500 rounded-lg font-bold"
+                            onclick="homeServos()">●</button>
+                    <button class="dpad-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg"
+                            onclick="nudge('pan', 0.1)">▶</button>
+                  </div>
+                  <button class="dpad-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg"
+                          onclick="nudge('tilt', -0.1)">▼</button>
+                </div>
+                <div class="mt-3 flex justify-center gap-2">
+                  <button onclick="nudge('pan', -0.25)" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-2 py-1">Pan -25</button>
+                  <button onclick="nudge('pan', 0.25)" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-2 py-1">Pan +25</button>
+                  <button onclick="nudge('tilt', -0.25)" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-2 py-1">Tilt -25</button>
+                  <button onclick="nudge('tilt', 0.25)" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-2 py-1">Tilt +25</button>
+                </div>
+                <!-- Keyboard shortcuts -->
+                <div class="mt-4 bg-gray-800/50 rounded-lg p-3">
+                  <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Keyboard</div>
+                  <div class="grid grid-cols-2 gap-1 text-xs text-gray-400">
+                    <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">W</kbd>/<kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">S</kbd> Tilt</div>
+                    <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">A</kbd>/<kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">D</kbd> Pan</div>
+                    <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">Q</kbd>/<kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">E</kbd> Pan ±0.25</div>
+                    <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">H</kbd> Home</div>
+                    <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">1</kbd>/<kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">2</kbd>/<kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">3</kbd> Sort</div>
+                    <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">Space</kbd> Snap</div>
+                  </div>
+                  <div class="mt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" id="kbEnabled" checked class="rounded bg-gray-700 border-gray-600 text-indigo-500">
+                      <span class="text-xs text-gray-400">Keyboard enabled</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Column 2: Sliders + Number Inputs -->
+              <div class="space-y-4">
+                <!-- Pan Slider + Input -->
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <label class="text-xs text-gray-500 uppercase tracking-wider">Pan</label>
+                    <div class="flex items-center gap-2">
+                      <button onclick="setServoValue('pan', -1)" class="text-xs text-gray-500 hover:text-white" title="Min">-1</button>
+                      <input type="number" id="panInput" min="-1" max="1" step="0.01" value="0"
+                             class="w-20 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm font-mono text-white text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                             onchange="onNumberInput('pan', this.value)">
+                      <button onclick="setServoValue('pan', 1)" class="text-xs text-gray-500 hover:text-white" title="Max">+1</button>
+                    </div>
+                  </div>
+                  <input type="range" id="panSlider" min="-1" max="1" step="0.01" value="0"
+                         class="w-full" oninput="onSliderMove('pan', this.value)">
+                  <div class="flex justify-between text-xs text-gray-600 mt-1">
+                    <span>-1.0</span><span>0.0</span><span>1.0</span>
+                  </div>
+                </div>
+
+                <!-- Tilt Slider + Input -->
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <label class="text-xs text-gray-500 uppercase tracking-wider">Tilt</label>
+                    <div class="flex items-center gap-2">
+                      <button onclick="setServoValue('tilt', -1)" class="text-xs text-gray-500 hover:text-white" title="Min">-1</button>
+                      <input type="number" id="tiltInput" min="-1" max="1" step="0.01" value="0"
+                             class="w-20 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm font-mono text-white text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                             onchange="onNumberInput('tilt', this.value)">
+                      <button onclick="setServoValue('tilt', 1)" class="text-xs text-gray-500 hover:text-white" title="Max">+1</button>
+                    </div>
+                  </div>
+                  <input type="range" id="tiltSlider" min="-1" max="1" step="0.01" value="0"
+                         class="w-full" oninput="onSliderMove('tilt', this.value)">
+                  <div class="flex justify-between text-xs text-gray-600 mt-1">
+                    <span>-1.0</span><span>0.0</span><span>1.0</span>
+                  </div>
+                </div>
+
+                <!-- Nudge Amount -->
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <label class="text-xs text-gray-500 uppercase tracking-wider">Nudge Step</label>
+                    <div class="flex items-center gap-1">
+                      <button onclick="setNudgeStep(0.01)" id="nudge01" class="nudge-step text-xs px-2 py-1 rounded bg-gray-800 border border-gray-700 text-gray-400 hover:text-white">0.01</button>
+                      <button onclick="setNudgeStep(0.05)" id="nudge05" class="nudge-step text-xs px-2 py-1 rounded bg-gray-800 border border-gray-700 text-gray-400 hover:text-white">0.05</button>
+                      <button onclick="setNudgeStep(0.1)" id="nudge1" class="nudge-step text-xs px-2 py-1 rounded bg-gray-800 border border-gray-700 text-indigo-300 bg-indigo-600/20 border-indigo-500">0.1</button>
+                      <button onclick="setNudgeStep(0.25)" id="nudge25" class="nudge-step text-xs px-2 py-1 rounded bg-gray-800 border border-gray-700 text-gray-400 hover:text-white">0.25</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Pulse Width Display -->
+                <div class="bg-gray-800/50 rounded-lg p-3">
+                  <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Pulse Width (µs)</div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <span class="text-xs text-gray-500">Pan</span>
+                      <div class="font-mono text-lg text-white" id="panPW">1500</div>
+                    </div>
+                    <div>
+                      <span class="text-xs text-gray-500">Tilt</span>
+                      <div class="font-mono text-lg text-white" id="tiltPW">1500</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Column 3: Category Presets + Gamepad -->
+              <div class="space-y-4">
+                <!-- Category Presets -->
+                <div>
+                  <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Bin Layout</div>
+                  <!-- Visual bin diagram -->
+                  <div class="bg-gray-800/50 rounded-lg p-3 mb-3">
+                    <div class="text-center text-xs text-gray-500 mb-2">Top-down view</div>
+                    <div class="grid grid-cols-3 gap-1 rounded-lg overflow-hidden">
+                      <button onclick="moveToCategory('general')"
+                              class="bg-general-dark/60 hover:bg-general-dark text-general-light text-xs py-3 px-1 transition-colors">
+                        <div class="text-lg">🗑️</div>
+                        <div>General</div>
+                        <div class="opacity-50 text-[10px]">pan -0.7</div>
+                      </button>
+                      <button onclick="moveToCategory('recycling')"
+                              class="bg-recycling-dark/60 hover:bg-recycling-dark text-recycling-light text-xs py-3 px-1 transition-colors">
+                        <div class="text-lg">♻️</div>
+                        <div>Recycling</div>
+                        <div class="opacity-50 text-[10px]">pan 0.0</div>
+                      </button>
+                      <button onclick="moveToCategory('compost')"
+                              class="bg-compost-dark/60 hover:bg-compost-dark text-compost-light text-xs py-3 px-1 transition-colors">
+                        <div class="text-lg">🌱</div>
+                        <div>Compost</div>
+                        <div class="opacity-50 text-[10px]">pan +0.7</div>
+                      </button>
+                    </div>
+                    <!-- Mechanism indicator -->
+                    <div class="mt-2 flex justify-center">
+                      <div id="mechanismPos" class="text-xs text-gray-400 flex items-center gap-1">
+                        <span class="text-indigo-400">▼</span> Mechanism position
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Sort sequence explanation -->
+                  <div class="bg-gray-800/50 rounded-lg p-3 mb-3">
+                    <div class="text-xs text-gray-500 mb-1">Sort sequence:</div>
+                    <div class="text-xs text-gray-300 space-y-0.5">
+                      <div>1. 📷 Camera classifies item</div>
+                      <div>2. ↔️ Pan to bin third</div>
+                      <div>3. ↕️ Tilt to dump item</div>
+                      <div>4. ↕️ Tilt back to rest</div>
+                      <div>5. ↔️ Pan back to center</div>
+                    </div>
+                  </div>
+                  <!-- Quick actions -->
+                  <div class="grid grid-cols-2 gap-2">
+                    <button onclick="homeServos()"
+                            class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-medium py-2 px-3 rounded-lg text-sm transition-colors flex items-center justify-center gap-1">
+                      <span>🏠</span><span>Home</span>
+                    </button>
+                    <button onclick="testDump()"
+                            class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-medium py-2 px-3 rounded-lg text-sm transition-colors flex items-center justify-center gap-1">
+                      <span>🔄</span><span>Test Dump</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Gamepad Controls -->
+                <div class="bg-gray-800/50 rounded-lg p-3">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="text-xs text-gray-500 uppercase tracking-wider">Gamepad</div>
+                    <button onclick="requestGamepad()" class="text-xs text-indigo-400 hover:text-indigo-300" id="gamepadConnectBtn">Connect</button>
+                  </div>
+                  <div id="gamepadInfo" class="space-y-2">
+                    <div class="text-xs text-gray-500">Press a button on your controller to connect</div>
+                    <div id="gamepadAxes" class="hidden">
+                      <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span class="text-gray-500">Left X:</span>
+                          <span class="font-mono text-white" id="gpLeftX">0.00</span>
+                        </div>
+                        <div>
+                          <span class="text-gray-500">Left Y:</span>
+                          <span class="font-mono text-white" id="gpLeftY">0.00</span>
+                        </div>
+                        <div>
+                          <span class="text-gray-500">Right X:</span>
+                          <span class="font-mono text-white" id="gpRightX">0.00</span>
+                        </div>
+                        <div>
+                          <span class="text-gray-500">Right Y:</span>
+                          <span class="font-mono text-white" id="gpRightY">0.00</span>
+                        </div>
+                      </div>
+                      <div class="mt-2 text-xs text-gray-500 space-y-0.5">
+                        <div><span class="text-gray-400">A</span> = Home | <span class="text-gray-400">B</span> = Sort General</div>
+                        <div><span class="text-gray-400">X</span> = Sort Recycling | <span class="text-gray-400">Y</span> = Sort Compost</div>
+                        <div><span class="text-gray-400">LB/RB</span> = Pan ±0.25</div>
+                      </div>
+                      <div class="mt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" id="gpEnabled" class="rounded bg-gray-700 border-gray-600 text-indigo-500">
+                          <span class="text-xs text-gray-400">Gamepad control active</span>
+                        </label>
+                      </div>
+                      <div class="mt-1">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" id="gpInvertY" class="rounded bg-gray-700 border-gray-600 text-indigo-500">
+                          <span class="text-xs text-gray-400">Invert Y axis</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LED Control Card -->
+        <div class="card bg-gray-900 border border-gray-800 rounded-xl">
+          <div class="px-5 py-3 border-b border-gray-800 flex items-center gap-2">
+            <span class="text-lg">💡</span>
+            <h2 class="font-semibold">LED Ring</h2>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center gap-6 flex-wrap">
+              <!-- Color Swatches -->
+              <div class="flex gap-3">
+                <button class="led-swatch" style="background:#000; border-color:#475569" onclick="setLED('off')" title="Off"></button>
+                <button class="led-swatch" style="background:#202020" onclick="setLED('white')" title="White"></button>
+                <button class="led-swatch" style="background:#ff0000" onclick="setLED('red')" title="Red"></button>
+                <button class="led-swatch" style="background:#ffb400" onclick="setLED('yellow')" title="Yellow"></button>
+                <button class="led-swatch" style="background:#00ff00" onclick="setLED('green')" title="Green"></button>
+                <button class="led-swatch" style="background:#0000ff" onclick="setLED('blue')" title="Blue"></button>
+                <button class="led-swatch" style="background:#800080" onclick="setLED('purple')" title="Purple"></button>
+              </div>
+              <!-- Quick actions -->
+              <div class="flex gap-2">
+                <button onclick="setLED('red')" class="text-xs bg-general-dark/50 hover:bg-general-dark text-general-light rounded-lg px-3 py-2 transition-colors">
+                  ⚠️ Alert
+                </button>
+                <button onclick="setLED('green')" class="text-xs bg-compost-dark/50 hover:bg-compost-dark text-compost-light rounded-lg px-3 py-2 transition-colors">
+                  ✅ Success
+                </button>
+                <button onclick="pulseLED()" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-2 transition-colors">
+                  💫 Pulse
+                </button>
+              </div>
+            </div>
+            <!-- LED Status -->
+            <div class="mt-4 flex items-center gap-3 text-sm text-gray-400">
+              <span>Current:</span>
+              <span id="ledCurrent" class="font-mono text-white">off</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="space-y-6">
+
+        <!-- System Health Card -->
+        <div class="card bg-gray-900 border border-gray-800 rounded-xl">
+          <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🖥️</span>
+              <h2 class="font-semibold">System Health</h2>
+            </div>
+            <button onclick="refreshHealth()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">↻ Refresh</button>
+          </div>
+          <div class="p-5 space-y-4">
+            <!-- CPU Temp Gauge -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs text-gray-500">CPU Temperature</span>
+                <span class="font-mono text-sm text-white" id="healthTemp">--°C</span>
+              </div>
+              <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                <div id="tempBar" class="h-full bg-green-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+            <!-- Uptime -->
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-500">Uptime</span>
+              <span class="font-mono text-sm text-white" id="healthUptime">--</span>
+            </div>
+            <!-- Status indicators -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-800/50 rounded-lg p-3 text-center">
+                <div class="text-xs text-gray-500 mb-1">Camera</div>
+                <div id="healthCamera" class="text-sm font-medium text-gray-400">--</div>
+              </div>
+              <div class="bg-gray-800/50 rounded-lg p-3 text-center">
+                <div class="text-xs text-gray-500 mb-1">Servos</div>
+                <div id="healthServos" class="text-sm font-medium text-gray-400">--</div>
+              </div>
+              <div class="bg-gray-800/50 rounded-lg p-3 text-center">
+                <div class="text-xs text-gray-500 mb-1">WiFi</div>
+                <div id="healthWifi" class="text-sm font-medium text-gray-400">--</div>
+              </div>
+              <div class="bg-gray-800/50 rounded-lg p-3 text-center">
+                <div class="text-xs text-gray-500 mb-1">Inference</div>
+                <div id="healthInference" class="text-sm font-medium text-gray-400">--</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode Card -->
+        <div class="card bg-gray-900 border border-gray-800 rounded-xl">
+          <div class="px-5 py-3 border-b border-gray-800 flex items-center gap-2">
+            <span class="text-lg">🔧</span>
+            <h2 class="font-semibold">Classification Mode</h2>
+          </div>
+          <div class="p-5">
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="setMode('llm')" id="modeLLM"
+                      class="mode-btn bg-indigo-600/20 hover:bg-indigo-600/30 border-2 border-indigo-500 text-indigo-300 font-medium py-3 px-4 rounded-xl transition-all text-center">
+                <div class="text-lg mb-1">🧠</div>
+                <div class="text-sm">LLM</div>
+              </button>
+              <button onclick="setMode('yolo')" id="modeYOLO"
+                      class="mode-btn bg-gray-800 hover:bg-gray-700 border-2 border-gray-700 text-gray-400 font-medium py-3 px-4 rounded-xl transition-all text-center">
+                <div class="text-lg mb-1">👁️</div>
+                <div class="text-sm">YOLO</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Provider Settings Card -->
+        <div class="card bg-gray-900 border border-gray-800 rounded-xl">
+          <div class="px-5 py-3 border-b border-gray-800 flex items-center gap-2">
+            <span class="text-lg">🔑</span>
+            <h2 class="font-semibold">Provider Settings</h2>
+          </div>
+          <div class="p-5 space-y-4" id="providerSettings">
+            <div class="text-sm text-gray-500">Loading providers…</div>
+          </div>
+        </div>
+
+        <!-- Dataset Card -->
+        <div class="card bg-gray-900 border border-gray-800 rounded-xl">
+          <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📦</span>
+              <h2 class="font-semibold">Dataset</h2>
+            </div>
+            <div class="flex gap-2">
+              <a href="/api/dataset/export" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 transition-colors">
+                ⬇ Export
+              </a>
+              <button onclick="clearDataset()" class="text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-800/50 rounded-lg px-3 py-1.5 transition-colors">
+                🗑 Clear
+              </button>
+            </div>
+          </div>
+          <div class="p-5">
+            <!-- Save to dataset -->
+            <div class="flex items-center gap-3 mb-4">
+              <select id="datasetCategory" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 flex-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="general">🗑️ General</option>
+                <option value="recycling">♻️ Recycling</option>
+                <option value="compost">🌱 Compost</option>
+              </select>
+              <button onclick="saveToDataset()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors whitespace-nowrap">
+                💾 Save Frame
+              </button>
+            </div>
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div class="bg-gray-800/50 rounded-lg p-2">
+                <div class="text-lg font-bold text-white" id="dsGeneral">0</div>
+                <div class="text-xs text-gray-500">General</div>
+              </div>
+              <div class="bg-gray-800/50 rounded-lg p-2">
+                <div class="text-lg font-bold text-recycling" id="dsRecycling">0</div>
+                <div class="text-xs text-gray-500">Recycling</div>
+              </div>
+              <div class="bg-gray-800/50 rounded-lg p-2">
+                <div class="text-lg font-bold text-compost" id="dsCompost">0</div>
+                <div class="text-xs text-gray-500">Compost</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Log (full width) -->
+    <div class="card bg-gray-900 border border-gray-800 rounded-xl mt-6">
+      <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">📋</span>
+          <h2 class="font-semibold">Activity Log</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex bg-gray-800 rounded-lg p-0.5">
+            <button onclick="filterLog('all')" class="log-filter text-xs px-3 py-1 rounded-md bg-gray-700 text-white" data-filter="all">All</button>
+            <button onclick="filterLog('general')" class="log-filter text-xs px-3 py-1 rounded-md text-gray-400 hover:text-white" data-filter="general">General</button>
+            <button onclick="filterLog('recycling')" class="log-filter text-xs px-3 py-1 rounded-md text-gray-400 hover:text-white" data-filter="recycling">Recycling</button>
+            <button onclick="filterLog('compost')" class="log-filter text-xs px-3 py-1 rounded-md text-gray-400 hover:text-white" data-filter="compost">Compost</button>
+          </div>
+          <button onclick="clearHistory()" class="text-xs text-gray-500 hover:text-red-400 transition-colors">Clear All</button>
+        </div>
+      </div>
+      <div class="p-5">
+        <div id="activityLog" class="space-y-2 max-h-[400px] overflow-y-auto">
+          <div class="text-sm text-gray-500 text-center py-8">No activity yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Debug Panel (collapsible) -->
+    <details class="card bg-gray-900 border border-gray-800 rounded-xl mt-6">
+      <summary class="px-5 py-3 cursor-pointer hover:bg-gray-800/50 transition-colors flex items-center gap-2">
+        <span class="text-lg">🐛</span>
+        <h2 class="font-semibold">Debug Panel</h2>
+        <span class="text-xs text-gray-500 ml-auto">Click to expand</span>
+      </summary>
+      <div class="p-5 border-t border-gray-800">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Raw API tester -->
+          <div>
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Quick API Test</div>
+            <div class="flex gap-2">
+              <select id="debugEndpoint" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 flex-1">
+                <option value="/api/health">GET /api/health</option>
+                <option value="/api/stats">GET /api/stats</option>
+                <option value="/api/servos">GET /api/servos</option>
+                <option value="/api/providers">GET /api/providers</option>
+                <option value="/api/camera">GET /api/camera</option>
+                <option value="/api/dataset/stats">GET /api/dataset/stats</option>
+                <option value="/api/mode">GET /api/mode</option>
+              </select>
+              <button onclick="debugApi()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 text-sm transition-colors">
+                Run
+              </button>
+            </div>
+            <pre id="debugOutput" class="mt-3 bg-gray-950 border border-gray-800 rounded-lg p-3 text-xs text-gray-300 max-h-[200px] overflow-auto font-mono whitespace-pre-wrap">Response will appear here…</pre>
+          </div>
+          <!-- SSE Event Log -->
+          <div>
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">SSE Events</div>
+            <div id="sseLog" class="bg-gray-950 border border-gray-800 rounded-lg p-3 text-xs text-gray-300 max-h-[240px] overflow-auto font-mono space-y-1">
+              <div class="text-gray-600">Waiting for events…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </main>
+
+
 
   <script>
+    // =========================================================================
+    // State
+    // =========================================================================
     let currentPan = 0.0;
     let currentTilt = 0.0;
+    let currentLED = 'off';
+    let currentMode = 'llm';
+    let currentFilter = 'all';
+    let allHistory = [];
+    let providers = [];
+    let activeProvider = '';
 
-    function move(axis, delta) {
-      if (axis === 'pan') currentPan = Math.max(-1, Math.min(1, currentPan + delta));
-      if (axis === 'tilt') currentTilt = Math.max(-1, Math.min(1, currentTilt + delta));
-      document.getElementById('panVal').textContent = currentPan.toFixed(1);
-      document.getElementById('tiltVal').textContent = currentTilt.toFixed(1);
-      fetch('/api/servos/' + axis, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({value: axis === 'pan' ? currentPan : currentTilt})
+    // =========================================================================
+    // Init
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+      loadHealth();
+      loadProviders();
+      loadMode();
+      loadDatasetStats();
+      loadHistory();
+      // Auto-refresh
+      setInterval(loadStats, 10000);
+      setInterval(loadHealth, 5000);
+      setInterval(loadDatasetStats, 30000);
+      // SSE connection
+      connectSSE();
+    });
+
+    // =========================================================================
+    // SSE (plain EventSource)
+    // =========================================================================
+    let evtSource = null;
+
+    function connectSSE() {
+      if (evtSource) evtSource.close();
+      evtSource = new EventSource('/api/events');
+
+      evtSource.addEventListener('connected', () => {
+        document.getElementById('sseStatus').className = 'w-2 h-2 rounded-full bg-green-500 pulse-dot';
+        document.getElementById('sseLabel').textContent = 'Connected';
       });
+
+      evtSource.addEventListener('sort_event', (e) => {
+        const data = JSON.parse(e.data);
+        showClassificationResult(data);
+        loadHistory();
+        loadStats();
+        loadDatasetStats();
+        logSSE('sort_event', data);
+      });
+
+      evtSource.addEventListener('mode_change', (e) => {
+        const data = JSON.parse(e.data);
+        currentMode = data.mode;
+        updateModeUI();
+        logSSE('mode_change', data);
+      });
+
+      evtSource.addEventListener('servo_update', (e) => {
+        const data = JSON.parse(e.data);
+        // Only update if NOT actively using gamepad (avoid feedback loop)
+        const gpActive = gamepadControlActive && (Math.abs(navigator.getGamepads()[gamepadIndex]?.axes[0] || 0) > DEADZONE || Math.abs(navigator.getGamepads()[gamepadIndex]?.axes[1] || 0) > DEADZONE);
+        if (!gpActive) {
+          if (data.axis === 'pan') currentPan = data.value;
+          else if (data.axis === 'tilt') currentTilt = data.value;
+          updateServoDisplays();
+        }
+        logSSE('servo_update', data);
+      });
+
+      evtSource.addEventListener('led_update', (e) => {
+        const data = JSON.parse(e.data);
+        currentLED = data.color;
+        document.getElementById('ledCurrent').textContent = data.color;
+        logSSE('led_update', data);
+      });
+
+      evtSource.addEventListener('data_cleared', () => {
+        loadHistory();
+        loadStats();
+        logSSE('data_cleared', {});
+      });
+
+      evtSource.addEventListener('sort_stage', (e) => {
+        const data = JSON.parse(e.data);
+        handleSortStage(data);
+        logSSE('sort_stage', data);
+      });
+
+      evtSource.onerror = () => {
+        document.getElementById('sseStatus').className = 'w-2 h-2 rounded-full bg-red-500 pulse-dot';
+        document.getElementById('sseLabel').textContent = 'Reconnecting…';
+        // EventSource auto-reconnects
+      };
     }
 
-    function home() {
+    // =========================================================================
+    // Toast Notifications
+    // =========================================================================
+    function toast(msg, type = 'info') {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = `toast ${type} show`;
+      setTimeout(() => { el.className = 'toast'; }, 3000);
+    }
+
+    // =========================================================================
+    // Stats
+    // =========================================================================
+    async function loadStats() {
+      try {
+        const r = await fetch('/api/stats');
+        const s = await r.json();
+        document.getElementById('statTotal').textContent = s.total_sorted;
+        document.getElementById('statGeneral').textContent = s.breakdown.general || 0;
+        document.getElementById('statRecycling').textContent = s.breakdown.recycling || 0;
+        document.getElementById('statCompost').textContent = s.breakdown.compost || 0;
+      } catch (e) { /* silent */ }
+    }
+
+    // =========================================================================
+    // System Health
+    // =========================================================================
+    async function loadHealth() {
+      try {
+        const r = await fetch('/api/health');
+        const h = await r.json();
+
+        const temp = h.cpu_temp_c || 0;
+        document.getElementById('healthTemp').textContent = temp + '°C';
+        document.getElementById('cpuTemp').textContent = temp + '°C';
+        const pct = Math.min(100, (temp / 80) * 100);
+        const bar = document.getElementById('tempBar');
+        bar.style.width = pct + '%';
+        bar.className = 'h-full rounded-full transition-all duration-500 ' +
+          (temp < 50 ? 'bg-green-500' : temp < 65 ? 'bg-yellow-500' : 'bg-red-500');
+
+        const up = h.uptime_seconds || 0;
+        const days = Math.floor(up / 86400);
+        const hrs = Math.floor((up % 86400) / 3600);
+        const mins = Math.floor((up % 3600) / 60);
+        const upStr = days > 0 ? `${days}d ${hrs}h` : hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+        document.getElementById('healthUptime').textContent = upStr;
+        document.getElementById('uptime').textContent = upStr;
+
+        document.getElementById('healthPill').classList.remove('hidden');
+
+        // Status indicators
+        const cam = document.getElementById('healthCamera');
+        cam.textContent = 'Active';
+        cam.className = 'text-sm font-medium text-green-400';
+
+        const servo = document.getElementById('healthServos');
+        servo.textContent = 'pigpio';
+        servo.className = 'text-sm font-medium text-green-400';
+
+        const wifi = document.getElementById('healthWifi');
+        wifi.textContent = h.wifi_connected ? 'Connected' : 'Offline';
+        wifi.className = 'text-sm font-medium ' + (h.wifi_connected ? 'text-green-400' : 'text-red-400');
+
+        const inf = document.getElementById('healthInference');
+        inf.textContent = h.inference_ms ? h.inference_ms + 'ms' : 'Idle';
+        inf.className = 'text-sm font-medium text-gray-400';
+      } catch (e) { /* silent */ }
+    }
+    function refreshHealth() { loadHealth(); toast('Health refreshed', 'info'); }
+
+    // =========================================================================
+    // Servo Control
+    // =========================================================================
+    let nudgeStep = 0.1;
+    let gamepadIndex = null;
+    let gamepadPolling = false;
+    let gamepadControlActive = false;
+    let gamepadInvertY = false;
+    const DEADZONE = 0.15;
+    let lastGpPan = null;
+    let lastGpTilt = null;
+    let gpUpdateThrottle = 0;
+
+    function updateServoDisplays() {
+      // Display values
+      document.getElementById('panDisplay').textContent = currentPan.toFixed(2);
+      document.getElementById('tiltDisplay').textContent = currentTilt.toFixed(2);
+      // Sliders
+      document.getElementById('panSlider').value = currentPan;
+      document.getElementById('tiltSlider').value = currentTilt;
+      // Number inputs
+      document.getElementById('panInput').value = currentPan.toFixed(2);
+      document.getElementById('tiltInput').value = currentTilt.toFixed(2);
+      // Pulse width: 1500 + (value * 1000)
+      document.getElementById('panPW').textContent = Math.round(1500 + (currentPan * 1000));
+      document.getElementById('tiltPW').textContent = Math.round(1500 + (currentTilt * 1000));
+    }
+
+    function nudge(axis, delta) {
+      if (axis === 'pan') {
+        currentPan = Math.max(-1, Math.min(1, +(currentPan + delta).toFixed(2)));
+      } else {
+        currentTilt = Math.max(-1, Math.min(1, +(currentTilt + delta).toFixed(2)));
+      }
+      updateServoDisplays();
+      sendServo(axis, axis === 'pan' ? currentPan : currentTilt);
+    }
+
+    function setServoValue(axis, val) {
+      val = Math.max(-1, Math.min(1, parseFloat(val)));
+      if (axis === 'pan') currentPan = val;
+      else currentTilt = val;
+      updateServoDisplays();
+      sendServo(axis, val);
+    }
+
+    function onSliderMove(axis, val) {
+      val = parseFloat(val);
+      if (axis === 'pan') currentPan = val;
+      else currentTilt = val;
+      updateServoDisplays();
+      sendServo(axis, val);
+    }
+
+    function onNumberInput(axis, val) {
+      val = parseFloat(val);
+      if (isNaN(val)) return;
+      val = Math.max(-1, Math.min(1, val));
+      if (axis === 'pan') currentPan = val;
+      else currentTilt = val;
+      updateServoDisplays();
+      sendServo(axis, val);
+    }
+
+    function setNudgeStep(step) {
+      nudgeStep = step;
+      document.querySelectorAll('.nudge-step').forEach(btn => {
+        btn.className = 'nudge-step text-xs px-2 py-1 rounded bg-gray-800 border border-gray-700 text-gray-400 hover:text-white';
+      });
+      const map = {0.01: 'nudge01', 0.05: 'nudge05', 0.1: 'nudge1', 0.25: 'nudge25'};
+      const el = document.getElementById(map[step]);
+      if (el) el.className = 'nudge-step text-xs px-2 py-1 rounded bg-gray-800 border border-gray-700 text-indigo-300 bg-indigo-600/20 border-indigo-500';
+    }
+
+    async function sendServo(axis, value) {
+      console.log(`[Servo] -> ${axis}=${value}`);
+      try {
+        await fetch(`/api/servos/${axis}`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({value})
+        });
+      } catch (e) { toast('Servo error: ' + e.message, 'error'); }
+    }
+
+    function homeServos() {
       currentPan = 0;
       currentTilt = 0;
-      document.getElementById('panVal').textContent = '0.0';
-      document.getElementById('tiltVal').textContent = '0.0';
+      updateServoDisplays();
       fetch('/api/home', {method: 'POST'});
+      toast('Servos homed', 'info');
     }
 
+    const BIN_PRESETS = {
+      general:   {pan: -0.7, tilt_dump: -0.6, tilt_rest: 0.0},
+      recycling: {pan:  0.0, tilt_dump: -0.6, tilt_rest: 0.0},
+      compost:   {pan:  0.7, tilt_dump: -0.6, tilt_rest: 0.0},
+    };
+
+    async function moveToCategory(cat) {
+      const preset = BIN_PRESETS[cat];
+      if (!preset) return;
+
+      toast(`Sorting to ${cat}...`, 'info');
+
+      // Step 1: Pan to the correct third
+      currentPan = preset.pan;
+      updateServoDisplays();
+      await fetch('/api/servos/pan', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({value: preset.pan})
+      });
+
+      // Wait for pan to settle
+      await new Promise(r => setTimeout(r, 500));
+
+      // Step 2: Tilt to dump
+      currentTilt = preset.tilt_dump;
+      updateServoDisplays();
+      await fetch('/api/servos/tilt', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({value: preset.tilt_dump})
+      });
+
+      // Hold dump position
+      await new Promise(r => setTimeout(r, 1000));
+
+      // Step 3: Return tilt to rest
+      currentTilt = preset.tilt_rest;
+      updateServoDisplays();
+      await fetch('/api/servos/tilt', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({value: preset.tilt_rest})
+      });
+
+      // Wait for tilt to settle
+      await new Promise(r => setTimeout(r, 500));
+
+      // Step 4: Pan back to center
+      currentPan = 0.0;
+      updateServoDisplays();
+      await fetch('/api/servos/pan', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({value: 0.0})
+      });
+
+      toast(`${cat} sorted!`, 'success');
+    }
+
+    async function testDump() {
+      toast('Testing dump sequence...', 'info');
+      // Just tilt down and back from current position
+      currentTilt = -0.6;
+      updateServoDisplays();
+      await fetch('/api/servos/tilt', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({value: -0.6})
+      });
+      await new Promise(r => setTimeout(r, 1000));
+      currentTilt = 0.0;
+      updateServoDisplays();
+      await fetch('/api/servos/tilt', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({value: 0.0})
+      });
+      toast('Dump test complete', 'success');
+    }
+
+    // =========================================================================
+    // Keyboard Controls
+    // =========================================================================
+    document.addEventListener('keydown', (e) => {
+      // Skip if typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+      if (!document.getElementById('kbEnabled').checked) return;
+
+      switch(e.key.toLowerCase()) {
+        case 'w': nudge('tilt', nudgeStep); break;
+        case 's': nudge('tilt', -nudgeStep); break;
+        case 'a': nudge('pan', -nudgeStep); break;
+        case 'd': nudge('pan', nudgeStep); break;
+        case 'q': nudge('pan', -0.25); break;
+        case 'e': nudge('pan', 0.25); break;
+        case 'h': homeServos(); break;
+        case '1': moveToCategory('general'); break;  // Full sort sequence
+        case '2': moveToCategory('recycling'); break; // Full sort sequence
+        case '3': moveToCategory('compost'); break;   // Full sort sequence
+        case ' ':
+          e.preventDefault();
+          sort();
+          break;
+      }
+    });
+
+    // =========================================================================
+    // Gamepad Controls
+    // =========================================================================
+    window.addEventListener('gamepadconnected', (e) => {
+      console.log('[GP] Connected:', e.gamepad.id, 'axes:', e.gamepad.axes.length, 'buttons:', e.gamepad.buttons.length);
+      gamepadIndex = e.gamepad.index;
+      document.getElementById('gamepadDot').className = 'w-2 h-2 rounded-full bg-green-500 pulse-dot';
+      document.getElementById('gamepadLabel').textContent = e.gamepad.id.substring(0, 20);
+      document.getElementById('gamepadAxes').classList.remove('hidden');
+      document.getElementById('gpEnabled').checked = true;
+      gamepadControlActive = true;
+      toast(`Gamepad connected: ${e.gamepad.id}`, 'success');
+      if (!gamepadPolling) {
+        gamepadPolling = true;
+        pollGamepad();
+      }
+    });
+
+    window.addEventListener('gamepaddisconnected', () => {
+      gamepadIndex = null;
+      gamepadControlActive = false;
+      document.getElementById('gamepadDot').className = 'w-2 h-2 rounded-full bg-gray-600';
+      document.getElementById('gamepadLabel').textContent = 'No Gamepad';
+      document.getElementById('gamepadAxes').classList.add('hidden');
+      gamepadPolling = false;
+      toast('Gamepad disconnected', 'info');
+    });
+
+    function requestGamepad() {
+      // Trigger gamepad scan by checking for existing gamepads
+      const gamepads = navigator.getGamepads();
+      for (const gp of gamepads) {
+        if (gp) {
+          gamepadIndex = gp.index;
+          document.getElementById('gamepadDot').className = 'w-2 h-2 rounded-full bg-green-500 pulse-dot';
+          document.getElementById('gamepadLabel').textContent = gp.id.substring(0, 20);
+          document.getElementById('gamepadAxes').classList.remove('hidden');
+          document.getElementById('gpEnabled').checked = true;
+          gamepadControlActive = true;
+          if (!gamepadPolling) {
+            gamepadPolling = true;
+            pollGamepad();
+          }
+          toast(`Gamepad: ${gp.id}`, 'success');
+          return;
+        }
+      }
+      toast('No gamepad detected — press a button on your controller', 'info');
+    }
+
+    let gpLogCounter = 0;
+
+    function pollGamepad() {
+      if (!gamepadPolling) return;
+
+      const gp = navigator.getGamepads()[gamepadIndex];
+      if (!gp) {
+        if (gpLogCounter++ % 120 === 0) console.log('[GP] No gamepad object at index', gamepadIndex);
+        requestAnimationFrame(pollGamepad);
+        return;
+      }
+
+      gamepadControlActive = document.getElementById('gpEnabled').checked;
+      gamepadInvertY = document.getElementById('gpInvertY').checked;
+
+      // Raw axes from gamepad
+      const rawLX = gp.axes[0] || 0;
+      const rawLY = gp.axes[1] || 0;
+      const rawRX = gp.axes[2] || 0;
+      const rawRY = gp.axes[3] || 0;
+
+      // After deadzone
+      const lx = applyDeadzone(rawLX);
+      const ly = applyDeadzone(rawLY);
+      const rx = applyDeadzone(rawRX);
+      const ry = applyDeadzone(rawRY);
+
+      // Log every 30 frames (~0.5s) or when sticks are moving
+      const sticksMoving = Math.abs(lx) > 0 || Math.abs(ly) > 0 || Math.abs(rx) > 0 || Math.abs(ry) > 0;
+      gpLogCounter++;
+      if (gpLogCounter % 30 === 0 || sticksMoving) {
+        console.log(`[GP] raw=[${rawLX.toFixed(3)}, ${rawLY.toFixed(3)}, ${rawRX.toFixed(3)}, ${rawRY.toFixed(3)}] deadzone=[${lx.toFixed(3)}, ${ly.toFixed(3)}, ${rx.toFixed(3)}, ${ry.toFixed(3)}] pan=${currentPan.toFixed(3)} tilt=${currentTilt.toFixed(3)} active=${gamepadControlActive}`);
+      }
+
+      // Display
+      document.getElementById('gpLeftX').textContent = lx.toFixed(2);
+      document.getElementById('gpLeftY').textContent = ly.toFixed(2);
+      document.getElementById('gpRightX').textContent = rx.toFixed(2);
+      document.getElementById('gpRightY').textContent = ry.toFixed(2);
+
+      if (gamepadControlActive && sticksMoving) {
+        const tiltDir = gamepadInvertY ? 1 : -1;
+
+        // Left stick = fine control, Right stick = fast control
+        const panDelta = lx * 0.03 + rx * 0.06;
+        const tiltDelta = (ly * 0.03 + ry * 0.06) * tiltDir;
+
+        const oldPan = currentPan;
+        const oldTilt = currentTilt;
+        currentPan = Math.max(-1, Math.min(1, currentPan + panDelta));
+        currentTilt = Math.max(-1, Math.min(1, currentTilt + tiltDelta));
+
+        console.log(`[GP] delta=[${panDelta.toFixed(4)}, ${tiltDelta.toFixed(4)}] pan ${oldPan.toFixed(3)} -> ${currentPan.toFixed(3)} tilt ${oldTilt.toFixed(3)} -> ${currentTilt.toFixed(3)}`);
+
+        updateServoDisplays();
+
+        // Throttle servo sends
+        gpUpdateThrottle++;
+        if (gpUpdateThrottle >= 4) {
+          gpUpdateThrottle = 0;
+          const panRounded = Math.round(currentPan * 100) / 100;
+          const tiltRounded = Math.round(currentTilt * 100) / 100;
+          if (panRounded !== lastGpPan) {
+            console.log(`[GP] SEND pan=${panRounded}`);
+            sendServo('pan', panRounded);
+            lastGpPan = panRounded;
+          }
+          if (tiltRounded !== lastGpTilt) {
+            console.log(`[GP] SEND tilt=${tiltRounded}`);
+            sendServo('tilt', tiltRounded);
+            lastGpTilt = tiltRounded;
+          }
+        }
+      }
+
+      // Buttons
+      if (gamepadControlActive) {
+        if (gp.buttons[0]?.pressed) { console.log('[GP] Button A -> home'); homeServos(); }
+        if (gp.buttons[1]?.pressed) { console.log('[GP] Button B -> sort general'); moveToCategory('general'); }
+        if (gp.buttons[2]?.pressed) { console.log('[GP] Button X -> sort recycling'); moveToCategory('recycling'); }
+        if (gp.buttons[3]?.pressed) { console.log('[GP] Button Y -> sort compost'); moveToCategory('compost'); }
+
+        // D-pad
+        if (gp.buttons[12]?.pressed) nudge('tilt', nudgeStep);
+        if (gp.buttons[13]?.pressed) nudge('tilt', -nudgeStep);
+        if (gp.buttons[14]?.pressed) nudge('pan', -nudgeStep);
+        if (gp.buttons[15]?.pressed) nudge('pan', nudgeStep);
+
+        // Bumpers
+        if (gp.buttons[4]?.pressed) nudge('pan', -0.25);
+        if (gp.buttons[5]?.pressed) nudge('pan', 0.25);
+      }
+
+      requestAnimationFrame(pollGamepad);
+    }
+
+    function applyDeadzone(val) {
+      if (Math.abs(val) < DEADZONE) return 0;
+      // Remap from [DEADZONE..1] to [0..1] for smooth ramp-up
+      const sign = val > 0 ? 1 : -1;
+      return sign * (Math.abs(val) - DEADZONE) / (1 - DEADZONE);
+    }
+
+    // =========================================================================
+    // Sort Stage Progress
+    // =========================================================================
+    function handleSortStage(data) {
+      const overlay = document.getElementById('classOverlay');
+      const result = document.getElementById('classResult');
+      const detail = document.getElementById('classDetail');
+
+      switch(data.stage) {
+        case 'classifying':
+          overlay.classList.remove('hidden');
+          result.className = 'text-lg font-bold text-blue-400';
+          result.textContent = '📷 Classifying...';
+          detail.textContent = 'AI is analyzing the image';
+          break;
+        case 'sorting':
+          const catColors = {general: 'text-red-400', recycling: 'text-blue-400', compost: 'text-green-400'};
+          result.className = `text-lg font-bold ${catColors[data.category] || 'text-white'}`;
+          const actions = {panning: '↔️ Panning to bin...', dumping: '↕️ Dumping item...', returning: '↕️ Returning...'};
+          result.textContent = `Sorting: ${data.category}`;
+          detail.textContent = actions[data.action] || '';
+          break;
+        case 'done':
+          if (data.category) {
+            const catColors = {general: 'text-red-400', recycling: 'text-blue-400', compost: 'text-green-400'};
+            result.className = `text-lg font-bold ${catColors[data.category] || 'text-white'}`;
+            result.textContent = `✅ ${data.category.toUpperCase()}`;
+            detail.textContent = 'Sorted!';
+          } else {
+            result.className = 'text-lg font-bold text-gray-400';
+            result.textContent = 'No items detected';
+            detail.textContent = '';
+          }
+          setTimeout(() => overlay.classList.add('hidden'), 3000);
+          break;
+        case 'error':
+          result.className = 'text-lg font-bold text-red-400';
+          result.textContent = '❌ Error';
+          detail.textContent = data.error || 'Classification failed';
+          setTimeout(() => overlay.classList.add('hidden'), 5000);
+          break;
+      }
+    }
+
+    // =========================================================================
+    // LED Control
+    // =========================================================================
+    async function setLED(color) {
+      try {
+        await fetch('/api/led', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({color})
+        });
+        currentLED = color;
+        document.getElementById('ledCurrent').textContent = color;
+        // Update swatch active states
+        document.querySelectorAll('.led-swatch').forEach(s => s.classList.remove('active'));
+        toast(`LED: ${color}`, 'info');
+      } catch (e) { toast('LED error: ' + e.message, 'error'); }
+    }
+
+    let pulseInterval = null;
+    function pulseLED() {
+      if (pulseInterval) {
+        clearInterval(pulseInterval);
+        pulseInterval = null;
+        setLED('white');
+        toast('Pulse stopped', 'info');
+        return;
+      }
+      const colors = ['red', 'yellow', 'green', 'blue', 'purple'];
+      let i = 0;
+      pulseInterval = setInterval(() => {
+        setLED(colors[i % colors.length]);
+        i++;
+      }, 300);
+      toast('Pulse started (click again to stop)', 'info');
+    }
+
+    // =========================================================================
+    // Classification / Sort
+    // =========================================================================
     async function sort() {
-      const btn = document.getElementById('snapBtn');
-      const res = document.getElementById('result');
+      const btn = document.getElementById('sortBtn');
       btn.disabled = true;
-      res.className = 'result waiting';
-      res.textContent = 'Capturing & classifying...';
+      btn.innerHTML = '<span class="animate-spin">⏳</span><span>Sorting…</span>';
+
+      // Show progress overlay immediately
+      const overlay = document.getElementById('classOverlay');
+      const result = document.getElementById('classResult');
+      const detail = document.getElementById('classDetail');
+      overlay.classList.remove('hidden');
+      result.className = 'text-lg font-bold text-blue-400';
+      result.textContent = '📷 Capturing...';
+      detail.textContent = '';
 
       try {
         const r = await fetch('/api/sort', {method: 'POST'});
         const data = await r.json();
+
         if (data.error) {
-          res.className = 'result waiting';
-          res.textContent = 'Error: ' + data.error;
+          toast('Error: ' + data.error, 'error');
+          result.className = 'text-lg font-bold text-red-400';
+          result.textContent = '❌ ' + data.error;
+          setTimeout(() => overlay.classList.add('hidden'), 3000);
           return;
         }
+
+        // Final result (SSE handles the progress)
         const items = data.items || [];
-        if (items.length === 0) {
-          res.className = 'result waiting';
-          res.textContent = 'No items detected.';
-          return;
+        if (items.length > 0) {
+          const cat = items[0].category;
+          const catColors = {general: 'text-red-400', recycling: 'text-blue-400', compost: 'text-green-400'};
+          result.className = `text-lg font-bold ${catColors[cat] || 'text-white'}`;
+          result.textContent = `✅ ${cat.toUpperCase()}`;
+          detail.textContent = items.map(i => `${i.label} (${Math.round(i.confidence*100)}%)`).join(', ');
         }
-        const cat = items[0].category;
-        res.className = 'result ' + cat;
-        res.innerHTML = `<div>${cat.toUpperCase()}</div>
-          <div style="font-size:14px;font-weight:normal;margin-top:4px;">
-            ${items.map(i => i.label + ' (' + Math.round(i.confidence*100) + '%)').join(', ')}
-          </div>
-          <div style="font-size:12px;font-weight:normal;color:#555;margin-top:4px;">
-            ${data.duration_ms}ms
-          </div>`;
+
+        loadHistory();
+        loadStats();
+        loadDatasetStats();
       } catch (e) {
-        res.className = 'result waiting';
-        res.textContent = 'Error: ' + e.message;
+        toast('Sort failed: ' + e.message, 'error');
       } finally {
         btn.disabled = false;
-        loadHistory();
+        btn.innerHTML = '<span class="text-xl">🎯</span><span>SNAP & SORT</span>';
       }
     }
 
-    async function saveKey() {
-      const key = document.getElementById('key').value.trim();
-      if (!key) return;
-      const r = await fetch('/api/providers/openrouter', {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({api_key: key})
-      });
-      document.getElementById('keyStatus').textContent = r.ok ? 'Saved!' : 'Failed';
+    async function classifyFromStream() {
+      const btn = document.getElementById('classifyBtn');
+      btn.disabled = true;
+      btn.textContent = 'Classifying…';
+
+      try {
+        const r = await fetch('/api/classify', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({source: 'device'})
+        });
+        const data = await r.json();
+
+        if (data.error) {
+          toast('Error: ' + data.error, 'error');
+          return;
+        }
+
+        showClassificationResult(data);
+        loadHistory();
+        loadStats();
+      } catch (e) {
+        toast('Classify failed: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Classify Only';
+      }
     }
 
+    async function captureSnapshot() {
+      try {
+        const r = await fetch('/api/camera');
+        const data = await r.json();
+        toast(`Camera: ${data.available ? 'Frame captured' : 'No frame available'}`, data.available ? 'success' : 'error');
+      } catch (e) { toast('Snapshot failed', 'error'); }
+    }
+
+    function showClassificationResult(data) {
+      const overlay = document.getElementById('classOverlay');
+      const result = document.getElementById('classResult');
+      const detail = document.getElementById('classDetail');
+      const time = document.getElementById('classTime');
+
+      const items = data.items || [];
+      if (items.length === 0) {
+        result.textContent = 'No items detected';
+        result.className = 'text-lg font-bold text-gray-400';
+        detail.textContent = '';
+      } else {
+        const cat = items[0].category;
+        const colorClass = cat === 'general' ? 'text-general' : cat === 'recycling' ? 'text-recycling' : 'text-compost';
+        result.className = `text-lg font-bold ${colorClass}`;
+        result.textContent = `${cat.toUpperCase()}`;
+        detail.textContent = items.map(i => `${i.label} (${Math.round(i.confidence * 100)}%)`).join(', ');
+      }
+      time.textContent = data.duration_ms ? `${data.duration_ms}ms` : '';
+      overlay.classList.remove('hidden');
+      setTimeout(() => overlay.classList.add('hidden'), 8000);
+    }
+
+    // =========================================================================
+    // Mode
+    // =========================================================================
+    async function loadMode() {
+      try {
+        const r = await fetch('/api/mode');
+        const data = await r.json();
+        currentMode = data.mode;
+        updateModeUI();
+      } catch (e) { /* silent */ }
+    }
+
+    async function setMode(mode) {
+      try {
+        await fetch('/api/mode', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({mode})
+        });
+        currentMode = mode;
+        updateModeUI();
+        toast(`Mode: ${mode.toUpperCase()}`, 'info');
+      } catch (e) { toast('Mode change failed', 'error'); }
+    }
+
+    function updateModeUI() {
+      const llm = document.getElementById('modeLLM');
+      const yolo = document.getElementById('modeYOLO');
+      if (currentMode === 'llm') {
+        llm.className = 'mode-btn bg-indigo-600/20 hover:bg-indigo-600/30 border-2 border-indigo-500 text-indigo-300 font-medium py-3 px-4 rounded-xl transition-all text-center';
+        yolo.className = 'mode-btn bg-gray-800 hover:bg-gray-700 border-2 border-gray-700 text-gray-400 font-medium py-3 px-4 rounded-xl transition-all text-center';
+      } else {
+        llm.className = 'mode-btn bg-gray-800 hover:bg-gray-700 border-2 border-gray-700 text-gray-400 font-medium py-3 px-4 rounded-xl transition-all text-center';
+        yolo.className = 'mode-btn bg-indigo-600/20 hover:bg-indigo-600/30 border-2 border-indigo-500 text-indigo-300 font-medium py-3 px-4 rounded-xl transition-all text-center';
+      }
+    }
+
+    // =========================================================================
+    // Providers
+    // =========================================================================
+    async function loadProviders() {
+      try {
+        const r = await fetch('/api/providers');
+        providers = await r.json();
+        renderProviderSettings();
+        renderProviderSelect();
+      } catch (e) { /* silent */ }
+    }
+
+    function renderProviderSelect() {
+      const sel = document.getElementById('providerSelect');
+      sel.innerHTML = providers.map(p =>
+        `<option value="${p.id}" ${p.is_active ? 'selected' : ''}>${p.name}</option>`
+      ).join('');
+    }
+
+    function renderProviderSettings() {
+      const container = document.getElementById('providerSettings');
+      container.innerHTML = providers.map(p => `
+        <div class="bg-gray-800/50 rounded-lg p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="font-medium text-sm">${p.name}</div>
+            <div class="flex items-center gap-2">
+              ${p.is_active ? '<span class="text-xs bg-indigo-600/30 text-indigo-300 px-2 py-0.5 rounded-full">Active</span>' : ''}
+              <button onclick="setActiveProvider('${p.id}')" class="text-xs text-gray-500 hover:text-white transition-colors">Set Active</button>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 block mb-1">API Key</label>
+            <input type="password" id="key-${p.id}" placeholder="${p.api_key_set ? p.api_key_masked : 'sk-or-...'}"
+                   class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 block mb-1">Model</label>
+            <input type="text" id="model-${p.id}" value="${p.model || ''}"
+                   class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div class="flex gap-2">
+            <button onclick="saveProvider('${p.id}')" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-sm py-2 rounded-lg transition-colors">Save</button>
+            <button onclick="testProvider('${p.id}')" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-sm py-2 px-4 rounded-lg transition-colors" id="testBtn-${p.id}">Test</button>
+          </div>
+          <div id="testResult-${p.id}" class="text-xs hidden"></div>
+        </div>
+      `).join('');
+    }
+
+    async function saveProvider(id) {
+      const key = document.getElementById(`key-${id}`).value.trim();
+      const model = document.getElementById(`model-${id}`).value.trim();
+      const body = {};
+      if (key) body.api_key = key;
+      if (model) body.model = model;
+
+      try {
+        await fetch(`/api/providers/${id}`, {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body)
+        });
+        document.getElementById(`key-${id}`).value = '';
+        toast(`${id} saved`, 'success');
+        loadProviders();
+      } catch (e) { toast('Save failed', 'error'); }
+    }
+
+    async function testProvider(id) {
+      const btn = document.getElementById(`testBtn-${id}`);
+      const result = document.getElementById(`testResult-${id}`);
+      btn.textContent = 'Testing…';
+      btn.disabled = true;
+      result.classList.add('hidden');
+
+      try {
+        const r = await fetch(`/api/providers/${id}/test`, {method: 'POST'});
+        const data = await r.json();
+        result.classList.remove('hidden');
+        if (data.error) {
+          result.textContent = '❌ ' + data.error;
+          result.className = 'text-xs text-red-400';
+        } else {
+          result.textContent = '✅ ' + (data.message || 'OK');
+          result.className = 'text-xs text-green-400';
+        }
+      } catch (e) {
+        result.classList.remove('hidden');
+        result.textContent = '❌ ' + e.message;
+        result.className = 'text-xs text-red-400';
+      } finally {
+        btn.textContent = 'Test';
+        btn.disabled = false;
+      }
+    }
+
+    async function setActiveProvider(id) {
+      try {
+        await fetch(`/api/providers/${id}`, {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({is_active: true})
+        });
+        toast(`${id} is now active`, 'success');
+        loadProviders();
+      } catch (e) { toast('Failed', 'error'); }
+    }
+
+    // =========================================================================
+    // Dataset
+    // =========================================================================
+    async function loadDatasetStats() {
+      try {
+        const r = await fetch('/api/dataset/stats');
+        const s = await r.json();
+        document.getElementById('dsGeneral').textContent = s.general || 0;
+        document.getElementById('dsRecycling').textContent = s.recycling || 0;
+        document.getElementById('dsCompost').textContent = s.compost || 0;
+      } catch (e) { /* silent */ }
+    }
+
+    async function saveToDataset() {
+      const cat = document.getElementById('datasetCategory').value;
+      try {
+        // Capture a frame from the stream
+        const img = document.getElementById('stream');
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || 640;
+        canvas.height = img.naturalHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const b64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+        const r = await fetch('/api/dataset/save', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({image: b64, category: cat})
+        });
+        const data = await r.json();
+        if (data.error) {
+          toast('Error: ' + data.error, 'error');
+        } else {
+          toast(`Saved to ${cat}`, 'success');
+          loadDatasetStats();
+        }
+      } catch (e) { toast('Save failed: ' + e.message, 'error'); }
+    }
+
+    async function clearDataset() {
+      if (!confirm('Delete ALL dataset images? This cannot be undone.')) return;
+      try {
+        await fetch('/api/dataset/clear', {method: 'POST'});
+        toast('Dataset cleared', 'success');
+        loadDatasetStats();
+      } catch (e) { toast('Clear failed', 'error'); }
+    }
+
+    // =========================================================================
+    // Activity Log
+    // =========================================================================
     async function loadHistory() {
       try {
-        const r = await fetch('/api/history?limit=10');
-        const items = await r.json();
-        const el = document.getElementById('log');
-        if (!items.length) { el.textContent = 'No sorts yet.'; return; }
-        el.innerHTML = items.map(s => `
-          <div class="log-item">
-            <strong style="color:${s.category==='general'?'#c00':s.category==='recycling'?'#06c':'#080'}">
-              ${s.category}
-            </strong>
-            — ${s.label || 'Unknown'}
-            <span style="color:#999;float:right;">${new Date(s.timestamp*1000).toLocaleTimeString()}</span>
+        const r = await fetch('/api/history?limit=50');
+        allHistory = await r.json();
+        renderLog();
+      } catch (e) { /* silent */ }
+    }
+
+    function renderLog() {
+      const el = document.getElementById('activityLog');
+      const filtered = currentFilter === 'all' ? allHistory : allHistory.filter(h => h.category === currentFilter);
+
+      if (filtered.length === 0) {
+        el.innerHTML = '<div class="text-sm text-gray-500 text-center py-8">No activity yet</div>';
+        return;
+      }
+
+      el.innerHTML = filtered.map(h => {
+        const catClass = `cat-${h.category}`;
+        const time = new Date(h.timestamp * 1000).toLocaleTimeString();
+        return `
+          <div class="flex items-center gap-3 bg-gray-800/30 rounded-lg px-4 py-2.5">
+            <span class="text-xs px-2 py-0.5 rounded-full ${catClass} uppercase font-medium">${h.category}</span>
+            <span class="text-sm text-gray-200 flex-1">${h.label || 'Unknown item'}</span>
+            <span class="text-xs text-gray-500 font-mono">${Math.round(h.confidence * 100)}%</span>
+            <span class="text-xs text-gray-600">${h.duration_ms || 0}ms</span>
+            <span class="text-xs text-gray-600 font-mono">${time}</span>
           </div>
-        `).join('');
+        `;
+      }).join('');
+    }
+
+    function filterLog(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.log-filter').forEach(btn => {
+        if (btn.dataset.filter === filter) {
+          btn.className = 'log-filter text-xs px-3 py-1 rounded-md bg-gray-700 text-white';
+        } else {
+          btn.className = 'log-filter text-xs px-3 py-1 rounded-md text-gray-400 hover:text-white';
+        }
+      });
+      renderLog();
+    }
+
+    async function clearHistory() {
+      if (!confirm('Clear all sort history?')) return;
+      try {
+        await fetch('/api/data/clear', {method: 'POST'});
+        allHistory = [];
+        renderLog();
+        loadStats();
+        toast('History cleared', 'success');
+      } catch (e) { toast('Clear failed', 'error'); }
+    }
+
+
+
+    // =========================================================================
+    // Debug Panel
+    // =========================================================================
+    async function debugApi() {
+      const endpoint = document.getElementById('debugEndpoint').value;
+      const output = document.getElementById('debugOutput');
+      output.textContent = 'Loading…';
+      try {
+        const r = await fetch(endpoint);
+        const data = await r.json();
+        output.textContent = JSON.stringify(data, null, 2);
       } catch (e) {
-        document.getElementById('log').textContent = 'Error loading history.';
+        output.textContent = 'Error: ' + e.message;
       }
     }
 
-    loadHistory();
-    setInterval(loadHistory, 5000);
+    function logSSE(type, data) {
+      const log = document.getElementById('sseLog');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span class="text-gray-600">${time}</span> <span class="text-indigo-400">${type}</span> <span class="text-gray-500">${JSON.stringify(data).slice(0, 80)}…</span>`;
+      log.appendChild(entry);
+      // Keep last 50
+      while (log.children.length > 50) log.removeChild(log.firstChild);
+      log.scrollTop = log.scrollHeight;
+    }
   </script>
 </body>
 </html>

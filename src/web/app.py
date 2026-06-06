@@ -141,16 +141,19 @@ def api_camera():
 
 @app.route("/api/camera/stream")
 def api_camera_stream():
-    """Stream MJPEG frames from the physical camera. (Mocked)"""
+    """Stream MJPEG frames from the camera (serves cached frames from background capture)."""
 
     def generate():
+        last_sent = None
         while True:
-            # On real hardware this fetches the MaixCAM's active buffer
             frame_bytes = hw.get_camera_jpeg_bytes()
-            yield (
-                b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
-            )
-            time.sleep(0.1)  # ~10 fps stream
+            if frame_bytes and frame_bytes != last_sent:
+                yield (
+                    b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
+                )
+                last_sent = frame_bytes
+            else:
+                time.sleep(0.1)
 
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
@@ -356,8 +359,10 @@ def api_manual_sort():
             {"status": "mock", "message": "Mock mode - no hardware connected"}
         ), 200
 
-    # Full pipeline: capture -> classify -> move servo -> flash LED
+    # Step 1: Capture photo
     raw_jpeg = hw.capture_photo()
+    if not raw_jpeg:
+        return jsonify({"error": "Camera capture failed"}), 500
     image_b64 = base64.b64encode(raw_jpeg).decode("utf-8")
 
     provider = database.get_active_provider()
@@ -366,7 +371,9 @@ def api_manual_sort():
     if not provider["api_key"]:
         return jsonify({"error": f"No API key set for {provider['name']}"}), 400
 
+    # Step 2: Classify (LED = blue)
     hw.set_led("blue")
+    broadcast_sse("sort_stage", {"stage": "classifying"})
     start_ms = time.time()
     result = llm.classify_image(
         image_b64=image_b64,
@@ -379,6 +386,7 @@ def api_manual_sort():
 
     if result.get("error"):
         hw.set_led("purple")
+        broadcast_sse("sort_stage", {"stage": "error", "error": result["error"]})
         return jsonify(result), 502
 
     items = result.get("items", [])
@@ -391,14 +399,39 @@ def api_manual_sort():
             duration_ms=duration_ms,
         )
 
-    # Move servo to the first detected item's category
+    # Step 3: Sort (pan → dump → return → home)
     if items:
         cat = items[0]["category"]
-        hw.move_to_category(cat)
         color_map = {"general": "red", "recycling": "yellow", "compost": "green"}
-        hw.set_led(color_map.get(cat, "white"))
+        led_color = color_map.get(cat, "white")
+
+        # Pan to bin third
+        broadcast_sse("sort_stage", {"stage": "sorting", "category": cat, "action": "panning"})
+        hw.set_led("yellow")
+        preset = hw.CATEGORY_PRESETS.get(cat, {})
+        hw.set_pan(preset.get("pan", 0))
+        time.sleep(0.5)
+
+        # Tilt to dump
+        broadcast_sse("sort_stage", {"stage": "sorting", "category": cat, "action": "dumping"})
+        hw.set_led(led_color)
+        hw.set_tilt(preset.get("tilt_dump", -0.6))
+        time.sleep(1.0)
+
+        # Return tilt
+        broadcast_sse("sort_stage", {"stage": "sorting", "category": cat, "action": "returning"})
+        hw.set_tilt(preset.get("tilt_rest", 0))
+        time.sleep(0.5)
+
+        # Pan home
+        hw.set_pan(0.0)
+        time.sleep(0.5)
+
+        hw.set_led(led_color)
+        broadcast_sse("sort_stage", {"stage": "done", "category": cat})
     else:
         hw.set_led("white")
+        broadcast_sse("sort_stage", {"stage": "done", "category": None})
 
     event = {
         "items": items,
@@ -408,6 +441,16 @@ def api_manual_sort():
     }
     broadcast_sse("sort_event", event)
     return jsonify(event)
+
+
+@app.route("/api/led", methods=["POST"])
+def api_set_led():
+    """Set the LED ring color."""
+    data = request.get_json(force=True)
+    color = data.get("color", "off")
+    hw.set_led(color)
+    broadcast_sse("led_update", {"color": color})
+    return jsonify({"color": color})
 
 
 @app.route("/api/home", methods=["POST"])
@@ -663,13 +706,16 @@ def api_events():
 
 
 def main():
+    import logging
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
     database.init_db()
 
     if config.MOCK_MODE:
         print("[mock] Running in mock mode (no hardware)")
 
-    print(f"[dashboard] http://localhost:{config.PORT}")
-    app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG, threaded=True)
+    print(f"[dashboard] http://0.0.0.0:{config.PORT}")
+    app.run(host=config.HOST, port=config.PORT, debug=False, threaded=True)
 
 
 if __name__ == "__main__":

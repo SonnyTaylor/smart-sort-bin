@@ -2,15 +2,18 @@
 AI Smart Bin - Raspberry Pi Hardware Layer
 
 Real hardware control for:
-- USB webcam (OpenCV preferred, fswebcam fallback)
+- USB webcam (fswebcam — reliable on Pi 3B)
 - Pan/tilt servos (pigpio - hardware timed PWM, no jitter)
-- WS2812B LED ring (rpi_ws281x, optional)
+- WS2812B LED ring (optional, not connected yet)
 """
 
 import os
 import time
 import threading
 import subprocess
+import logging
+
+log = logging.getLogger(__name__)
 
 # Servos - pigpio for hardware-timed PWM (no jitter)
 try:
@@ -18,20 +21,6 @@ try:
     HAS_PIGPIO = True
 except Exception:
     HAS_PIGPIO = False
-
-# Camera
-try:
-    import cv2
-    HAS_CV2 = True
-except Exception:
-    HAS_CV2 = False
-
-# LED
-try:
-    from rpi_ws281x import PixelStrip, Color
-    HAS_LED = True
-except Exception:
-    HAS_LED = False
 
 # Pin config
 PAN_PIN = 17
@@ -47,12 +36,21 @@ def _val_to_pw(value):
 def _pw_to_val(pw):
     return round((pw - 1500) / 1000, 2)
 
-# Bin presets (pan value: -1 to 1)
+# Bin presets — pan to the correct third, then tilt to dump
+# Bin layout (top view): [ GENERAL | RECYCLING | COMPOST ]
+#                        pan -1    pan 0       pan +1
+#
+# Tilt: 0.0 = horizontal (rest), -1.0 = fully tipped (dump)
 CATEGORY_PRESETS = {
-    "general": -0.8,
-    "recycling": 0.0,
-    "compost": 0.8,
+    "general":   {"pan": -0.7, "tilt_dump": -0.6, "tilt_rest": 0.0},
+    "recycling": {"pan":  0.0, "tilt_dump": -0.6, "tilt_rest": 0.0},
+    "compost":   {"pan":  0.7, "tilt_dump": -0.6, "tilt_rest": 0.0},
 }
+
+# Timing
+SORT_PAN_SETTLE_S = 0.5   # Wait for pan to reach position
+SORT_DUMP_HOLD_S  = 1.0   # Hold tilt to let item fall
+SORT_RETURN_S     = 0.5   # Wait for tilt to return
 
 LED_COLORS = {
     "off": (0, 0, 0),
@@ -66,89 +64,136 @@ LED_COLORS = {
 
 
 class Camera:
-    """Threaded USB camera capture."""
+    """USB webcam capture using v4l2-ctl with mmap streaming.
+
+    Keeps the camera device open for continuous frames and stable auto-exposure.
+    """
 
     def __init__(self, device=0, width=640, height=480):
         self.width = width
         self.height = height
-        self._cap = None
-        self._frame = None
+        self.device = device
+        self._last_jpeg = None
+        self._last_time = 0
         self._running = False
-        self._thread = None
+        self._process = None
+        self._lock = threading.Lock()
+        log.info(f"Camera: v4l2 mmap mode (device {device}, {width}x{height})")
+        self._start_stream()
 
-        if HAS_CV2:
-            self._cap = cv2.VideoCapture(device)
-            if self._cap.isOpened():
-                self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-                self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-                self._running = True
-                self._thread = threading.Thread(target=self._loop, daemon=True)
-                self._thread.start()
-            else:
-                self._cap = None
+    def _start_stream(self):
+        """Start v4l2-ctl mmap stream that keeps device open."""
+        if self._running:
+            return
+        self._running = True
+        self._thread = threading.Thread(target=self._stream_loop, daemon=True)
+        self._thread.start()
+        log.info("Camera: v4l2 stream started")
 
-    def _loop(self):
+    def _stream_loop(self):
+        """Run v4l2-ctl --stream-mmap and parse JPEG frames from output."""
+        cmd = [
+            "v4l2-ctl",
+            f"--device=/dev/video{self.device}",
+            f"--set-fmt-video=width={self.width},height={self.height},pixelformat=MJPG",
+            "--stream-mmap",
+            "--stream-count=-1",
+            "--stream-to=-",
+        ]
+
         while self._running:
-            ret, frame = self._cap.read()
-            if ret:
-                self._frame = frame
-            time.sleep(0.005)
+            try:
+                log.info("Camera: starting v4l2 stream...")
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                self._process = proc
 
-    def get_jpeg(self):
-        """Return latest frame as JPEG bytes, or None."""
-        if self._frame is not None and HAS_CV2:
-            ret, buf = cv2.imencode(".jpg", self._frame)
-            if ret:
-                return buf.tobytes()
-        return None
+                # Read JPEG frames from stdout
+                # JPEG files start with FF D8 and end with FF D9
+                buffer = b""
+                warmup = 5  # Skip first few frames for auto-exposure
+                frame_count = 0
 
-    def capture_fallback(self, path="/tmp/snapshot.jpg"):
-        """Capture using fswebcam and return bytes."""
-        subprocess.run(
-            ["fswebcam", "-r", f"{self.width}x{self.height}", "--no-banner", path],
-            capture_output=True,
-        )
-        with open(path, "rb") as f:
-            return f.read()
+                while self._running and proc.poll() is None:
+                    chunk = proc.stdout.read(4096)
+                    if not chunk:
+                        break
+                    buffer += chunk
+
+                    # Find JPEG frames in buffer
+                    while True:
+                        # Look for JPEG start marker
+                        start = buffer.find(b"\xff\xd8")
+                        if start == -1:
+                            buffer = b""
+                            break
+
+                        # Look for JPEG end marker after start
+                        end = buffer.find(b"\xff\xd9", start + 2)
+                        if end == -1:
+                            # Keep from start onwards, might be incomplete
+                            buffer = buffer[start:]
+                            break
+
+                        # Extract complete JPEG frame
+                        jpeg = buffer[start:end + 2]
+                        buffer = buffer[end + 2:]
+
+                        frame_count += 1
+                        if frame_count == warmup + 1:
+                            log.info(f"Camera: warmup complete, serving frames ({len(jpeg)} bytes)")
+                        if frame_count > warmup:
+                            with self._lock:
+                                self._last_jpeg = jpeg
+                                self._last_time = time.time()
+
+                log.warning("Camera: v4l2 stream ended")
+
+            except FileNotFoundError:
+                log.error("v4l2-ctl not installed")
+                self._running = False
+                break
+            except Exception as e:
+                log.error(f"Camera stream error: {e}")
+
+            if self._running:
+                time.sleep(2)  # Wait before retry
 
     def get_jpeg_bytes(self):
-        """Best-effort JPEG: OpenCV live frame, or fswebcam snapshot."""
-        jpeg = self.get_jpeg()
-        if jpeg:
-            return jpeg
-        return self.capture_fallback()
+        """Return latest captured frame (non-blocking)."""
+        with self._lock:
+            return self._last_jpeg
+
+    def get_jpeg(self):
+        """Alias for get_jpeg_bytes (compatibility with old code)."""
+        return self.get_jpeg_bytes()
 
     def stop(self):
         self._running = False
-        if self._thread:
-            self._thread.join(timeout=1)
-        if self._cap:
-            self._cap.release()
+        if self._process:
+            try:
+                self._process.terminate()
+            except Exception:
+                pass
+        if hasattr(self, '_thread') and self._thread:
+            self._thread.join(timeout=3)
 
 
 class LEDController:
-    """WS2812B LED ring control."""
+    """WS2812B LED ring control. (Not connected yet — no-op)."""
 
     def __init__(self, count=LED_COUNT, pin=LED_PIN):
         self.strip = None
-        if HAS_LED:
-            try:
-                self.strip = PixelStrip(
-                    count, pin, 800000, 10, False, 64, 0, "WS2811_STRIP_GRB"
-                )
-                self.strip.begin()
-                self.clear()
-            except Exception:
-                self.strip = None
+        # rpi_ws281x not installed — LED ring not connected yet
 
     def set_color(self, r, g, b):
-        if self.strip:
-            for i in range(self.strip.numPixels()):
-                self.strip.setPixelColor(i, Color(r, g, b))
-            self.strip.show()
+        pass  # No-op until LED ring is wired
 
     def clear(self):
-        self.set_color(0, 0, 0)
+        pass
 
 
 class Hardware:
@@ -163,13 +208,19 @@ class Hardware:
         self._tilt_val = 0.0
 
         if HAS_PIGPIO:
-            self._pi = pigpio.pi()
-            if self._pi.connected:
-                self._pi.set_servo_pulsewidth(PAN_PIN, _val_to_pw(0))
-                self._pi.set_servo_pulsewidth(TILT_PIN, _val_to_pw(0))
-                self._pan_val = 0.0
-                self._tilt_val = 0.0
-            else:
+            try:
+                self._pi = pigpio.pi()
+                if self._pi.connected:
+                    self._pi.set_servo_pulsewidth(PAN_PIN, _val_to_pw(0))
+                    self._pi.set_servo_pulsewidth(TILT_PIN, _val_to_pw(0))
+                    self._pan_val = 0.0
+                    self._tilt_val = 0.0
+                    log.info("pigpio connected, servos centered")
+                else:
+                    self._pi = None
+                    log.warning("pigpio not connected — servos disabled")
+            except Exception as e:
+                log.warning(f"pigpio init failed: {e}")
                 self._pi = None
 
     # --- Servos ---
@@ -189,8 +240,32 @@ class Hardware:
             self._pi.set_servo_pulsewidth(TILT_PIN, _val_to_pw(value))
 
     def move_to_category(self, category):
-        preset = CATEGORY_PRESETS.get(category, 0.0)
-        self.set_pan(preset)
+        """Full sort sequence: pan to bin third, dump, return home."""
+        preset = CATEGORY_PRESETS.get(category)
+        if not preset:
+            return
+        # Step 1: Pan to the correct third
+        self.set_pan(preset["pan"])
+        time.sleep(SORT_PAN_SETTLE_S)
+        # Step 2: Tilt to dump
+        self.set_tilt(preset["tilt_dump"])
+        time.sleep(SORT_DUMP_HOLD_S)
+        # Step 3: Return tilt to rest
+        self.set_tilt(preset["tilt_rest"])
+        time.sleep(SORT_RETURN_S)
+        # Step 4: Pan back to center
+        self.set_pan(0.0)
+        time.sleep(SORT_PAN_SETTLE_S)
+
+    def dump_only(self, category):
+        """Just tilt to dump (assumes already panned)."""
+        preset = CATEGORY_PRESETS.get(category)
+        if not preset:
+            return
+        self.set_tilt(preset["tilt_dump"])
+        time.sleep(SORT_DUMP_HOLD_S)
+        self.set_tilt(preset["tilt_rest"])
+        time.sleep(SORT_RETURN_S)
 
     def center_servos(self):
         self.set_pan(0)
@@ -242,7 +317,7 @@ class Hardware:
             "cpu_temp_c": round(temp_c, 1),
             "uptime_seconds": round(uptime_s, 1),
             "inference_ms": 0,
-            "uart_connected": False,
+            "uart_connected": self._pi is not None and self._pi.connected,
             "wifi_connected": True,
         }
 
@@ -287,6 +362,10 @@ def set_tilt(value):
 
 def move_to_category(category):
     get_hw().move_to_category(category)
+
+
+def dump_only(category):
+    get_hw().dump_only(category)
 
 
 def center_servos():
