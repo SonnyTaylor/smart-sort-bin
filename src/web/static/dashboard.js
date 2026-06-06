@@ -188,6 +188,7 @@ document.addEventListener("alpine:init", () => {
     compareProviderB: localStorage.getItem("cmp_providerB") || "",
     compareModelA: localStorage.getItem("cmp_modelA") || "",
     compareModelB: localStorage.getItem("cmp_modelB") || "",
+    compareExplain: localStorage.getItem("cmp_explain") === "true",
     compareWebcamActive: false,
     compareWebcamStream: null,
     comparing: false,
@@ -263,6 +264,7 @@ document.addEventListener("alpine:init", () => {
       this.$watch('compareProviderB', (v) => localStorage.setItem('cmp_providerB', v));
       this.$watch('compareModelA', (v) => localStorage.setItem('cmp_modelA', v));
       this.$watch('compareModelB', (v) => localStorage.setItem('cmp_modelB', v));
+      this.$watch('compareExplain', (v) => localStorage.setItem('cmp_explain', String(v)));
 
       // Flush deferred chart updates when switching back to the dashboard tab
       this.$watch('tab', (val) => {
@@ -833,6 +835,7 @@ document.addEventListener("alpine:init", () => {
             provider_b: this.compareProviderB,
             model_a: this.compareModelA || "",
             model_b: this.compareModelB || "",
+            explain: this.compareExplain,
           }),
         });
         const data = await res.json();

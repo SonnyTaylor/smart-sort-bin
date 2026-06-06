@@ -1,6 +1,6 @@
-# UART Serial Protocol: MaixCAM <-> ESP32
+# UART Serial Protocol: ESP32-CAM <-> ESP32
 
-This document defines the serial communication protocol between the MaixCAM Pro (brain) and the ESP32 (hardware controller).
+This document defines the serial communication protocol between the ESP32-CAM (brain) and the ESP32 DevKit (hardware controller).
 
 ## Physical Layer
 
@@ -11,7 +11,7 @@ This document defines the serial communication protocol between the MaixCAM Pro 
 | Data Bits | 8 |
 | Parity | None |
 | Stop Bits | 1 |
-| Wiring | MaixCAM TX -> ESP32 RX, MaixCAM RX -> ESP32 TX, Common GND |
+| Wiring | ESP32-CAM TX -> ESP32 RX, ESP32-CAM RX -> ESP32 TX, Common GND |
 
 ## Message Format
 
@@ -25,7 +25,7 @@ All messages are newline-terminated ASCII strings for simplicity and debuggabili
 - `PAYLOAD` -- Command-specific data. May be empty.
 - Messages are terminated with `\n` (0x0A).
 
-## Commands: MaixCAM -> ESP32
+## Commands: ESP32-CAM -> ESP32
 
 | Command | Payload | Description | Example |
 | :--- | :--- | :--- | :--- |
@@ -35,7 +35,7 @@ All messages are newline-terminated ASCII strings for simplicity and debuggabili
 | `PING` | *(none)* | Heartbeat check. ESP32 must respond with `PONG`. | `PING:\n` |
 | `SET_ANGLE` | `<category>,<angle>` | Update the stored pan angle for a waste category. Persisted in ESP32 EEPROM. | `SET_ANGLE:recycling,120\n` |
 
-## Responses: ESP32 -> MaixCAM
+## Responses: ESP32 -> ESP32-CAM
 
 | Response | Payload | Description | Example |
 | :--- | :--- | :--- | :--- |
@@ -43,7 +43,7 @@ All messages are newline-terminated ASCII strings for simplicity and debuggabili
 | `DONE` | `<command>` | Command execution completed successfully. | `DONE:SORT\n` |
 | `NACK` | `<command>,<reason>` | Command rejected or failed. | `NACK:SORT,servo_stall\n` |
 | `PONG` | *(none)* | Heartbeat response. | `PONG:\n` |
-| `ITEM` | *(none)* | HC-SR04 has detected an item on the tray. MaixCAM should capture and classify. | `ITEM:\n` |
+| `ITEM` | *(none)* | HC-SR04 has detected an item on the tray. ESP32-CAM should capture and classify. | `ITEM:\n` |
 
 ## Waste Categories
 
@@ -61,9 +61,9 @@ Angles are configurable via `SET_ANGLE` and persisted in ESP32 EEPROM across reb
 
 | Parameter | Value |
 | :--- | :--- |
-| ACK timeout | 100ms (MaixCAM retries up to 3 times) |
+| ACK timeout | 100ms (ESP32-CAM retries up to 3 times) |
 | DONE timeout | 5000ms (full sort sequence max duration) |
-| Heartbeat interval | MaixCAM sends `PING` every 2 seconds |
+| Heartbeat interval | ESP32-CAM sends `PING` every 2 seconds |
 | Watchdog timeout | ESP32 homes servos if no `PING` received for 5 seconds |
 
 ## Sort Sequence (ESP32 Internal)
@@ -84,11 +84,11 @@ If any servo reports a stall or the sequence exceeds 5 seconds, send `NACK:SORT,
 ## Example Conversation
 
 ```
-ESP32 -> MaixCAM:  ITEM:
-MaixCAM -> ESP32:  SORT:recycling
-ESP32 -> MaixCAM:  ACK:SORT
-                   ... (servos execute) ...
-ESP32 -> MaixCAM:  DONE:SORT
-MaixCAM -> ESP32:  PING:
-ESP32 -> MaixCAM:  PONG:
+ESP32 -> ESP32-CAM:  ITEM:
+ESP32-CAM -> ESP32:  SORT:recycling
+ESP32 -> ESP32-CAM:  ACK:SORT
+                     ... (servos execute) ...
+ESP32 -> ESP32-CAM:  DONE:SORT
+ESP32-CAM -> ESP32:  PING:
+ESP32 -> ESP32-CAM:  PONG:
 ```

@@ -72,6 +72,30 @@ If multiple items are visible, include one object per item. If no items are visi
 
 Do not include any other text, explanation, or formatting. Just the JSON object."""
 
+SYSTEM_PROMPT_EXPLAIN = """You are a waste classification AI inside a smart recycling bin operating in Australia.
+You will receive a photo that may contain one or more items being disposed of. A person may be holding the items or they may be placed on a sorting tray.
+
+Classify ANY object that someone could put in a bin — this includes everyday items like scissors, pens, electronics, toys, clothing, and household objects, not just typical rubbish.
+
+IGNORE these (do NOT classify them):
+- People, hands, arms, fingers, or any body parts
+- The sorting tray, table, or background surfaces
+- Clothing or accessories being worn (not discarded)
+
+Identify ALL distinct items visible and classify each into one of these categories following strict Australian guidelines:
+- general (Red bin: non-recyclable waste, soft plastics, plastic wrap, chip packets, styrofoam/polystyrene, broken glass, heavily soiled or greasy items, mixed-material items, electronics, ceramics, metal tools, and anything that doesn't fit recycling or compost)
+- recycling (Yellow bin: clean and empty rigid plastics, aluminium/steel cans, clean glass bottles/jars, clean paper and cardboard. MUST be clean and unspoiled)
+- compost (Green FOGO bin: organic waste, food scraps, fruit peels, coffee grounds, garden waste. Do NOT include compostable plastics unless explicitly marked FOGO safe)
+
+Pay close attention to the condition of each item. If a recyclable item (like a pizza box or plastic container) is greasy, heavily soiled with food, or contaminated, it MUST go to 'general' or 'compost' (if fully organic), NEVER 'recycling'. Only clean items can be recycled.
+
+Respond with ONLY a JSON object containing an "items" array. Each element represents one item:
+{"items": [{"category": "<general|recycling|compost>", "label": "<specific item name>", "confidence": <0.0-1.0>, "reason": "<1-2 sentence explanation of why this category was chosen>"}]}
+
+If multiple items are visible, include one object per item. If no items are visible (e.g. only a person or empty background), return: {"items": []}
+
+Do not include any other text, explanation, or formatting. Just the JSON object."""
+
 
 def classify_image(
     image_b64: str,
@@ -80,6 +104,7 @@ def classify_image(
     model: str,
     base_url: str = "",
     timeout: float = 10.0,
+    explain: bool = False,
 ) -> dict:
     """
     Send an image to a VLM provider for waste classification.
@@ -115,10 +140,12 @@ def classify_image(
         headers["HTTP-Referer"] = "https://github.com/ai-smart-bin"
         headers["X-Title"] = "AI Smart Bin"
 
+    prompt = SYSTEM_PROMPT_EXPLAIN if explain else SYSTEM_PROMPT
+
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": prompt},
             {
                 "role": "user",
                 "content": [
@@ -208,15 +235,16 @@ def classify_image(
             category = item.get("category", "general").lower()
             if category not in valid_categories:
                 category = "general"
-            items.append(
-                {
-                    "category": category,
-                    "label": item.get("label", "Unknown item"),
-                    "confidence": min(
-                        1.0, max(0.0, float(item.get("confidence", 0.8)))
-                    ),
-                }
-            )
+            entry = {
+                "category": category,
+                "label": item.get("label", "Unknown item"),
+                "confidence": min(
+                    1.0, max(0.0, float(item.get("confidence", 0.8)))
+                ),
+            }
+            if item.get("reason"):
+                entry["reason"] = item["reason"]
+            items.append(entry)
 
         return {
             "items": items,

@@ -20,7 +20,16 @@ from flask import Flask, Response, jsonify, render_template, request, send_file
 import config
 import database
 import llm
-import mock_hardware
+
+# Allow importing from src/pi when running on the Pi
+if config.PI_MODE:
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from pi import hardware as hw
+else:
+    import mock_hardware as hw
 
 app = Flask(__name__)
 
@@ -117,7 +126,7 @@ def api_set_mode():
 
 @app.route("/api/health")
 def api_health():
-    return jsonify(mock_hardware.get_system_health())
+    return jsonify(hw.get_system_health())
 
 
 # ---------------------------------------------------------------------------
@@ -127,7 +136,7 @@ def api_health():
 
 @app.route("/api/camera")
 def api_camera():
-    return jsonify(mock_hardware.get_camera_frame())
+    return jsonify(hw.get_camera_frame())
 
 
 @app.route("/api/camera/stream")
@@ -137,11 +146,11 @@ def api_camera_stream():
     def generate():
         while True:
             # On real hardware this fetches the MaixCAM's active buffer
-            frame_bytes = mock_hardware.get_camera_jpeg_bytes()
+            frame_bytes = hw.get_camera_jpeg_bytes()
             yield (
                 b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
             )
-            time.sleep(1.0)  # Mock 1fps stream
+            time.sleep(0.1)  # ~10 fps stream
 
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
@@ -157,7 +166,7 @@ def api_classify():
 
     if data.get("source") == "device":
         # Capture from hardware (mocked here)
-        raw_jpeg = mock_hardware.get_camera_jpeg_bytes()
+        raw_jpeg = hw.get_camera_jpeg_bytes()
         import base64
 
         image_b64 = base64.b64encode(raw_jpeg).decode("utf-8")
@@ -271,6 +280,8 @@ def api_compare():
     if model_b_override:
         provider_b = dict(provider_b, model=model_b_override)
 
+    explain = data.get("explain", False)
+
     def run_classify(provider):
         start = time.time()
         result = llm.classify_image(
@@ -279,6 +290,7 @@ def api_compare():
             api_key=provider["api_key"],
             model=provider["model"],
             base_url=provider["base_url"],
+            explain=explain,
         )
         duration_ms = int((time.time() - start) * 1000)
         result["duration_ms"] = duration_ms
@@ -319,19 +331,96 @@ def api_set_servo():
     return jsonify({"category": category, "angle": angle})
 
 
+@app.route("/api/servos/pan", methods=["POST"])
+def api_set_pan():
+    data = request.get_json(force=True)
+    value = data.get("value", 0)
+    hw.set_pan(value)
+    broadcast_sse("servo_update", {"axis": "pan", "value": value})
+    return jsonify({"axis": "pan", "value": value})
+
+
+@app.route("/api/servos/tilt", methods=["POST"])
+def api_set_tilt():
+    data = request.get_json(force=True)
+    value = data.get("value", 0)
+    hw.set_tilt(value)
+    broadcast_sse("servo_update", {"axis": "tilt", "value": value})
+    return jsonify({"axis": "tilt", "value": value})
+
+
 @app.route("/api/sort", methods=["POST"])
 def api_manual_sort():
     if config.MOCK_MODE:
         return jsonify(
             {"status": "mock", "message": "Mock mode - no hardware connected"}
         ), 200
-    return jsonify({"error": "Manual sort not implemented for real hardware yet"}), 501
+
+    # Full pipeline: capture -> classify -> move servo -> flash LED
+    raw_jpeg = hw.capture_photo()
+    image_b64 = base64.b64encode(raw_jpeg).decode("utf-8")
+
+    provider = database.get_active_provider()
+    if not provider:
+        return jsonify({"error": "No active LLM provider configured"}), 400
+    if not provider["api_key"]:
+        return jsonify({"error": f"No API key set for {provider['name']}"}), 400
+
+    hw.set_led("blue")
+    start_ms = time.time()
+    result = llm.classify_image(
+        image_b64=image_b64,
+        provider_id=provider["id"],
+        api_key=provider["api_key"],
+        model=provider["model"],
+        base_url=provider["base_url"],
+    )
+    duration_ms = int((time.time() - start_ms) * 1000)
+
+    if result.get("error"):
+        hw.set_led("purple")
+        return jsonify(result), 502
+
+    items = result.get("items", [])
+    for item in items:
+        database.log_sort(
+            category=item["category"],
+            confidence=item["confidence"],
+            mode=config.MODE_LLM,
+            label=item.get("label", ""),
+            duration_ms=duration_ms,
+        )
+
+    # Move servo to the first detected item's category
+    if items:
+        cat = items[0]["category"]
+        hw.move_to_category(cat)
+        color_map = {"general": "red", "recycling": "yellow", "compost": "green"}
+        hw.set_led(color_map.get(cat, "white"))
+    else:
+        hw.set_led("white")
+
+    event = {
+        "items": items,
+        "mode": config.MODE_LLM,
+        "duration_ms": duration_ms,
+        "raw_response": result.get("raw_response", ""),
+    }
+    broadcast_sse("sort_event", event)
+    return jsonify(event)
 
 
 @app.route("/api/home", methods=["POST"])
 def api_home():
+    hw.center_servos()
+    hw.set_led("white")
     broadcast_sse("servo_home", {"status": "homed"})
     return jsonify({"status": "homed"})
+
+
+@app.route("/pi")
+def pi_dashboard():
+    return render_template("pi_dashboard.html")
 
 
 # ---------------------------------------------------------------------------

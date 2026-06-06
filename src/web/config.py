@@ -38,5 +38,8 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = "meta-llama/llama-4-scout"
 LLM_TIMEOUT_SECONDS = 3
 
+# Pi prototype mode - uses real servos/camera/LED via src/pi/hardware.py
+PI_MODE = True
+
 # Mock mode - set to False when running on real hardware
-MOCK_MODE = True
+MOCK_MODE = False

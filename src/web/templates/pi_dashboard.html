@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Bin Pi</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 960px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    h1 { margin: 0 0 20px; font-size: 24px; }
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+    img { width: 100%; border-radius: 6px; border: 1px solid #ddd; background: #222; min-height: 200px; }
+    button { font-size: 18px; padding: 12px 20px; margin: 4px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; }
+    button:hover { background: #eee; }
+    button.primary { background: #111; color: #fff; border-color: #111; }
+    button.primary:hover { background: #333; }
+    .d-pad { display: inline-block; text-align: center; }
+    .d-pad button { width: 60px; height: 50px; }
+    .result { padding: 15px; border-radius: 6px; margin-top: 10px; font-weight: bold; }
+    .result.general { background: #fee; border: 2px solid #c00; color: #600; }
+    .result.recycling { background: #eef; border: 2px solid #06c; color: #036; }
+    .result.compost { background: #efe; border: 2px solid #080; color: #040; }
+    .result.waiting { background: #eee; border: 2px solid #999; color: #555; }
+    #log { max-height: 200px; overflow-y: auto; background: #fafafa; border: 1px solid #ddd; border-radius: 6px; padding: 10px; font-size: 13px; }
+    .log-item { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #eee; }
+    input[type="password"], input[type="text"] { font-size: 14px; padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 4px; }
+    label { font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>🗑️ Smart Bin Pi Prototype</h1>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Camera</h2>
+      <img id="stream" src="/api/camera/stream" alt="camera stream">
+      <br><br>
+      <button class="primary" onclick="sort()" id="snapBtn">📸 SNAP & SORT</button>
+    </div>
+
+    <div class="card">
+      <h2>Pan / Tilt</h2>
+      <div class="d-pad">
+        <div><button onclick="move('tilt', 0.2)">⬆️</button></div>
+        <div>
+          <button onclick="move('pan', -0.2)">⬅️</button>
+          <button onclick="home()">●</button>
+          <button onclick="move('pan', 0.2)">➡️</button>
+        </div>
+        <div><button onclick="move('tilt', -0.2)">⬇️</button></div>
+      </div>
+      <p style="font-size: 12px; color: #666; margin-top: 10px;">
+        Pan value: <span id="panVal">0.0</span> | Tilt value: <span id="tiltVal">0.0</span>
+      </p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
+      <h3>Result</h3>
+      <div id="result" class="result waiting">Press SNAP & SORT to classify</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Settings</h2>
+    <label>OpenRouter API Key: <input type="password" id="key" placeholder="sk-or-..."></label>
+    <button onclick="saveKey()">Save Key</button>
+    <span id="keyStatus" style="font-size: 12px; color: #666; margin-left: 10px;"></span>
+  </div>
+
+  <div class="card">
+    <h2>Recent Sorts</h2>
+    <div id="log">Loading...</div>
+  </div>
+
+  <script>
+    let currentPan = 0.0;
+    let currentTilt = 0.0;
+
+    function move(axis, delta) {
+      if (axis === 'pan') currentPan = Math.max(-1, Math.min(1, currentPan + delta));
+      if (axis === 'tilt') currentTilt = Math.max(-1, Math.min(1, currentTilt + delta));
+      document.getElementById('panVal').textContent = currentPan.toFixed(1);
+      document.getElementById('tiltVal').textContent = currentTilt.toFixed(1);
+      fetch('/api/servos/' + axis, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({value: axis === 'pan' ? currentPan : currentTilt})
+      });
+    }
+
+    function home() {
+      currentPan = 0;
+      currentTilt = 0;
+      document.getElementById('panVal').textContent = '0.0';
+      document.getElementById('tiltVal').textContent = '0.0';
+      fetch('/api/home', {method: 'POST'});
+    }
+
+    async function sort() {
+      const btn = document.getElementById('snapBtn');
+      const res = document.getElementById('result');
+      btn.disabled = true;
+      res.className = 'result waiting';
+      res.textContent = 'Capturing & classifying...';
+
+      try {
+        const r = await fetch('/api/sort', {method: 'POST'});
+        const data = await r.json();
+        if (data.error) {
+          res.className = 'result waiting';
+          res.textContent = 'Error: ' + data.error;
+          return;
+        }
+        const items = data.items || [];
+        if (items.length === 0) {
+          res.className = 'result waiting';
+          res.textContent = 'No items detected.';
+          return;
+        }
+        const cat = items[0].category;
+        res.className = 'result ' + cat;
+        res.innerHTML = `<div>${cat.toUpperCase()}</div>
+          <div style="font-size:14px;font-weight:normal;margin-top:4px;">
+            ${items.map(i => i.label + ' (' + Math.round(i.confidence*100) + '%)').join(', ')}
+          </div>
+          <div style="font-size:12px;font-weight:normal;color:#555;margin-top:4px;">
+            ${data.duration_ms}ms
+          </div>`;
+      } catch (e) {
+        res.className = 'result waiting';
+        res.textContent = 'Error: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        loadHistory();
+      }
+    }
+
+    async function saveKey() {
+      const key = document.getElementById('key').value.trim();
+      if (!key) return;
+      const r = await fetch('/api/providers/openrouter', {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({api_key: key})
+      });
+      document.getElementById('keyStatus').textContent = r.ok ? 'Saved!' : 'Failed';
+    }
+
+    async function loadHistory() {
+      try {
+        const r = await fetch('/api/history?limit=10');
+        const items = await r.json();
+        const el = document.getElementById('log');
+        if (!items.length) { el.textContent = 'No sorts yet.'; return; }
+        el.innerHTML = items.map(s => `
+          <div class="log-item">
+            <strong style="color:${s.category==='general'?'#c00':s.category==='recycling'?'#06c':'#080'}">
+              ${s.category}
+            </strong>
+            — ${s.label || 'Unknown'}
+            <span style="color:#999;float:right;">${new Date(s.timestamp*1000).toLocaleTimeString()}</span>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('log').textContent = 'Error loading history.';
+      }
+    }
+
+    loadHistory();
+    setInterval(loadHistory, 5000);
+  </script>
+</body>
+</html>

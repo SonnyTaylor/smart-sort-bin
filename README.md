@@ -2,10 +2,10 @@
 
 ![Status](https://img.shields.io/badge/Status-Prototyping-orange.svg)
 ![VCE](https://img.shields.io/badge/VCE-Systems_Engineering_3%264-blue.svg)
-![Platform](https://img.shields.io/badge/Platform-MaixCAM_Pro_%2B_ESP32-green.svg)
-![Budget](https://img.shields.io/badge/Budget-~%24155_AUD-lightgrey.svg)
+![Platform](https://img.shields.io/badge/Platform-ESP32--CAM_%2B_ESP32-green.svg)
+![Budget](https://img.shields.io/badge/Budget-~%24111_AUD-lightgrey.svg)
 
-An AI-powered waste sorting system that eliminates recycling contamination at the point of disposal. Uses edge AI object detection to classify waste and a two-axis servo mechanism to sort items into the correct bin partition — entirely offline, with an optional cloud LLM mode and a web-based control dashboard.
+An AI-powered waste sorting system that eliminates recycling contamination at the point of disposal. Uses a cloud Vision Language Model to classify waste and a two-axis servo mechanism to sort items into the correct bin partition, with a web-based control dashboard.
 
 Developed for VCE Systems Engineering Unit 3 & 4. Inspired by the [Ameru AI Bin](https://www.ameru.com.au/).
 
@@ -93,20 +93,15 @@ Press `Ctrl + C` in the Command Prompt window.
 ```
   [ Item placed on tray ]
            |
-  ESP32: HC-SR04 detects item --> UART --> MaixCAM: "item detected"
+  ESP32: HC-SR04 detects item --> UART --> ESP32-CAM: "item detected"
            |
-  MaixCAM: Capture image
+  ESP32-CAM: Capture image --> WiFi --> Cloud VLM classifies
            |
-       ┌───┴───┐
-   YOLO Mode   LLM Mode
-   (offline)   (cloud)
-       └───┬───┘
-           |
-  MaixCAM: UART --> ESP32: "sort recycling"
+  ESP32-CAM: UART --> ESP32: "sort recycling"
            |
   ESP32: Servo 1 pan --> Servo 2 tilt --> Home
            |
-  MaixCAM: Log to SQLite --> Push to Web Dashboard
+  ESP32-CAM: Log to SQLite --> Push to Web Dashboard
 ```
 
 ## Architecture
@@ -115,8 +110,8 @@ The system uses a **dual-board architecture**:
 
 | Board | Role | Responsibilities |
 | :--- | :--- | :--- |
-| **MaixCAM Pro** | Brain | AI inference, camera, LCD UI, web server, decision-making |
-| **ESP32** | Muscles | Servo PWM, ultrasonic sensor, real-time hardware control |
+| **ESP32-CAM** | Brain | Camera capture, WiFi, cloud VLM classification, web server |
+| **ESP32 DevKit** | Muscles | Servo PWM, ultrasonic sensor, real-time hardware control |
 
 Connected over UART serial. See [`docs/06_serial_protocol.md`](docs/06_serial_protocol.md) for the protocol spec.
 
@@ -124,33 +119,34 @@ Connected over UART serial. See [`docs/06_serial_protocol.md`](docs/06_serial_pr
 
 | Component | Role |
 | :--- | :--- |
-| Sipeed MaixCAM Pro | AI compute, camera, LCD display, Wi-Fi (RISC-V + 1 TOPS NPU) |
+| ESP32-CAM (OV2640) | Camera capture, WiFi, cloud VLM classification |
 | ESP32 DevKit | Real-time servo/sensor control over UART |
 | 2x MG996R Servos | Pan & tilt actuation |
 | HC-SR04 Ultrasonic Sensor | Item detection trigger |
-| 5V 5A Power Supply | System power |
+| USB-C PD Trigger Board | 5V power from any USB-C PD charger |
+| WS2812B LED Ring (12 LED) | Camera illumination + category feedback |
 
 ## Software
 
 | Layer | Technology |
 | :--- | :--- |
-| AI Model | YOLO11s @ 416x416, INT8 quantised `.cvimodel` (local) |
-| Cloud AI | OpenRouter API — Llama-4-Scout VLM (optional) |
-| MaixCAM | Python + MaixPy + Flask |
-| ESP32 | Arduino / MicroPython |
+| AI Classification | Cloud VLM (GPT-4o, Gemini, Llama Vision via OpenRouter) |
+| ESP32-CAM | Arduino + WiFi HTTP client |
+| ESP32 | Arduino (servo PWM, UART, sensor) |
 | Web Dashboard | Alpine.js + Tailwind CSS (CDN) + REST API + SSE |
 | Data | SQLite (sorting history & statistics) |
 
 ## Web Dashboard Features
 
-Accessible at `http://localhost:8080` when running locally, or `http://<maixcam-ip>:8080` on the physical device:
+Accessible at `http://localhost:8080` when running locally, or `http://<esp32-cam-ip>:8080` on the physical device:
 
-- **Mode Switching** — Toggle between local YOLO and cloud LLM classification
 - **Live Stats** — Items sorted, category breakdown, accuracy tracking
-- **Camera Feed** — Live or last-frame view with detection overlay
-- **System Health** — Temperature, uptime, inference latency
+- **Camera Feed** — Live or last-frame view with classification results
+- **System Health** — Uptime, inference latency, connectivity
 - **Manual Controls** — Servo calibration, manual sort trigger, home reset
-- **LLM Settings** — Provider selection (OpenRouter/OpenAI/Gemini/Custom), model ID input
+- **LLM Settings** — Provider selection (OpenRouter/OpenAI/Gemini/Ollama/Custom), model ID input
+- **Model Comparison** — Run two VLM providers side-by-side on the same image
+- **Dataset Collection** — Save images for accuracy auditing, export as ZIP
 
 ## Project Structure
 
@@ -164,11 +160,8 @@ smart-sort-bin/
 │   ├── 05_future_scope.md
 │   └── 06_serial_protocol.md
 ├── src/
-│   ├── maixcam/            # MaixCAM Python: AI inference, control loop, serial comms
 │   ├── esp32/              # ESP32 firmware: servo PWM, sensor, UART listener
 │   └── web/                # Web dashboard: Flask backend + HTML/JS frontend
-├── models/                 # Trained YOLO weights (.onnx, .cvimodel)
-├── training/               # Colab notebooks and dataset config
 ├── cad/                    # Mechanical design files
 ├── portfolio/              # Presentation files
 └── PLAN.md                 # Master project plan
@@ -179,7 +172,7 @@ smart-sort-bin/
 - [Project Plan](PLAN.md) — System architecture, mechanism design, AI strategy, and timeline
 - [Risk Assessment](docs/01_risk_assessment.md) — Hardware, software, and comms risk analysis
 - [Testing Plan](docs/02_testing_plan.md) — Evaluation procedures and success criteria
-- [Budget & BOM](docs/03_budget.md) — Component list and cost breakdown (~$155 AUD)
-- [Iteration Log](docs/04_iteration_log.md) — YOLO11n vs YOLO11s engineering iteration
+- [Budget & BOM](docs/03_budget.md) — Component list and cost breakdown (~$111 AUD)
+- [Iteration Log](docs/04_iteration_log.md) — YOLO vs cloud VLM engineering iteration
 - [Future Scope](docs/05_future_scope.md) — Future enhancement directions
-- [Serial Protocol](docs/06_serial_protocol.md) — UART command spec between MaixCAM and ESP32
+- [Serial Protocol](docs/06_serial_protocol.md) — UART command spec between ESP32-CAM and ESP32
