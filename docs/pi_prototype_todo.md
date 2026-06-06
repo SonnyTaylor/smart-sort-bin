@@ -21,18 +21,25 @@
 - [x] `src/pi/hardware.py` — real hardware abstraction
 - [x] `src/web/config.py` — `PI_MODE = True`, `MOCK_MODE = False`
 - [x] `src/web/app.py` — hardware API endpoints wired to real servos/camera
-- [x] `src/web/templates/pi_dashboard.html` — basic control UI
+- [x] `src/web/templates/pi_dashboard.html` — full dashboard UI (HTMX + Tailwind)
 - [x] Flask server running on Pi port 8080
 - [x] pigpio daemon installed and running (no servo jitter)
-- [x] MJPEG camera stream endpoint
-- [x] "Snap & Sort" pipeline: capture -> LLM classify -> servo move -> LED flash
+- [x] v4l2 mmap camera streaming (continuous, stable exposure)
+- [x] "Snap & Sort" pipeline: capture -> LLM classify -> two-stage sort -> LED
+- [x] Gamepad support (DualSense, Xbox) with deadzone filtering
+- [x] Keyboard shortcuts (WASD, 1/2/3, H, Space)
+- [x] Number inputs for precise pan/tilt values
+- [x] Bin presets with visual layout diagram
+- [x] SSE real-time progress during sort (classifying → panning → dumping → done)
+- [x] Deploy script (`deploy.py`)
+- [x] cv2 import hang documented and worked around (v4l2 instead)
 - [ ] Auto-start Flask on boot (systemd service)
-- [ ] Add camera preview auto-refresh if stream is slow
-- [ ] Add joystick-style slider for finer pan/tilt control
+- [ ] Calibrate servo positions for actual bin thirds
 - [ ] Add confidence threshold filter (ignore < 0.7)
 - [ ] Cache OpenRouter API responses for repeated objects
 - [ ] Add image saving toggle (dataset collection on/off)
 - [ ] Error handling for camera disconnection
+- [ ] LED animations once ring is wired
 
 ## AI / LLM
 - [x] OpenRouter provider configured
@@ -43,12 +50,14 @@
 - [ ] Fine-tune prompt for specific bin geometry
 
 ## Deployment
+- [x] `deploy.py` script for easy Pi deployment
+- [x] Documentation updated
 - [ ] systemd service file for auto-start
-- [ ] `requirements.txt` for Pi (Flask, httpx, pigpio, rpi_ws281x, opencv)
+- [ ] `requirements.txt` for Pi (Flask, httpx, pigpio)
 - [ ] Document re-deploy steps (SD card flash, first boot script)
 - [ ] Backup SD card image before demo day
 
 ## Known Issues
-- [ ] gpiozero warning still appears on import (harmless, pigpio overrides it)
-- [ ] Camera stream sometimes shows gray frame on first load (OpenCV warmup)
+- [ ] cv2 import deadlocks on Pi 3B — use v4l2 instead (see docs/pi_cv2_hang.md)
+- [x] Camera stream was dark/flashing — fixed with v4l2 mmap continuous streaming
 - [ ] Servo range may need mechanical calibration after webcam is mounted
