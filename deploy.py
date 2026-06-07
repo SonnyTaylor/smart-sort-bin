@@ -31,12 +31,43 @@ PI_DIR = "/home/pi/smartbin"
 
 # Files to sync (relative to project root)
 FILES = [
+    # Core Python
     "src/pi/hardware.py",
     "src/web/app.py",
+    "src/web/binjamin.py",
     "src/web/config.py",
     "src/web/database.py",
     "src/web/llm.py",
+    # New dashboard v2 templates
+    "src/web/templates/pi/base.html",
+    "src/web/templates/pi/dashboard.html",
+    "src/web/templates/pi/binjamin.html",
+    "src/web/templates/pi/partials/header.html",
+    "src/web/templates/pi/partials/camera_zone.html",
+    "src/web/templates/pi/partials/system_panel.html",
+    "src/web/templates/pi/partials/control_panel.html",
+    "src/web/templates/pi/partials/activity_panel.html",
+    "src/web/templates/pi/partials/settings_drawer.html",
+    "src/web/templates/pi/partials/chat_drawer.html",
+    # Legacy dashboard (still needed)
     "src/web/templates/pi_dashboard.html",
+    # New dashboard v2 CSS
+    "src/web/static/css/pi-dashboard.css",
+    # New dashboard v2 JS modules
+    "src/web/static/js/pi/api.js",
+    "src/web/static/js/pi/state.js",
+    "src/web/static/js/pi/ui.js",
+    "src/web/static/js/pi/sse.js",
+    "src/web/static/js/pi/camera.js",
+    "src/web/static/js/pi/servos.js",
+    "src/web/static/js/pi/input-keyboard.js",
+    "src/web/static/js/pi/input-gamepad.js",
+    "src/web/static/js/pi/led.js",
+    "src/web/static/js/pi/activity.js",
+    "src/web/static/js/pi/settings.js",
+    "src/web/static/js/pi/fun-controls.js",
+    "src/web/static/js/pi/dashboard.js",
+    "src/web/static/js/pi/binjamin.js",
 ]
 
 # Colors
@@ -208,13 +239,14 @@ def cmd_setup_services(client):
     log("Setting up systemd services...")
 
     smartbin_service = """[Unit]
-Description=Smart Bin Web Dashboard
+Description=Smart Bin Flask Dashboard
 After=network.target pigpiod.service
 
 [Service]
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/smartbin/src/web
+ExecStartPre=/bin/rm -rf /home/pi/smartbin/src/web/__pycache__
 ExecStart=/usr/bin/python3 -u app.py
 Restart=on-failure
 RestartSec=3

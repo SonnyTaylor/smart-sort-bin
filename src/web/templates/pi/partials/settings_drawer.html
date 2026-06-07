@@ -1,0 +1,78 @@
+<!-- Drawer overlay -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+
+<!-- Settings drawer -->
+<aside class="drawer" id="settings-drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">Settings</span>
+    <button class="btn btn-icon" id="btn-close-settings" style="width:32px;height:32px">✕</button>
+  </div>
+
+  <div class="drawer-body">
+    <!-- Provider Settings -->
+    <div class="drawer-section">
+      <div class="drawer-section-title">LLM Providers</div>
+      <div id="provider-list">
+        <div style="font-size:0.875rem;color:var(--text-muted)">Loading providers…</div>
+      </div>
+    </div>
+
+    <!-- Dataset -->
+    <div class="drawer-section">
+      <div class="drawer-section-title">Dataset</div>
+      <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)">
+        <select id="dataset-category" style="flex:1">
+          <option value="general">🗑️ General</option>
+          <option value="recycling">♻️ Recycling</option>
+          <option value="compost">🌱 Compost</option>
+        </select>
+        <button class="btn btn-primary" id="btn-save-dataset">💾 Save Frame</button>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-item">
+          <span class="label">General</span>
+          <span class="value" id="ds-general">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="label">Recycling</span>
+          <span class="value" id="ds-recycling" style="color:var(--cat-recycling)">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="label">Compost</span>
+          <span class="value" id="ds-compost" style="color:var(--cat-compost)">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="label">Total</span>
+          <span class="value" id="ds-total">0</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:var(--space-2);margin-top:var(--space-4)">
+        <a href="/api/dataset/export" class="btn" style="flex:1;text-align:center;text-decoration:none">⬇ Export ZIP</a>
+        <button class="btn" id="btn-clear-dataset" style="color:var(--status-error);border-color:rgba(239,68,68,0.3)">🗑 Clear</button>
+      </div>
+    </div>
+
+    <!-- Debug -->
+    <div class="drawer-section">
+      <div class="drawer-section-title">Debug</div>
+      <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-3)">
+        <select id="debug-endpoint" style="flex:1">
+          <option value="/api/health">GET /api/health</option>
+          <option value="/api/stats">GET /api/stats</option>
+          <option value="/api/servos">GET /api/servos</option>
+          <option value="/api/providers">GET /api/providers</option>
+          <option value="/api/camera">GET /api/camera</option>
+          <option value="/api/dataset/stats">GET /api/dataset/stats</option>
+          <option value="/api/mode">GET /api/mode</option>
+        </select>
+        <button class="btn" id="btn-debug-run">Run</button>
+      </div>
+      <pre class="debug-output" id="debug-output">Select an endpoint and click Run…</pre>
+
+      <div style="margin-top:var(--space-5)">
+        <div class="drawer-section-title" style="margin-bottom:var(--space-2)">SSE Events</div>
+        <div class="debug-output" id="sse-log" style="max-height:160px">Waiting for events…</div>
+      </div>
+    </div>
+  </div>
+</aside>

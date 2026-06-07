@@ -1,0 +1,22 @@
+{% extends "pi/base.html" %}
+
+{% block content %}
+<div class="dashboard">
+  {% include "pi/partials/header.html" %}
+
+  <main class="dashboard-main">
+    <div class="dashboard-primary">
+      {% include "pi/partials/camera_zone.html" %}
+      {% include "pi/partials/activity_panel.html" %}
+    </div>
+
+    <aside class="dashboard-sidebar">
+      {% include "pi/partials/system_panel.html" %}
+      {% include "pi/partials/control_panel.html" %}
+    </aside>
+  </main>
+
+  {% include "pi/partials/settings_drawer.html" %}
+  {% include "pi/partials/chat_drawer.html" %}
+</div>
+{% endblock %}

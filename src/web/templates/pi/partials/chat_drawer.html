@@ -1,0 +1,46 @@
+<!-- Binjamin Chat Drawer -->
+<div class="drawer-overlay" id="binjamin-overlay"></div>
+<aside class="drawer chat-drawer" id="binjamin-drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">
+      <span style="font-size:1.25rem;margin-right:var(--space-2)">🗑️</span>
+      Binjamin
+    </div>
+    <button class="btn btn-icon" id="btn-close-binjamin" title="Close">✕</button>
+  </div>
+
+  <div class="chat-messages" id="chat-messages">
+    <div class="chat-empty">
+      <div style="font-size:2rem;margin-bottom:var(--space-3)">🗑️</div>
+      <div style="color:var(--text-secondary);font-weight:500;margin-bottom:var(--space-1)">Hey! I'm Binjamin.</div>
+      <div style="color:var(--text-muted);font-size:0.8125rem;line-height:1.5">
+        Your friendly smart bin. Talk to me using the mic or type a message. I can see through my camera, move my head, and sort your rubbish!
+      </div>
+    </div>
+    <div class="chat-thinking" id="chat-thinking" style="display:none">
+      <span class="thinking-dot"></span>
+      <span class="thinking-dot"></span>
+      <span class="thinking-dot"></span>
+    </div>
+  </div>
+
+  <div class="chat-input-area">
+    <div class="chat-options">
+      <label class="chat-option">
+        <input type="checkbox" id="chat-camera-toggle" checked style="accent-color:var(--accent)">
+        <span>Send camera</span>
+      </label>
+    </div>
+    <form class="chat-input-row" id="chat-form">
+      <button type="button" class="btn btn-icon chat-mic-btn" id="chat-mic" title="Hold to talk">
+        🎙️
+      </button>
+      <input type="text" class="chat-text-input" id="chat-input"
+             placeholder="Say something to Binjamin…" autocomplete="off">
+      <button type="submit" class="btn btn-primary btn-icon" id="chat-send" title="Send">
+        ➤
+      </button>
+    </form>
+    <div id="mic-label" class="mic-label"></div>
+  </div>
+</aside>

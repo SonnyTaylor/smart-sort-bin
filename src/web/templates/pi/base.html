@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Bin — Control Surface</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🗑️%3C/text%3E%3C/svg%3E">
+
+  <!-- Fonts: Bodoni Moda (display), Sora (UI), JetBrains Mono (data) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Design system -->
+  <link rel="stylesheet" href="/static/css/pi-dashboard.css">
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block content %}{% endblock %}
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Module scripts -->
+  <script src="/static/js/pi/api.js"></script>
+  <script src="/static/js/pi/state.js"></script>
+  <script src="/static/js/pi/ui.js"></script>
+  <script src="/static/js/pi/sse.js"></script>
+  <script src="/static/js/pi/camera.js"></script>
+  <script src="/static/js/pi/servos.js"></script>
+  <script src="/static/js/pi/input-keyboard.js"></script>
+  <script src="/static/js/pi/input-gamepad.js"></script>
+  <script src="/static/js/pi/led.js"></script>
+  <script src="/static/js/pi/activity.js"></script>
+  <script src="/static/js/pi/settings.js"></script>
+  <script src="/static/js/pi/fun-controls.js"></script>
+  <script src="/static/js/pi/binjamin.js"></script>
+  <script src="/static/js/pi/dashboard.js"></script>
+</body>
+</html>

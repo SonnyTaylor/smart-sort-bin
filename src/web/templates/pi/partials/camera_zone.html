@@ -1,0 +1,69 @@
+<section class="zone" id="camera-zone">
+  <div class="zone-header">
+    <span class="zone-title">Camera Feed</span>
+    <div style="display:flex;align-items:center;gap:var(--space-3)">
+      <select id="provider-select">
+        <option value="">Loading providers…</option>
+      </select>
+      <button class="btn btn-icon" id="btn-snapshot" title="Snapshot">📸</button>
+      <button class="btn" id="btn-binjamin">🗑️ Binjamin</button>
+      <button class="btn" id="btn-face-track">😶‍🌫️ Face Track</button>
+      <div id="face-track-speed" style="display:none;align-items:center;gap:var(--space-2)">
+        <span style="font-size:0.6875rem;color:var(--text-muted)">Speed</span>
+        <input type="range" id="track-speed-slider" min="0.1" max="1.0" step="0.1" value="0.5" style="width:60px">
+        <span id="track-speed-val" class="font-mono" style="font-size:0.6875rem;min-width:24px">0.5</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="camera-zone" id="cam-container">
+    <img id="cam-stream" src="/api/camera/stream" alt="Camera Stream"
+         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 480%22%3E%3Crect fill=%22%230a0a0a%22 width=%22640%22 height=%22480%22/%3E%3Ctext x=%22320%22 y=%22240%22 text-anchor=%22middle%22 fill=%22%23333%22 font-family=%22monospace%22 font-size=%2214%22%3ENO CAMERA SIGNAL%3C/text%3E%3C/svg%3E'">
+
+    <!-- Viewfinder overlay -->
+    <div class="viewfinder-overlay">
+      <div class="corner-bracket cb-tl"></div>
+      <div class="corner-bracket cb-tr"></div>
+      <div class="corner-bracket cb-bl"></div>
+      <div class="corner-bracket cb-br"></div>
+    </div>
+
+    <!-- Live badge -->
+    <div class="live-badge" id="cam-live-badge">
+      <span class="indicator indicator-pulse" style="color:var(--status-error);background:var(--status-error)"></span>
+      <span>Live</span>
+    </div>
+
+    <!-- Face tracking badge -->
+    <div class="face-track-badge" id="face-track-badge">
+      <span class="indicator indicator-pulse" style="color:var(--status-ok);background:var(--status-ok)"></span>
+      <span id="face-track-status">Tracking</span>
+    </div>
+
+    <!-- Classification result overlay -->
+    <div class="class-overlay" id="class-overlay">
+      <div class="category" id="class-category"></div>
+      <div class="detail" id="class-detail"></div>
+      <div class="meta" id="class-meta"></div>
+    </div>
+
+    <!-- Sort stage indicator -->
+    <div class="sort-stage-indicator" id="sort-stage" style="display:none;position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-default)">
+      <span id="sort-stage-text">Sorting…</span>
+    </div>
+  </div>
+
+  <div class="cam-toolbar">
+    <div class="toolbar-group" style="flex:1">
+      <button class="btn btn-primary btn-large" id="btn-snap-sort" style="flex:1;max-width:280px">
+        <span>🎯</span>
+        <span>Snap &amp; Sort</span>
+      </button>
+      <button class="btn" id="btn-classify">🔍 Classify Only</button>
+    </div>
+    <div class="toolbar-sep"></div>
+    <div class="toolbar-group">
+      <button class="btn btn-icon" id="btn-cam-fullscreen" title="Fullscreen">⛶</button>
+    </div>
+  </div>
+</section>

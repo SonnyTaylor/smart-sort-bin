@@ -20,6 +20,7 @@ from flask import Flask, Response, jsonify, render_template, request, send_file
 import config
 import database
 import llm
+import binjamin as binjamin_module
 
 # Allow importing from src/pi when running on the Pi
 if config.PI_MODE:
@@ -32,6 +33,13 @@ else:
     import mock_hardware as hw
 
 app = Flask(__name__)
+
+# Initialize Binjamin personality engine
+if config.PI_MODE:
+    binjamin_module.init(hw)
+else:
+    # In mock mode, pass a lightweight shim so the endpoint still works
+    binjamin_module.init(hw)
 
 # Ensure dataset directories exist
 for cat in config.CATEGORIES:
@@ -538,6 +546,18 @@ def pi_dashboard():
     return render_template("pi_dashboard.html")
 
 
+@app.route("/pi/v2")
+def pi_dashboard_v2():
+    """New precision-industrial dashboard."""
+    return render_template("pi/dashboard.html")
+
+
+@app.route("/binjamin")
+def binjamin_page():
+    """Binjamin — dedicated chat + camera page."""
+    return render_template("pi/binjamin.html")
+
+
 # ---------------------------------------------------------------------------
 # REST API - LLM Provider Settings
 # ---------------------------------------------------------------------------
@@ -738,6 +758,43 @@ def api_test_provider(provider_id):
         return jsonify({"error": "Connection refused. Check the API URL."}), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 502
+
+
+# ---------------------------------------------------------------------------
+# REST API - Binjamin Chat
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    """Send a message to Binjamin and get a response with tool calls."""
+    data = request.get_json(force=True)
+    message = data.get("message", "")
+    image_b64 = data.get("image", None)
+    conversation = data.get("conversation", [])
+
+    if not message and not image_b64:
+        return jsonify({"error": "No message or image provided"}), 400
+
+    # Get active LLM provider
+    provider = database.get_active_provider()
+    if not provider:
+        return jsonify({"error": "No active LLM provider configured"}), 400
+
+    result = binjamin_module.chat(
+        message=message or "What do you see?",
+        image_b64=image_b64,
+        conversation=conversation,
+        provider_id=provider["id"],
+        api_key=provider["api_key"],
+        # Binjamin uses its own default model, not the provider's
+        base_url=provider["base_url"],
+    )
+
+    if result.get("error"):
+        return jsonify(result), 502
+
+    return jsonify(result)
 
 
 # ---------------------------------------------------------------------------

@@ -26,6 +26,7 @@ LOCAL_DIR="$(cd "$(dirname "$0")" && pwd)"
 FILES=(
   "src/pi/hardware.py"
   "src/web/app.py"
+  "src/web/binjamin.py"
   "src/web/config.py"
   "src/web/database.py"
   "src/web/llm.py"
