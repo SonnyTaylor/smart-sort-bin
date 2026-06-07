@@ -89,6 +89,61 @@
     }
     .dpad-btn:active { transform: scale(0.92); }
 
+    /* Virtual joystick */
+    .joystick-container {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+      border: 2px solid #334155;
+      position: relative;
+      cursor: pointer;
+      touch-action: none;
+      user-select: none;
+    }
+    .joystick-knob {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #818cf8 0%, #6366f1 100%);
+      border: 2px solid #a5b4fc;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+      transition: box-shadow 0.1s;
+    }
+    .joystick-knob.active {
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.7);
+    }
+    .joystick-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .joystick-crosshair::before,
+    .joystick-crosshair::after {
+      content: '';
+      position: absolute;
+      background: #334155;
+    }
+    .joystick-crosshair::before {
+      width: 1px;
+      height: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .joystick-crosshair::after {
+      height: 1px;
+      width: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
     /* LED color swatch */
     .led-swatch {
       width: 40px;
@@ -205,12 +260,28 @@
               <button onclick="captureSnapshot()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm transition-colors">
                 📸 Snapshot
               </button>
+              <button onclick="toggleFaceTracking()" id="faceTrackBtn"
+                      class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm transition-colors">
+                😶‍🌫️ Face Track
+              </button>
+              <div id="faceTrackSpeed" class="hidden flex items-center gap-2">
+                <span class="text-xs text-gray-400">Speed</span>
+                <input type="range" id="trackSpeedSlider" min="0.1" max="1.0" step="0.1" value="0.5"
+                       class="w-20" onchange="updateTrackSpeed(this.value)">
+                <span id="trackSpeedVal" class="text-xs text-white font-mono w-6">0.5</span>
+              </div>
             </div>
           </div>
           <div class="relative bg-black">
             <img id="stream" src="/api/camera/stream" alt="Camera Stream"
                  class="w-full aspect-video object-contain bg-black"
                  onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 480%22><rect fill=%22%23111%22 width=%22640%22 height=%22480%22/><text x=%22320%22 y=%22240%22 text-anchor=%22middle%22 fill=%22%23555%22 font-size=%2220%22>No Camera</text></svg>'">
+            <!-- Face tracking indicator -->
+            <div id="faceTrackIndicator" class="hidden absolute top-3 right-3 bg-green-600/80 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-white pulse-dot"></span>
+              <span id="faceTrackStatus">Tracking</span>
+            </div>
+
             <!-- Classification result overlay -->
             <div id="classOverlay" class="hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
               <div id="classResult" class="text-lg font-bold"></div>
@@ -254,9 +325,29 @@
           <div class="p-5">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-              <!-- Column 1: D-Pad + Keyboard -->
+              <!-- Column 1: Joystick + D-Pad + Keyboard -->
               <div>
-                <div class="text-xs text-gray-500 uppercase tracking-wider mb-3">Direction Pad</div>
+                <!-- Virtual Joystick -->
+                <div class="text-xs text-gray-500 uppercase tracking-wider mb-3">Joystick</div>
+                <div class="flex flex-col items-center">
+                  <div class="joystick-container" id="joystick">
+                    <div class="joystick-crosshair"></div>
+                    <div class="joystick-knob" id="joystickKnob"></div>
+                  </div>
+                  <div class="mt-2 text-xs text-gray-500 font-mono">
+                    Pan: <span id="joyPan" class="text-white">0.00</span>
+                    &nbsp;Tilt: <span id="joyTilt" class="text-white">0.00</span>
+                  </div>
+                  <div class="mt-1">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" id="joyEnabled" checked class="rounded bg-gray-700 border-gray-600 text-indigo-500">
+                      <span class="text-xs text-gray-400">Joystick enabled</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- D-Pad -->
+                <div class="text-xs text-gray-500 uppercase tracking-wider mb-3 mt-4">Direction Pad</div>
                 <div class="flex flex-col items-center gap-1">
                   <button class="dpad-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg"
                           onclick="nudge('tilt', 0.1)">▲</button>
@@ -271,12 +362,7 @@
                   <button class="dpad-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg"
                           onclick="nudge('tilt', -0.1)">▼</button>
                 </div>
-                <div class="mt-3 flex justify-center gap-2">
-                  <button onclick="nudge('pan', -0.25)" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-2 py-1">Pan -25</button>
-                  <button onclick="nudge('pan', 0.25)" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-2 py-1">Pan +25</button>
-                  <button onclick="nudge('tilt', -0.25)" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-2 py-1">Tilt -25</button>
-                  <button onclick="nudge('tilt', 0.25)" class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-2 py-1">Tilt +25</button>
-                </div>
+
                 <!-- Keyboard shortcuts -->
                 <div class="mt-4 bg-gray-800/50 rounded-lg p-3">
                   <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Keyboard</div>
@@ -287,11 +373,16 @@
                     <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">H</kbd> Home</div>
                     <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">1</kbd>/<kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">2</kbd>/<kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">3</kbd> Sort</div>
                     <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">Space</kbd> Snap</div>
+                    <div><kbd class="bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">F</kbd> Face Track</div>
                   </div>
-                  <div class="mt-2">
+                  <div class="mt-2 flex flex-col gap-1.5">
                     <label class="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" id="kbEnabled" checked class="rounded bg-gray-700 border-gray-600 text-indigo-500">
                       <span class="text-xs text-gray-400">Keyboard enabled</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" id="kbContinuous" class="rounded bg-gray-700 border-gray-600 text-indigo-500">
+                      <span class="text-xs text-gray-400">Hold to move (continuous)</span>
                     </label>
                   </div>
                 </div>
@@ -1059,30 +1150,258 @@
     }
 
     // =========================================================================
-    // Keyboard Controls
+    // Keyboard Controls (nudge + continuous mode)
     // =========================================================================
+    const keysDown = new Set();
+    let kbContinuousInterval = null;
+    const KB_CONTINUOUS_RATE = 50; // ms between nudges when holding
+
+    function getKbContinuous() {
+      return document.getElementById('kbContinuous').checked;
+    }
+
+    function startContinuousLoop() {
+      if (kbContinuousInterval) return;
+      kbContinuousInterval = setInterval(() => {
+        if (!document.getElementById('kbEnabled').checked) return;
+        const step = nudgeStep;
+        if (keysDown.has('w') || keysDown.has('arrowup')) nudge('tilt', step);
+        if (keysDown.has('s') || keysDown.has('arrowdown')) nudge('tilt', -step);
+        if (keysDown.has('a') || keysDown.has('arrowleft')) nudge('pan', -step);
+        if (keysDown.has('d') || keysDown.has('arrowright')) nudge('pan', step);
+        if (keysDown.has('q')) nudge('pan', -0.25);
+        if (keysDown.has('e')) nudge('pan', 0.25);
+      }, KB_CONTINUOUS_RATE);
+    }
+
+    function stopContinuousLoop() {
+      if (kbContinuousInterval) {
+        clearInterval(kbContinuousInterval);
+        kbContinuousInterval = null;
+      }
+    }
+
     document.addEventListener('keydown', (e) => {
-      // Skip if typing in an input
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
       if (!document.getElementById('kbEnabled').checked) return;
 
-      switch(e.key.toLowerCase()) {
+      const key = e.key.toLowerCase();
+
+      // Continuous mode: track held keys
+      if (getKbContinuous() && ['w','a','s','d','q','e','arrowup','arrowdown','arrowleft','arrowright'].includes(key)) {
+        e.preventDefault();
+        if (!keysDown.has(key)) {
+          keysDown.add(key);
+          startContinuousLoop();
+        }
+        return;
+      }
+
+      // Nudge mode (default): single press actions
+      switch(key) {
         case 'w': nudge('tilt', nudgeStep); break;
         case 's': nudge('tilt', -nudgeStep); break;
         case 'a': nudge('pan', -nudgeStep); break;
         case 'd': nudge('pan', nudgeStep); break;
         case 'q': nudge('pan', -0.25); break;
         case 'e': nudge('pan', 0.25); break;
+        case 'arrowup': nudge('tilt', nudgeStep); break;
+        case 'arrowdown': nudge('tilt', -nudgeStep); break;
+        case 'arrowleft': nudge('pan', -nudgeStep); break;
+        case 'arrowright': nudge('pan', nudgeStep); break;
         case 'h': homeServos(); break;
-        case '1': moveToCategory('general'); break;  // Full sort sequence
-        case '2': moveToCategory('recycling'); break; // Full sort sequence
-        case '3': moveToCategory('compost'); break;   // Full sort sequence
+        case '1': moveToCategory('general'); break;
+        case '2': moveToCategory('recycling'); break;
+        case '3': moveToCategory('compost'); break;
         case ' ':
           e.preventDefault();
           sort();
           break;
       }
     });
+
+    document.addEventListener('keyup', (e) => {
+      const key = e.key.toLowerCase();
+      keysDown.delete(key);
+      if (keysDown.size === 0) stopContinuousLoop();
+    });
+
+    // Stop continuous on window blur (safety)
+    window.addEventListener('blur', () => {
+      keysDown.clear();
+      stopContinuousLoop();
+    });
+
+    // =========================================================================
+    // Virtual Joystick
+    // =========================================================================
+    const joyEl = document.getElementById('joystick');
+    const joyKnob = document.getElementById('joystickKnob');
+    let joyActive = false;
+    let joyRect = null;
+    const JOY_RADIUS = 56; // max knob travel distance
+
+    function updateJoystick(x, y) {
+      // x, y are -1 to 1
+      document.getElementById('joyPan').textContent = x.toFixed(2);
+      document.getElementById('joyTilt').textContent = y.toFixed(2);
+
+      // Move knob visually
+      const px = x * JOY_RADIUS;
+      const py = -y * JOY_RADIUS; // invert Y (up = positive tilt)
+      joyKnob.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
+
+      // Send servo commands
+      if (document.getElementById('joyEnabled').checked) {
+        currentPan = Math.max(-1, Math.min(1, x));
+        currentTilt = Math.max(-1, Math.min(1, y));
+        updateServoDisplays();
+        sendServo('pan', currentPan);
+        sendServo('tilt', currentTilt);
+      }
+    }
+
+    function joyStart(e) {
+      if (!document.getElementById('joyEnabled').checked) return;
+      e.preventDefault();
+      joyActive = true;
+      joyRect = joyEl.getBoundingClientRect();
+      joyKnob.classList.add('active');
+      joyMove(e);
+    }
+
+    function joyMove(e) {
+      if (!joyActive) return;
+      e.preventDefault();
+      const touch = e.touches ? e.touches[0] : e;
+      const cx = joyRect.left + joyRect.width / 2;
+      const cy = joyRect.top + joyRect.height / 2;
+      let dx = (touch.clientX - cx) / JOY_RADIUS;
+      let dy = -(touch.clientY - cy) / JOY_RADIUS; // invert Y
+
+      // Clamp to circle
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 1) { dx /= dist; dy /= dist; }
+
+      updateJoystick(dx, dy);
+    }
+
+    function joyEnd() {
+      if (!joyActive) return;
+      joyActive = false;
+      joyKnob.classList.remove('active');
+      joyKnob.style.transform = 'translate(-50%, -50%)';
+      // Return to center
+      updateJoystick(0, 0);
+    }
+
+    joyEl.addEventListener('mousedown', joyStart);
+    document.addEventListener('mousemove', joyMove);
+    document.addEventListener('mouseup', joyEnd);
+    joyEl.addEventListener('touchstart', joyStart, {passive: false});
+    document.addEventListener('touchmove', joyMove, {passive: false});
+    document.addEventListener('touchend', joyEnd);
+
+    // Joystick throttle - only send updates at ~30fps
+    let joyThrottleTimer = null;
+    const origUpdateJoystick = updateJoystick;
+    updateJoystick = function(x, y) {
+      if (joyThrottleTimer) return;
+      joyThrottleTimer = setTimeout(() => {
+        joyThrottleTimer = null;
+        origUpdateJoystick(x, y);
+      }, 33);
+    };
+
+    // =========================================================================
+    // Face Tracking
+    // =========================================================================
+    let faceTrackingActive = false;
+    let faceTrackPollInterval = null;
+
+    async function toggleFaceTracking() {
+      faceTrackingActive = !faceTrackingActive;
+      const btn = document.getElementById('faceTrackBtn');
+      const indicator = document.getElementById('faceTrackIndicator');
+
+      try {
+        const res = await fetch('/api/face-tracking', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({active: faceTrackingActive})
+        });
+        const data = await res.json();
+
+        if (data.status === 'started') {
+          btn.className = 'bg-green-600 hover:bg-green-500 border border-green-500 text-white rounded-lg px-3 py-1.5 text-sm transition-colors';
+          btn.textContent = '🎯 Tracking';
+          indicator.classList.remove('hidden');
+          document.getElementById('faceTrackSpeed').classList.remove('hidden');
+          document.getElementById('faceTrackStatus').textContent = 'Searching...';
+          startFaceTrackPoll();
+          toast('Face tracking enabled', 'success');
+        } else if (data.status === 'stopped') {
+          btn.className = 'bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm transition-colors';
+          btn.textContent = '😶‍🌫️ Face Track';
+          indicator.classList.add('hidden');
+          document.getElementById('faceTrackSpeed').classList.add('hidden');
+          stopFaceTrackPoll();
+          toast('Face tracking disabled', 'info');
+        } else {
+          toast('Face tracker not available', 'error');
+          faceTrackingActive = false;
+        }
+      } catch (e) {
+        toast('Face tracking error: ' + e.message, 'error');
+        faceTrackingActive = false;
+      }
+    }
+
+    function startFaceTrackPoll() {
+      stopFaceTrackPoll();
+      faceTrackPollInterval = setInterval(async () => {
+        try {
+          const res = await fetch('/api/face-tracking');
+          const data = await res.json();
+          const statusEl = document.getElementById('faceTrackStatus');
+          if (data.face_detected) {
+            statusEl.textContent = `Face: ${data.face_x.toFixed(1)}, ${data.face_y.toFixed(1)}`;
+          } else {
+            statusEl.textContent = 'Searching...';
+          }
+          // Update displays with current servo positions
+          document.getElementById('panDisplay').textContent = currentPan.toFixed(2);
+          document.getElementById('tiltDisplay').textContent = currentTilt.toFixed(2);
+        } catch (e) { /* silent */ }
+      }, 500);
+    }
+
+    function stopFaceTrackPoll() {
+      if (faceTrackPollInterval) {
+        clearInterval(faceTrackPollInterval);
+        faceTrackPollInterval = null;
+      }
+    }
+
+    // Keyboard shortcut for face tracking
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key.toLowerCase() === 'f') {
+        toggleFaceTracking();
+      }
+    });
+
+    async function updateTrackSpeed(val) {
+      val = parseFloat(val);
+      document.getElementById('trackSpeedVal').textContent = val.toFixed(1);
+      try {
+        await fetch('/api/face-tracking/config', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({tracking_speed: val})
+        });
+      } catch (e) { /* silent */ }
+    }
 
     // =========================================================================
     // Gamepad Controls

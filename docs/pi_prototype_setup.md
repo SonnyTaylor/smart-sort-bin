@@ -69,11 +69,15 @@ Capacitor:
 
 ### Installed Packages
 ```bash
-sudo apt install -y python3-pip python3-venv fswebcam v4l-utils libopenjp2-7
+sudo apt install -y python3-pip python3-venv v4l-utils libopenjp2-7
 pip install flask httpx pigpio paramiko --break-system-packages
 ```
 
-**Note:** Do NOT install `python3-opencv` — it deadlocks on import on Pi 3B headless. Use `v4l2-ctl` instead (see `docs/pi_cv2_hang.md`).
+**OpenCV:** Use `opencv-python-headless` from pip, NOT the apt version:
+```bash
+sudo apt-get remove -y python3-opencv  # remove apt version (deadlocks)
+pip install opencv-python-headless --break-system-packages  # works fine
+```
 
 ### pigpio Daemon
 The daemon must be running for jitter-free servo control:
@@ -220,9 +224,10 @@ Edit `CATEGORY_PRESETS` in `src/pi/hardware.py` to adjust:
 - `ls /dev/video*` should show `/dev/video0` plus internal Pi devices
 - If only internal devices (video10+), webcam is not plugged in or not powered
 
-### cv2 import hangs
-- See `docs/pi_cv2_hang.md` — do NOT use `python3-opencv` on headless Pi 3B
-- Use `v4l2-ctl` for camera access instead
+### cv2 import hangs (FIXED)
+- The apt `python3-opencv` (4.10.0) deadlocks on import — do NOT use it
+- Fix: `pip install opencv-python-headless` (4.13.0 works fine)
+- See `docs/pi_cv2_hang.md` for details
 
 ### Camera stream dark/flashing
 - Camera needs time for auto-exposure to adjust

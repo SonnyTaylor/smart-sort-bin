@@ -1,0 +1,19 @@
+[Unit]
+Description=Smart Bin Flask Dashboard
+After=network.target pigpiod.service
+Wants=pigpiod.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/smartbin/src/web
+ExecStart=/usr/bin/python3 -u app.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=append:/home/pi/flask.log
+StandardError=append:/home/pi/flask.log
+
+[Install]
+WantedBy=multi-user.target

@@ -148,6 +148,23 @@ def api_camera_stream():
         while True:
             frame_bytes = hw.get_camera_jpeg_bytes()
             if frame_bytes and frame_bytes != last_sent:
+                # Draw face tracking overlay if active
+                try:
+                    ft = hw.get_hw().face_tracker
+                    if ft.active and ft.face_box:
+                        import cv2
+                        import numpy as np
+                        nparr = np.frombuffer(frame_bytes, np.uint8)
+                        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                        if frame is not None:
+                            x, y, w, h = ft.face_box
+                            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                            cv2.putText(frame, 'FACE', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                            _, buf = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                            frame_bytes = buf.tobytes()
+                except Exception:
+                    pass  # Fall through with original frame
+
                 yield (
                     b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
                 )
@@ -156,6 +173,61 @@ def api_camera_stream():
                 time.sleep(0.1)
 
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+
+@app.route("/api/face-tracking", methods=["GET"])
+def api_face_tracking_status():
+    """Get face tracking status."""
+    ft = hw.get_hw().face_tracker
+    return jsonify(ft.get_status())
+
+
+@app.route("/api/face-tracking", methods=["POST"])
+def api_face_tracking_toggle():
+    """Toggle face tracking on/off.
+    Expects JSON: {"active": true/false}
+    """
+    data = request.get_json(force=True)
+    ft = hw.get_hw().face_tracker
+
+    if data.get("active"):
+        if ft.start():
+            broadcast_sse("face_tracking", {"active": True})
+            return jsonify({"status": "started", "available": ft.available})
+        else:
+            return jsonify({"status": "error", "message": "Face tracker not available"}), 400
+    else:
+        ft.stop()
+        broadcast_sse("face_tracking", {"active": False})
+        return jsonify({"status": "stopped"})
+
+
+@app.route("/api/face-tracking/config", methods=["POST"])
+def api_face_tracking_config():
+    """Update face tracking parameters.
+    Expects JSON: {"tracking_speed": 0.5, "deadzone": 0.04, "kp": 1.5, "ki": 0.1, "kd": 0.8}
+    """
+    data = request.get_json(force=True)
+    ft = hw.get_hw().face_tracker
+
+    if "tracking_speed" in data:
+        ft.tracking_speed = max(0.1, min(1.0, float(data["tracking_speed"])))
+    if "deadzone" in data:
+        ft.deadzone = max(0.01, min(0.2, float(data["deadzone"])))
+    if "kp" in data:
+        kp = max(0.1, min(5.0, float(data["kp"])))
+        ft._pid_pan.kp = kp
+        ft._pid_tilt.kp = kp
+    if "ki" in data:
+        ki = max(0.0, min(2.0, float(data["ki"])))
+        ft._pid_pan.ki = ki
+        ft._pid_tilt.ki = ki
+    if "kd" in data:
+        kd = max(0.0, min(3.0, float(data["kd"])))
+        ft._pid_pan.kd = kd
+        ft._pid_tilt.kd = kd
+
+    return jsonify(ft.get_status())
 
 
 @app.route("/api/classify", methods=["POST"])
