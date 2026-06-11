@@ -247,7 +247,7 @@ Type=simple
 User=pi
 WorkingDirectory=/home/pi/smartbin/src/web
 ExecStartPre=/bin/rm -rf /home/pi/smartbin/src/web/__pycache__
-ExecStart=/usr/bin/python3 -u app.py
+ExecStart=/usr/bin/python3 -u app.py --pi
 Restart=on-failure
 RestartSec=3
 Environment=PYTHONUNBUFFERED=1

@@ -39,7 +39,14 @@ OPENROUTER_MODEL = "meta-llama/llama-4-scout"
 LLM_TIMEOUT_SECONDS = 3
 
 # Pi prototype mode - uses real servos/camera/LED via src/pi/hardware.py
-PI_MODE = True
-
-# Mock mode - set to False when running on real hardware
-MOCK_MODE = False
+# Override with: python app.py --mock  or  python app.py --pi
+import sys as _sys
+if "--mock" in _sys.argv:
+    PI_MODE = False
+    MOCK_MODE = True
+elif "--pi" in _sys.argv:
+    PI_MODE = True
+    MOCK_MODE = False
+else:
+    PI_MODE = False
+    MOCK_MODE = True

@@ -162,7 +162,7 @@ cmd_restart() {
   sleep 1
 
   # Start fresh
-  ssh_cmd "cd $PI_DIR/src/web && nohup python3 -u app.py > /tmp/flask.log 2>&1 &"
+  ssh_cmd "cd $PI_DIR/src/web && nohup python3 -u app.py --pi > /tmp/flask.log 2>&1 &"
   sleep 3
 
   # Verify
