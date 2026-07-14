@@ -73,11 +73,8 @@ sudo apt install -y python3-pip python3-venv v4l-utils libopenjp2-7
 pip install flask httpx pigpio paramiko --break-system-packages
 ```
 
-**OpenCV:** Use `opencv-python-headless` from pip, NOT the apt version:
-```bash
-sudo apt-get remove -y python3-opencv  # remove apt version (deadlocks)
-pip install opencv-python-headless --break-system-packages  # works fine
-```
+**OpenCV:** No longer required — camera capture uses `v4l2-ctl` directly.
+(If you ever need cv2 on the Pi 3B, use pip's `opencv-python-headless`, never the apt version — see `docs/pi_cv2_hang.md`.)
 
 ### pigpio Daemon
 The daemon must be running for jitter-free servo control:
@@ -118,21 +115,21 @@ chan.send('Futiz$23\n')
 └── src/
     ├── pi/
     │   ├── __init__.py
-    │   └── hardware.py       # Real servo, camera (v4l2), LED control
+    │   └── hardware.py       # Servos (pigpio + slew smoothing), v4l2 camera, LED
     └── web/
         ├── app.py            # Flask API + dashboard routes
-        ├── config.py         # PI_MODE=True, MOCK_MODE=False
-        ├── database.py       # SQLite sort history
-        ├── llm.py            # OpenRouter/LLM provider abstraction
-        └── templates/
-            └── pi_dashboard.html   # Full dashboard (HTMX + Tailwind)
+        ├── animations.py     # Server-side keyframe animation engine
+        ├── config.py         # --mock / --pi mode flags
+        ├── database.py       # SQLite: history, calibration, sequences, providers
+        ├── llm.py            # VLM provider abstraction
+        ├── templates/pi/     # Dashboard templates + partials
+        └── static/           # app.css + js/pi/ modules
 ```
 
 ### File Structure Locally
 ```
 smart-sort-bin/
-├── deploy.py               # Deployment script
-├── deploy.sh               # Bash deployment script
+├── deploy.py               # Deployment script (directory sync + restart)
 ├── docs/
 │   ├── handoff.md          # Main handoff doc
 │   ├── pi_prototype_setup.md
@@ -144,25 +141,30 @@ smart-sort-bin/
 ### Key Endpoints
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/pi` | GET | Full dashboard (HTMX + Tailwind) |
+| `/` | GET | Dashboard |
 | `/api/health` | GET | CPU temp, uptime, WiFi, pigpio status |
 | `/api/camera/stream` | GET | MJPEG live stream (v4l2 mmap) |
-| `/api/servos/pan` | POST | `{"value": -1.0 to 1.0}` |
-| `/api/servos/tilt` | POST | `{"value": -1.0 to 1.0}` |
-| `/api/home` | POST | Center both servos + LED off |
+| `/api/servos` | GET | Current position + targets |
+| `/api/servos/move` | POST | `{"pan": -1..1, "tilt": -1..1}` (either optional) |
+| `/api/home` | POST | Center both servos |
 | `/api/led` | POST | `{"color": "red|yellow|green|blue|purple|white|off"}` |
-| `/api/sort` | POST | Full sort: capture → classify → pan → dump → home |
+| `/api/sort` | POST | Full sort: capture -> classify -> pan -> dump -> home |
 | `/api/classify` | POST | Classify base64 image or device capture |
+| `/api/compare` | POST | Same frame through two providers in parallel |
+| `/api/animations` | GET | Built-ins + saved sequences + playback state |
+| `/api/animations/play` | POST | `{"name"}` or `{"id"}` or `{"keyframes": [...]}` |
+| `/api/animations/stop` | POST | Stop playback |
+| `/api/animations/custom` | POST/DELETE | Save / delete custom sequences |
+| `/api/calibration` | GET/PUT | Bin positions + sequence timing |
+| `/api/calibration/test/<cat>` | POST | Run the full sort sequence for a bin |
 | `/api/events` | GET | SSE stream for real-time updates |
-| `/api/stats` | GET | Sort history statistics |
-| `/api/history` | GET | Recent sort events |
-| `/api/providers` | GET/POST | LLM provider settings |
-| `/api/dataset/*` | Various | Dataset management |
+| `/api/stats`, `/api/stats/hourly`, `/api/history` | GET | Sort statistics |
+| `/api/providers` | GET/PATCH | LLM provider settings |
 
 ### Starting the Server
 ```bash
 cd /home/pi/smartbin/src/web
-python3 -u app.py
+python3 -u app.py --pi
 ```
 Runs on `http://192.168.0.88:8080`
 

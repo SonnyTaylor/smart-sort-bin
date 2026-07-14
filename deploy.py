@@ -29,40 +29,34 @@ PI_USER = "pi"
 PI_PASS = "Futiz$23"
 PI_DIR = "/home/pi/smartbin"
 
-# Files to sync (relative to project root)
-FILES = [
-    # Core Python
-    "src/pi/hardware.py",
-    "src/web/app.py",
-    "src/web/config.py",
-    "src/web/database.py",
-    "src/web/llm.py",
-    # Dashboard templates
-    "src/web/templates/pi/base.html",
-    "src/web/templates/pi/dashboard.html",
-    "src/web/templates/pi/partials/header.html",
-    "src/web/templates/pi/partials/camera_zone.html",
-    "src/web/templates/pi/partials/system_panel.html",
-    "src/web/templates/pi/partials/control_panel.html",
-    "src/web/templates/pi/partials/activity_panel.html",
-    "src/web/templates/pi/partials/settings_drawer.html",
-    # Dashboard CSS
-    "src/web/static/css/pi-dashboard.css",
-    # Dashboard JS modules
-    "src/web/static/js/pi/api.js",
-    "src/web/static/js/pi/state.js",
-    "src/web/static/js/pi/ui.js",
-    "src/web/static/js/pi/sse.js",
-    "src/web/static/js/pi/camera.js",
-    "src/web/static/js/pi/servos.js",
-    "src/web/static/js/pi/input-keyboard.js",
-    "src/web/static/js/pi/input-gamepad.js",
-    "src/web/static/js/pi/led.js",
-    "src/web/static/js/pi/activity.js",
-    "src/web/static/js/pi/settings.js",
-    "src/web/static/js/pi/fun-controls.js",
-    "src/web/static/js/pi/dashboard.js",
+# Directories to sync (relative to project root). Every file inside is
+# uploaded, so new modules/templates deploy without touching this list.
+SYNC_DIRS = [
+    "src/pi",
+    "src/web",
 ]
+
+# Skip these anywhere in a synced tree
+SKIP_DIRS = {".venv", "__pycache__", ".pytest_cache", "node_modules", "dataset"}
+SKIP_SUFFIXES = {".db", ".db-wal", ".db-shm", ".pyc", ".log"}
+
+
+def collect_files(project_root):
+    """Walk SYNC_DIRS and return project-relative paths to upload."""
+    files = []
+    for base in SYNC_DIRS:
+        base_path = os.path.join(project_root, base)
+        if not os.path.isdir(base_path):
+            continue
+        for root, dirs, names in os.walk(base_path):
+            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            for name in names:
+                if any(name.endswith(s) for s in SKIP_SUFFIXES):
+                    continue
+                full = os.path.join(root, name)
+                rel = os.path.relpath(full, project_root).replace(os.sep, "/")
+                files.append(rel)
+    return files
 
 # Colors
 GREEN = "\033[92m"
@@ -156,23 +150,23 @@ def cmd_upload(client):
     log("Uploading files to Pi...")
 
     project_root = os.path.dirname(os.path.abspath(__file__))
+    files = collect_files(project_root)
     sftp = client.open_sftp()
     uploaded = 0
+    known_dirs = set()
 
-    for file in FILES:
+    for file in files:
         local_path = os.path.join(project_root, file)
         remote_path = f"{PI_DIR}/{file}"
 
-        if not os.path.exists(local_path):
-            warn(f"Skip (not found): {file}")
-            continue
-
-        # Create remote directory
+        # Create remote directory (cache checks to avoid a stat per file)
         remote_dir = os.path.dirname(remote_path)
-        try:
-            sftp.stat(remote_dir)
-        except FileNotFoundError:
-            ssh_exec(client, f"mkdir -p {remote_dir}")
+        if remote_dir not in known_dirs:
+            try:
+                sftp.stat(remote_dir)
+            except FileNotFoundError:
+                ssh_exec(client, f"mkdir -p {remote_dir}")
+            known_dirs.add(remote_dir)
 
         sftp.put(local_path, remote_path)
         ok(file)
