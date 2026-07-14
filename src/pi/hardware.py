@@ -40,6 +40,7 @@ def _pw_to_val(pw):
 #                        pan -1    pan 0       pan +1
 #
 # Tilt: 0.0 = horizontal (rest), -1.0 = fully tipped (dump)
+# Used as fallbacks; live values come from the calibration store (database).
 CATEGORY_PRESETS = {
     "general":   {"pan": -0.7, "tilt_dump": -0.6, "tilt_rest": 0.0},
     "recycling": {"pan":  0.0, "tilt_dump": -0.6, "tilt_rest": 0.0},
@@ -50,6 +51,14 @@ CATEGORY_PRESETS = {
 SORT_PAN_SETTLE_S = 0.5   # Wait for pan to reach position
 SORT_DUMP_HOLD_S  = 1.0   # Hold tilt to let item fall
 SORT_RETURN_S     = 0.5   # Wait for tilt to return
+
+# Servo motion smoothing (slew-rate limiting).
+# Manual control used to jump the pulsewidth straight to the target, which
+# snaps the servos. The motion thread instead steps toward the target at a
+# bounded rate so every move is smooth regardless of input source.
+SLEW_ENABLED = True
+SLEW_RATE = 2.5        # units/second (-1..1 scale); full sweep -1 -> +1 in 0.8s
+SLEW_TICK_HZ = 50      # motion thread update rate
 
 LED_COLORS = {
     "off": (0, 0, 0),
@@ -196,15 +205,24 @@ class LEDController:
 
 
 class Hardware:
-    """Main hardware interface using pigpio for servos."""
+    """Main hardware interface using pigpio for servos.
+
+    Servo writes go through a slew-rate-limited motion thread: callers set a
+    target and the thread walks the actual pulsewidth toward it at SLEW_RATE.
+    Pass immediate=True to bypass smoothing (used by the animation engine,
+    which generates its own fine-grained easing steps).
+    """
 
     def __init__(self):
         self.camera = Camera()
         self.led = LEDController()
 
         self._pi = None
-        self._pan_val = 0.0
+        self._pan_val = 0.0    # actual (last written) position
         self._tilt_val = 0.0
+        self._pan_target = 0.0
+        self._tilt_target = 0.0
+        self._servo_lock = threading.Lock()
 
         if HAS_PIGPIO:
             try:
@@ -212,8 +230,6 @@ class Hardware:
                 if self._pi.connected:
                     self._pi.set_servo_pulsewidth(PAN_PIN, _val_to_pw(0))
                     self._pi.set_servo_pulsewidth(TILT_PIN, _val_to_pw(0))
-                    self._pan_val = 0.0
-                    self._tilt_val = 0.0
                     log.info("pigpio connected, servos centered")
                 else:
                     self._pi = None
@@ -222,57 +238,116 @@ class Hardware:
                 log.warning(f"pigpio init failed: {e}")
                 self._pi = None
 
+        if SLEW_ENABLED:
+            self._motion_running = True
+            self._motion_thread = threading.Thread(target=self._motion_loop, daemon=True)
+            self._motion_thread.start()
+            log.info(f"Servo motion thread started (slew {SLEW_RATE}/s @ {SLEW_TICK_HZ}Hz)")
+
     # --- Servos ---
 
-    def set_pan(self, value):
-        """value: -1.0 to 1.0"""
-        value = max(-1.0, min(1.0, float(value)))
+    def _write_pan(self, value):
         self._pan_val = value
         if self._pi:
             self._pi.set_servo_pulsewidth(PAN_PIN, _val_to_pw(value))
 
-    def set_tilt(self, value):
-        """value: -1.0 to 1.0"""
-        value = max(-1.0, min(1.0, float(value)))
+    def _write_tilt(self, value):
         self._tilt_val = value
         if self._pi:
             self._pi.set_servo_pulsewidth(TILT_PIN, _val_to_pw(value))
 
-    def move_to_category(self, category):
-        """Full sort sequence: pan to bin third, dump, return home."""
-        preset = CATEGORY_PRESETS.get(category)
+    def _motion_loop(self):
+        """Walk actual positions toward targets at a bounded rate."""
+        tick = 1.0 / SLEW_TICK_HZ
+        max_step = SLEW_RATE * tick
+        while self._motion_running:
+            with self._servo_lock:
+                for axis in ("pan", "tilt"):
+                    current = self._pan_val if axis == "pan" else self._tilt_val
+                    target = self._pan_target if axis == "pan" else self._tilt_target
+                    delta = target - current
+                    if abs(delta) < 1e-4:
+                        continue
+                    step = max(-max_step, min(max_step, delta))
+                    if axis == "pan":
+                        self._write_pan(current + step)
+                    else:
+                        self._write_tilt(current + step)
+            time.sleep(tick)
+
+    def set_pan(self, value, immediate=False):
+        """value: -1.0 to 1.0"""
+        value = max(-1.0, min(1.0, float(value)))
+        with self._servo_lock:
+            self._pan_target = value
+            if immediate or not SLEW_ENABLED:
+                self._write_pan(value)
+
+    def set_tilt(self, value, immediate=False):
+        """value: -1.0 to 1.0"""
+        value = max(-1.0, min(1.0, float(value)))
+        with self._servo_lock:
+            self._tilt_target = value
+            if immediate or not SLEW_ENABLED:
+                self._write_tilt(value)
+
+    def get_position(self):
+        """Current actual and target positions."""
+        with self._servo_lock:
+            return {
+                "pan": round(self._pan_val, 3),
+                "tilt": round(self._tilt_val, 3),
+                "pan_target": round(self._pan_target, 3),
+                "tilt_target": round(self._tilt_target, 3),
+            }
+
+    def move_to_category(self, category, presets=None, timing=None):
+        """Full sort sequence: pan to bin third, dump, return home.
+
+        presets/timing default to the hardcoded fallbacks; the web layer
+        passes DB-backed calibration values.
+        """
+        preset = (presets or CATEGORY_PRESETS).get(category)
         if not preset:
             return
+        t = timing or {}
+        pan_settle = t.get("pan_settle_s", SORT_PAN_SETTLE_S)
+        dump_hold = t.get("dump_hold_s", SORT_DUMP_HOLD_S)
+        return_s = t.get("return_s", SORT_RETURN_S)
+
         # Step 1: Pan to the correct third
         self.set_pan(preset["pan"])
-        time.sleep(SORT_PAN_SETTLE_S)
+        time.sleep(pan_settle)
         # Step 2: Tilt to dump
         self.set_tilt(preset["tilt_dump"])
-        time.sleep(SORT_DUMP_HOLD_S)
+        time.sleep(dump_hold)
         # Step 3: Return tilt to rest
-        self.set_tilt(preset["tilt_rest"])
-        time.sleep(SORT_RETURN_S)
+        self.set_tilt(preset.get("tilt_rest", 0.0))
+        time.sleep(return_s)
         # Step 4: Pan back to center
         self.set_pan(0.0)
-        time.sleep(SORT_PAN_SETTLE_S)
+        time.sleep(pan_settle)
 
-    def dump_only(self, category):
+    def dump_only(self, category, presets=None, timing=None):
         """Just tilt to dump (assumes already panned)."""
-        preset = CATEGORY_PRESETS.get(category)
+        preset = (presets or CATEGORY_PRESETS).get(category)
         if not preset:
             return
+        t = timing or {}
         self.set_tilt(preset["tilt_dump"])
-        time.sleep(SORT_DUMP_HOLD_S)
-        self.set_tilt(preset["tilt_rest"])
-        time.sleep(SORT_RETURN_S)
+        time.sleep(t.get("dump_hold_s", SORT_DUMP_HOLD_S))
+        self.set_tilt(preset.get("tilt_rest", 0.0))
+        time.sleep(t.get("return_s", SORT_RETURN_S))
 
     def center_servos(self):
         self.set_pan(0)
         self.set_tilt(0)
-        time.sleep(0.5)
+        # Give the slew time to finish before detaching (stops servo hum)
+        time.sleep(1.0 if SLEW_ENABLED else 0.5)
         if self._pi:
-            self._pi.set_servo_pulsewidth(PAN_PIN, 0)
-            self._pi.set_servo_pulsewidth(TILT_PIN, 0)
+            with self._servo_lock:
+                self._pi.set_servo_pulsewidth(PAN_PIN, 0)
+                self._pi.set_servo_pulsewidth(TILT_PIN, 0)
 
     # --- Camera ---
 
@@ -351,20 +426,24 @@ def capture_photo():
     return get_hw().capture_photo()
 
 
-def set_pan(value):
-    get_hw().set_pan(value)
+def set_pan(value, immediate=False):
+    get_hw().set_pan(value, immediate=immediate)
 
 
-def set_tilt(value):
-    get_hw().set_tilt(value)
+def set_tilt(value, immediate=False):
+    get_hw().set_tilt(value, immediate=immediate)
 
 
-def move_to_category(category):
-    get_hw().move_to_category(category)
+def get_position():
+    return get_hw().get_position()
 
 
-def dump_only(category):
-    get_hw().dump_only(category)
+def move_to_category(category, presets=None, timing=None):
+    get_hw().move_to_category(category, presets=presets, timing=timing)
+
+
+def dump_only(category, presets=None, timing=None):
+    get_hw().dump_only(category, presets=presets, timing=timing)
 
 
 def center_servos():

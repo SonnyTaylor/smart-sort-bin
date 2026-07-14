@@ -16,6 +16,7 @@ from flask import Flask, Response, jsonify, redirect, render_template, request
 import config
 import database
 import llm
+import animations
 
 # Allow importing from src/pi when running on the Pi
 if config.PI_MODE:
@@ -47,6 +48,10 @@ def broadcast_sse(event_type, data):
             dead.append(q)
     for q in dead:
         _sse_clients.remove(q)
+
+
+# Animation engine (server-side keyframe playback)
+player = animations.init(hw, broadcast_sse)
 
 
 # ---------------------------------------------------------------------------
@@ -302,10 +307,43 @@ def api_compare():
 # ---------------------------------------------------------------------------
 
 
+def _interrupt_animation():
+    """Manual servo input takes priority over a running animation."""
+    if player.status().get("playing"):
+        player.stop(and_home=False)
+
+
+@app.route("/api/servos", methods=["GET"])
+def api_get_servos():
+    """Current servo position (actual + target)."""
+    return jsonify(hw.get_position())
+
+
+@app.route("/api/servos/move", methods=["POST"])
+def api_move_servos():
+    """Set one or both axes in a single request.
+    Expects JSON: {"pan": -1..1, "tilt": -1..1} (either may be omitted)
+    """
+    data = request.get_json(force=True)
+    _interrupt_animation()
+    result = {}
+    if "pan" in data:
+        hw.set_pan(data["pan"])
+        result["pan"] = data["pan"]
+    if "tilt" in data:
+        hw.set_tilt(data["tilt"])
+        result["tilt"] = data["tilt"]
+    if not result:
+        return jsonify({"error": "Provide pan and/or tilt"}), 400
+    broadcast_sse("servo_update", {"axis": "both", **result})
+    return jsonify(result)
+
+
 @app.route("/api/servos/pan", methods=["POST"])
 def api_set_pan():
     data = request.get_json(force=True)
     value = data.get("value", 0)
+    _interrupt_animation()
     hw.set_pan(value)
     broadcast_sse("servo_update", {"axis": "pan", "value": value})
     return jsonify({"axis": "pan", "value": value})
@@ -315,6 +353,7 @@ def api_set_pan():
 def api_set_tilt():
     data = request.get_json(force=True)
     value = data.get("value", 0)
+    _interrupt_animation()
     hw.set_tilt(value)
     broadcast_sse("servo_update", {"axis": "tilt", "value": value})
     return jsonify({"axis": "tilt", "value": value})
@@ -326,6 +365,8 @@ def api_manual_sort():
         return jsonify(
             {"status": "mock", "message": "Mock mode - no hardware connected"}
         ), 200
+
+    _interrupt_animation()
 
     # Step 1: Capture photo
     raw_jpeg = hw.capture_photo()
@@ -367,33 +408,36 @@ def api_manual_sort():
             duration_ms=duration_ms,
         )
 
-    # Step 3: Sort (pan → dump → return → home)
+    # Step 3: Sort (pan → dump → return → home) using calibrated positions
     if items:
         cat = items[0]["category"]
         color_map = {"general": "red", "recycling": "yellow", "compost": "green"}
         led_color = color_map.get(cat, "white")
 
+        cal = database.get_calibration()
+        preset = cal["categories"].get(cat, {})
+        timing = cal["timing"]
+
         # Pan to bin third
         broadcast_sse("sort_stage", {"stage": "sorting", "category": cat, "action": "panning"})
         hw.set_led("yellow")
-        preset = hw.CATEGORY_PRESETS.get(cat, {})
         hw.set_pan(preset.get("pan", 0))
-        time.sleep(0.5)
+        time.sleep(timing["pan_settle_s"])
 
         # Tilt to dump
         broadcast_sse("sort_stage", {"stage": "sorting", "category": cat, "action": "dumping"})
         hw.set_led(led_color)
         hw.set_tilt(preset.get("tilt_dump", -0.6))
-        time.sleep(1.0)
+        time.sleep(timing["dump_hold_s"])
 
         # Return tilt
         broadcast_sse("sort_stage", {"stage": "sorting", "category": cat, "action": "returning"})
         hw.set_tilt(preset.get("tilt_rest", 0))
-        time.sleep(0.5)
+        time.sleep(timing["return_s"])
 
         # Pan home
         hw.set_pan(0.0)
-        time.sleep(0.5)
+        time.sleep(timing["pan_settle_s"])
 
         hw.set_led(led_color)
         broadcast_sse("sort_stage", {"stage": "done", "category": cat})
@@ -422,10 +466,134 @@ def api_set_led():
 
 @app.route("/api/home", methods=["POST"])
 def api_home():
+    _interrupt_animation()
     hw.center_servos()
     hw.set_led("white")
     broadcast_sse("servo_home", {"status": "homed"})
     return jsonify({"status": "homed"})
+
+
+# ---------------------------------------------------------------------------
+# REST API - Animations
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/animations", methods=["GET"])
+def api_get_animations():
+    """List built-in animations, saved custom sequences, and playback state."""
+    return jsonify({
+        "builtins": player.list_animations(),
+        "custom": database.get_sequences(),
+        "state": player.status(),
+    })
+
+
+@app.route("/api/animations/play", methods=["POST"])
+def api_play_animation():
+    """Play an animation.
+    Expects JSON: {"name": "<builtin>"} OR {"id": <custom sequence id>}
+    OR {"keyframes": [...], "loop": bool} for a live preview.
+    """
+    data = request.get_json(force=True)
+    try:
+        if data.get("keyframes"):
+            player.play_keyframes(
+                data["keyframes"],
+                loop=data.get("loop", False),
+                name="preview",
+                label=data.get("label", "Preview"),
+            )
+        elif data.get("id") is not None:
+            seq = database.get_sequence(data["id"])
+            if not seq:
+                return jsonify({"error": f"Sequence not found: {data['id']}"}), 404
+            player.play_keyframes(
+                seq["keyframes"],
+                loop=seq["loop"],
+                name=f"custom:{seq['id']}",
+                label=seq["name"],
+            )
+        elif data.get("name"):
+            player.play_builtin(data["name"])
+        else:
+            return jsonify({"error": "Provide name, id, or keyframes"}), 400
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify(player.status())
+
+
+@app.route("/api/animations/stop", methods=["POST"])
+def api_stop_animation():
+    stopped = player.stop()
+    return jsonify({"stopped": stopped, "state": player.status()})
+
+
+@app.route("/api/animations/custom", methods=["POST"])
+def api_save_sequence():
+    """Create or update a custom sequence.
+    Expects JSON: {"name": str, "keyframes": [...], "loop": bool, "id": optional}
+    """
+    data = request.get_json(force=True)
+    try:
+        seq_id = database.save_sequence(
+            name=data.get("name"),
+            keyframes=data.get("keyframes"),
+            loop=data.get("loop", False),
+            seq_id=data.get("id"),
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"status": "saved", "id": seq_id})
+
+
+@app.route("/api/animations/custom/<int:seq_id>", methods=["DELETE"])
+def api_delete_sequence(seq_id):
+    database.delete_sequence(seq_id)
+    return jsonify({"status": "deleted", "id": seq_id})
+
+
+# ---------------------------------------------------------------------------
+# REST API - Calibration
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/calibration", methods=["GET"])
+def api_get_calibration():
+    return jsonify(database.get_calibration())
+
+
+@app.route("/api/calibration", methods=["PUT", "PATCH"])
+def api_set_calibration():
+    """Update calibration values (partial updates allowed).
+    Expects JSON: {"categories": {"general": {"pan": -0.7, ...}}, "timing": {...}}
+    """
+    data = request.get_json(force=True)
+    try:
+        result = database.set_calibration(data)
+    except (ValueError, TypeError) as e:
+        return jsonify({"error": str(e)}), 400
+    broadcast_sse("calibration_update", result)
+    return jsonify(result)
+
+
+@app.route("/api/calibration/reset", methods=["POST"])
+def api_reset_calibration():
+    result = database.reset_calibration()
+    broadcast_sse("calibration_update", result)
+    return jsonify(result)
+
+
+@app.route("/api/calibration/test/<category>", methods=["POST"])
+def api_test_calibration(category):
+    """Run the full sort sequence for a category using stored calibration."""
+    cal = database.get_calibration()
+    if category not in cal["categories"]:
+        return jsonify({"error": f"Invalid category: {category}"}), 400
+    _interrupt_animation()
+    broadcast_sse("sort_stage", {"stage": "sorting", "category": category, "action": "testing"})
+    hw.move_to_category(category, presets=cal["categories"], timing=cal["timing"])
+    broadcast_sse("sort_stage", {"stage": "done", "category": category})
+    return jsonify({"status": "done", "category": category})
 
 
 # ---------------------------------------------------------------------------

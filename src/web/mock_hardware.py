@@ -73,14 +73,19 @@ CATEGORY_PRESETS = {
 }
 
 
-def set_pan(value):
+def set_pan(value, immediate=False):
     global _pan
     _pan = max(-1.0, min(1.0, float(value)))
 
 
-def set_tilt(value):
+def set_tilt(value, immediate=False):
     global _tilt
     _tilt = max(-1.0, min(1.0, float(value)))
+
+
+def get_position():
+    return {"pan": round(_pan, 3), "tilt": round(_tilt, 3),
+            "pan_target": round(_pan, 3), "tilt_target": round(_tilt, 3)}
 
 
 def set_led(color_name):
@@ -98,21 +103,21 @@ def center_servos():
     _tilt = 0.0
 
 
-def move_to_category(category):
-    preset = CATEGORY_PRESETS.get(category)
+def move_to_category(category, presets=None, timing=None):
+    preset = (presets or CATEGORY_PRESETS).get(category)
     if not preset:
         return
     set_pan(preset["pan"])
     set_tilt(preset["tilt_dump"])
     time.sleep(0.3)
-    set_tilt(preset["tilt_rest"])
+    set_tilt(preset.get("tilt_rest", 0.0))
     set_pan(0.0)
 
 
-def dump_only(category):
-    preset = CATEGORY_PRESETS.get(category)
+def dump_only(category, presets=None, timing=None):
+    preset = (presets or CATEGORY_PRESETS).get(category)
     if not preset:
         return
     set_tilt(preset["tilt_dump"])
     time.sleep(0.3)
-    set_tilt(preset["tilt_rest"])
+    set_tilt(preset.get("tilt_rest", 0.0))
