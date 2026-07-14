@@ -59,19 +59,6 @@ def init_db():
                 ON sort_events(category);
         """)
 
-        # Set defaults if not present
-        defaults = {
-            "mode": config.DEFAULT_MODE,
-            "pan_general": str(config.DEFAULT_ANGLES["general"]),
-            "pan_recycling": str(config.DEFAULT_ANGLES["recycling"]),
-            "pan_compost": str(config.DEFAULT_ANGLES["compost"]),
-        }
-        for key, value in defaults.items():
-            conn.execute(
-                "INSERT OR IGNORE INTO system_state (key, value) VALUES (?, ?)",
-                (key, value),
-            )
-
         # Seed default LLM providers
         from llm import PROVIDER_PRESETS
 
@@ -191,34 +178,6 @@ def set_state(key, value):
             "INSERT OR REPLACE INTO system_state (key, value) VALUES (?, ?)",
             (key, str(value)),
         )
-
-
-def get_mode():
-    """Return the current classification mode."""
-    return get_state("mode", config.DEFAULT_MODE)
-
-
-def set_mode(mode):
-    """Set the classification mode."""
-    if mode not in (config.MODE_YOLO, config.MODE_LLM):
-        raise ValueError(f"Invalid mode: {mode}")
-    set_state("mode", mode)
-
-
-def get_servo_angles():
-    """Return the current servo angle configuration."""
-    return {
-        cat: int(get_state(f"pan_{cat}", config.DEFAULT_ANGLES[cat]))
-        for cat in config.CATEGORIES
-    }
-
-
-def set_servo_angle(category, angle):
-    """Update a servo angle for a waste category."""
-    if category not in config.CATEGORIES:
-        raise ValueError(f"Invalid category: {category}")
-    angle = max(0, min(360, int(angle)))
-    set_state(f"pan_{category}", angle)
 
 
 # ---------------------------------------------------------------------------

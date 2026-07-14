@@ -31,9 +31,6 @@ SB.api = (function () {
     stats: () => SB.api.get('/api/stats'),
     health: () => SB.api.get('/api/health'),
     history: (limit = 50) => SB.api.get(`/api/history?limit=${limit}`),
-    mode: () => SB.api.get('/api/mode'),
-    setMode: (mode) => SB.api.post('/api/mode', { mode }),
-    servos: () => SB.api.get('/api/servos'),
     setServo: (axis, value) => SB.api.post(`/api/servos/${axis}`, { value }),
     home: () => SB.api.post('/api/home'),
     sort: () => SB.api.post('/api/sort'),
@@ -42,11 +39,6 @@ SB.api = (function () {
     updateProvider: (id, data) => SB.api.patch(`/api/providers/${id}`, data),
     testProvider: (id) => SB.api.post(`/api/providers/${id}/test`),
     led: (color) => SB.api.post('/api/led', { color }),
-    pulseLED: () => SB.api.post('/api/led/pulse'),
-    datasetStats: () => SB.api.get('/api/dataset/stats'),
-    saveDataset: (image, category) =>
-      SB.api.post('/api/dataset/save', { image, category }),
-    clearDataset: () => SB.api.post('/api/dataset/clear'),
     clearHistory: () => SB.api.post('/api/data/clear'),
   };
 })();

@@ -1,6 +1,6 @@
 /**
  * Smart Bin — Keyboard Input
- * WASD pan/tilt, shortcuts for sort/home/snapshot/face-track.
+ * WASD pan/tilt, shortcuts for sort/home/snapshot.
  */
 var SB = window.SB || {};
 
@@ -26,7 +26,6 @@ SB.inputKeyboard = (function () {
       case 'e': SB.servos.setAxis('pan', Math.min(1, SB.state.currentPan + big)); break;
       case 'h': SB.servos.home(); break;
       case ' ': e.preventDefault(); SB.camera.snapshot(); break;
-      case 'f': SB.camera.toggleFaceTracking(); break;
       case '1': SB.servos.moveToCategory('general'); break;
       case '2': SB.servos.moveToCategory('recycling'); break;
       case '3': SB.servos.moveToCategory('compost'); break;

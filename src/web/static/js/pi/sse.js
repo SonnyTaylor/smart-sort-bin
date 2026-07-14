@@ -23,15 +23,7 @@ SB.sse = (function () {
       SB.camera.showResult(data);
       SB.activity.load();
       SB.activity.loadStats();
-      SB.settings.loadDatasetStats();
       logEvent('sort_event', data);
-    });
-
-    source.addEventListener('mode_change', (e) => {
-      const data = JSON.parse(e.data);
-      SB.state.currentMode = data.mode;
-      SB.settings.updateModeUI();
-      logEvent('mode_change', data);
     });
 
     source.addEventListener('servo_update', (e) => {

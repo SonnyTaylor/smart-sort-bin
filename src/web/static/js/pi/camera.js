@@ -1,6 +1,6 @@
 /**
  * Smart Bin — Camera & Classification
- * Stream handling, snapshot, classify, face tracking, overlays.
+ * Stream handling, snapshot, classify, overlays.
  */
 var SB = window.SB || {};
 
@@ -105,34 +105,6 @@ SB.camera = (function () {
     SB.ui.toast('Snapshot saved', 'success');
   }
 
-  function toggleFaceTracking() {
-    SB.state.faceTracking = !SB.state.faceTracking;
-    const btn = document.getElementById('btn-face-track');
-    const speed = document.getElementById('face-track-speed');
-    const badge = document.getElementById('face-track-badge');
-
-    if (SB.state.faceTracking) {
-      btn.classList.add('active');
-      btn.style.borderColor = 'var(--status-ok)';
-      btn.style.color = 'var(--status-ok)';
-      if (speed) speed.style.display = 'flex';
-      if (badge) badge.classList.add('active');
-      SB.ui.toast('Face tracking enabled', 'info');
-    } else {
-      btn.classList.remove('active');
-      btn.style.borderColor = '';
-      btn.style.color = '';
-      if (speed) speed.style.display = 'none';
-      if (badge) badge.classList.remove('active');
-      SB.ui.toast('Face tracking disabled', 'info');
-    }
-  }
-
-  function updateTrackSpeed(val) {
-    SB.state.trackSpeed = parseFloat(val);
-    document.getElementById('track-speed-val').textContent = val;
-  }
-
   function toggleFullscreen() {
     const el = document.getElementById('cam-container');
     if (!el) return;
@@ -147,8 +119,6 @@ SB.camera = (function () {
     document.getElementById('btn-snap-sort')?.addEventListener('click', sort);
     document.getElementById('btn-classify')?.addEventListener('click', classifyOnly);
     document.getElementById('btn-snapshot')?.addEventListener('click', snapshot);
-    document.getElementById('btn-face-track')?.addEventListener('click', toggleFaceTracking);
-    document.getElementById('track-speed-slider')?.addEventListener('input', (e) => updateTrackSpeed(e.target.value));
     document.getElementById('btn-cam-fullscreen')?.addEventListener('click', toggleFullscreen);
   }
 
@@ -159,8 +129,6 @@ SB.camera = (function () {
     sort,
     classifyOnly,
     snapshot,
-    toggleFaceTracking,
-    updateTrackSpeed,
     toggleFullscreen,
   };
 })();

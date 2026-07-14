@@ -17,16 +17,11 @@ SB.dashboard = (function () {
     SB.inputKeyboard.bind();
     SB.inputGamepad.bind();
 
-    // Binjamin
-    if (SB.binjamin && SB.binjamin.init) SB.binjamin.init();
-
     // Data
     SB.settings.loadHealth();
-    SB.settings.loadMode();
     SB.activity.loadStats();
     SB.activity.load();
     SB.settings.loadProviders();
-    SB.settings.loadDatasetStats();
 
     // Effects grid
     if (SB.fun && SB.fun.renderGrid) SB.fun.renderGrid();
@@ -37,7 +32,6 @@ SB.dashboard = (function () {
     // Auto-refresh
     setInterval(() => SB.settings.loadHealth(), 5000);
     setInterval(() => SB.activity.loadStats(), 10000);
-    setInterval(() => SB.settings.loadDatasetStats(), 30000);
 
     console.log('[SmartBin] Dashboard initialized');
   }

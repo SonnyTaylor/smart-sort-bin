@@ -34,26 +34,21 @@ FILES = [
     # Core Python
     "src/pi/hardware.py",
     "src/web/app.py",
-    "src/web/binjamin.py",
     "src/web/config.py",
     "src/web/database.py",
     "src/web/llm.py",
-    # New dashboard v2 templates
+    # Dashboard templates
     "src/web/templates/pi/base.html",
     "src/web/templates/pi/dashboard.html",
-    "src/web/templates/pi/binjamin.html",
     "src/web/templates/pi/partials/header.html",
     "src/web/templates/pi/partials/camera_zone.html",
     "src/web/templates/pi/partials/system_panel.html",
     "src/web/templates/pi/partials/control_panel.html",
     "src/web/templates/pi/partials/activity_panel.html",
     "src/web/templates/pi/partials/settings_drawer.html",
-    "src/web/templates/pi/partials/chat_drawer.html",
-    # Legacy dashboard (still needed)
-    "src/web/templates/pi_dashboard.html",
-    # New dashboard v2 CSS
+    # Dashboard CSS
     "src/web/static/css/pi-dashboard.css",
-    # New dashboard v2 JS modules
+    # Dashboard JS modules
     "src/web/static/js/pi/api.js",
     "src/web/static/js/pi/state.js",
     "src/web/static/js/pi/ui.js",
@@ -67,7 +62,6 @@ FILES = [
     "src/web/static/js/pi/settings.js",
     "src/web/static/js/pi/fun-controls.js",
     "src/web/static/js/pi/dashboard.js",
-    "src/web/static/js/pi/binjamin.js",
 ]
 
 # Colors

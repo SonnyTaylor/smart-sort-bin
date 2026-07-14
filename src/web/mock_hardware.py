@@ -116,22 +116,3 @@ def dump_only(category):
     set_tilt(preset["tilt_dump"])
     time.sleep(0.3)
     set_tilt(preset["tilt_rest"])
-
-
-class _MockFaceTracker:
-    active = False
-    face_box = None
-    def get_status(self):
-        return {"active": False, "available": False, "face_detected": False}
-    def start(self):
-        return False
-    def stop(self):
-        pass
-
-
-class _MockHW:
-    face_tracker = _MockFaceTracker()
-
-
-def get_hw():
-    return _MockHW()

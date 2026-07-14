@@ -14,7 +14,6 @@ SB.state = {
   currentLED: 'off',
 
   // Classification
-  currentMode: 'llm',
   activeProvider: '',
   providers: [],
 
@@ -27,16 +26,9 @@ SB.state = {
   keyboardContinuous: false,
   joystickEnabled: true,
 
-  // Camera
-  faceTracking: false,
-  trackSpeed: 0.5,
-
   // Activity
   allHistory: [],
   activityFilter: 'all',
-
-  // Dataset
-  datasetStats: { general: 0, recycling: 0, compost: 0, total: 0 },
 };
 
 window.SB = SB;

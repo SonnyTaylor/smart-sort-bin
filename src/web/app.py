@@ -2,25 +2,20 @@
 AI Smart Bin - Web Dashboard
 
 Flask application serving the control dashboard and REST API.
-Run with: uv run app.py
+Run with: uv run app.py [--mock | --pi]
 """
 
+import base64
 import json
 import queue
 import time
-import os
-import shutil
-import io
-import zipfile
-import base64
 from concurrent.futures import ThreadPoolExecutor
 
-from flask import Flask, Response, jsonify, render_template, request, send_file
+from flask import Flask, Response, jsonify, redirect, render_template, request
 
 import config
 import database
 import llm
-import binjamin as binjamin_module
 
 # Allow importing from src/pi when running on the Pi
 if config.PI_MODE:
@@ -33,17 +28,6 @@ else:
     import mock_hardware as hw
 
 app = Flask(__name__)
-
-# Initialize Binjamin personality engine
-if config.PI_MODE:
-    binjamin_module.init(hw)
-else:
-    # In mock mode, pass a lightweight shim so the endpoint still works
-    binjamin_module.init(hw)
-
-# Ensure dataset directories exist
-for cat in config.CATEGORIES:
-    os.makedirs(os.path.join(config.DATASET_DIR, cat), exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # SSE (Server-Sent Events) infrastructure
@@ -72,7 +56,13 @@ def broadcast_sse(event_type, data):
 
 @app.route("/")
 def index():
-    return render_template("dashboard.html")
+    return render_template("pi/dashboard.html")
+
+
+@app.route("/pi")
+@app.route("/pi/v2")
+def legacy_dashboard_redirect():
+    return redirect("/", code=301)
 
 
 # ---------------------------------------------------------------------------
@@ -106,28 +96,6 @@ def api_stats_hourly():
 
 
 # ---------------------------------------------------------------------------
-# REST API - Mode
-# ---------------------------------------------------------------------------
-
-
-@app.route("/api/mode", methods=["GET"])
-def api_get_mode():
-    return jsonify({"mode": database.get_mode()})
-
-
-@app.route("/api/mode", methods=["POST"])
-def api_set_mode():
-    data = request.get_json(force=True)
-    mode = data.get("mode", "")
-    try:
-        database.set_mode(mode)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    broadcast_sse("mode_change", {"mode": mode})
-    return jsonify({"mode": mode})
-
-
-# ---------------------------------------------------------------------------
 # REST API - System Health
 # ---------------------------------------------------------------------------
 
@@ -138,7 +106,7 @@ def api_health():
 
 
 # ---------------------------------------------------------------------------
-# REST API - Camera / Webcam
+# REST API - Camera
 # ---------------------------------------------------------------------------
 
 
@@ -156,23 +124,6 @@ def api_camera_stream():
         while True:
             frame_bytes = hw.get_camera_jpeg_bytes()
             if frame_bytes and frame_bytes != last_sent:
-                # Draw face tracking overlay if active
-                try:
-                    ft = hw.get_hw().face_tracker
-                    if ft.active and ft.face_box:
-                        import cv2
-                        import numpy as np
-                        nparr = np.frombuffer(frame_bytes, np.uint8)
-                        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                        if frame is not None:
-                            x, y, w, h = ft.face_box
-                            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                            cv2.putText(frame, 'FACE', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                            _, buf = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-                            frame_bytes = buf.tobytes()
-                except Exception:
-                    pass  # Fall through with original frame
-
                 yield (
                     b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
                 )
@@ -183,59 +134,9 @@ def api_camera_stream():
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
-@app.route("/api/face-tracking", methods=["GET"])
-def api_face_tracking_status():
-    """Get face tracking status."""
-    ft = hw.get_hw().face_tracker
-    return jsonify(ft.get_status())
-
-
-@app.route("/api/face-tracking", methods=["POST"])
-def api_face_tracking_toggle():
-    """Toggle face tracking on/off.
-    Expects JSON: {"active": true/false}
-    """
-    data = request.get_json(force=True)
-    ft = hw.get_hw().face_tracker
-
-    if data.get("active"):
-        if ft.start():
-            broadcast_sse("face_tracking", {"active": True})
-            return jsonify({"status": "started", "available": ft.available})
-        else:
-            return jsonify({"status": "error", "message": "Face tracker not available"}), 400
-    else:
-        ft.stop()
-        broadcast_sse("face_tracking", {"active": False})
-        return jsonify({"status": "stopped"})
-
-
-@app.route("/api/face-tracking/config", methods=["POST"])
-def api_face_tracking_config():
-    """Update face tracking parameters.
-    Expects JSON: {"tracking_speed": 0.5, "deadzone": 0.04, "kp": 1.5, "ki": 0.1, "kd": 0.8}
-    """
-    data = request.get_json(force=True)
-    ft = hw.get_hw().face_tracker
-
-    if "tracking_speed" in data:
-        ft.tracking_speed = max(0.1, min(1.0, float(data["tracking_speed"])))
-    if "deadzone" in data:
-        ft.deadzone = max(0.01, min(0.2, float(data["deadzone"])))
-    if "kp" in data:
-        kp = max(0.1, min(5.0, float(data["kp"])))
-        ft._pid_pan.kp = kp
-        ft._pid_tilt.kp = kp
-    if "ki" in data:
-        ki = max(0.0, min(2.0, float(data["ki"])))
-        ft._pid_pan.ki = ki
-        ft._pid_tilt.ki = ki
-    if "kd" in data:
-        kd = max(0.0, min(3.0, float(data["kd"])))
-        ft._pid_pan.kd = kd
-        ft._pid_tilt.kd = kd
-
-    return jsonify(ft.get_status())
+# ---------------------------------------------------------------------------
+# REST API - Classification
+# ---------------------------------------------------------------------------
 
 
 @app.route("/api/classify", methods=["POST"])
@@ -248,10 +149,9 @@ def api_classify():
     data = request.get_json(force=True)
 
     if data.get("source") == "device":
-        # Capture from hardware (mocked here)
         raw_jpeg = hw.get_camera_jpeg_bytes()
-        import base64
-
+        if not raw_jpeg:
+            return jsonify({"error": "Camera capture failed"}), 500
         image_b64 = base64.b64encode(raw_jpeg).decode("utf-8")
     else:
         image_b64 = data.get("image", "")
@@ -289,20 +189,18 @@ def api_classify():
         database.log_sort(
             category=item["category"],
             confidence=item["confidence"],
-            mode=config.MODE_LLM,
+            mode="llm",
             label=item.get("label", ""),
             duration_ms=duration_ms,
         )
 
     event = {
         "items": items,
-        "mode": config.MODE_LLM,
         "duration_ms": duration_ms,
         "raw_response": result.get("raw_response", ""),
     }
     broadcast_sse("sort_event", event)
 
-    # Return the full payload to the caller, including image if needed
     response_data = dict(event)
     if data.get("source") == "device":
         response_data["image"] = image_b64
@@ -320,10 +218,18 @@ def api_compare():
     """
     Classify the same image with two different providers in parallel.
     Expects JSON: {"image": "<base64 jpeg>", "provider_a": "<id>", "provider_b": "<id>"}
+    OR {"source": "device", ...} to use the internal camera.
     """
     data = request.get_json(force=True)
 
-    image_b64 = data.get("image", "")
+    if data.get("source") == "device":
+        raw_jpeg = hw.get_camera_jpeg_bytes()
+        if not raw_jpeg:
+            return jsonify({"error": "Camera capture failed"}), 500
+        image_b64 = base64.b64encode(raw_jpeg).decode("utf-8")
+    else:
+        image_b64 = data.get("image", "")
+
     provider_a_id = data.get("provider_a", "")
     provider_b_id = data.get("provider_b", "")
 
@@ -396,24 +302,6 @@ def api_compare():
 # ---------------------------------------------------------------------------
 
 
-@app.route("/api/servos", methods=["GET"])
-def api_get_servos():
-    return jsonify(database.get_servo_angles())
-
-
-@app.route("/api/servos", methods=["POST"])
-def api_set_servo():
-    data = request.get_json(force=True)
-    category = data.get("category", "")
-    angle = data.get("angle", 0)
-    try:
-        database.set_servo_angle(category, angle)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    broadcast_sse("servo_update", {"category": category, "angle": angle})
-    return jsonify({"category": category, "angle": angle})
-
-
 @app.route("/api/servos/pan", methods=["POST"])
 def api_set_pan():
     data = request.get_json(force=True)
@@ -474,7 +362,7 @@ def api_manual_sort():
         database.log_sort(
             category=item["category"],
             confidence=item["confidence"],
-            mode=config.MODE_LLM,
+            mode="llm",
             label=item.get("label", ""),
             duration_ms=duration_ms,
         )
@@ -515,7 +403,6 @@ def api_manual_sort():
 
     event = {
         "items": items,
-        "mode": config.MODE_LLM,
         "duration_ms": duration_ms,
         "raw_response": result.get("raw_response", ""),
     }
@@ -539,23 +426,6 @@ def api_home():
     hw.set_led("white")
     broadcast_sse("servo_home", {"status": "homed"})
     return jsonify({"status": "homed"})
-
-
-@app.route("/pi")
-def pi_dashboard():
-    return render_template("pi_dashboard.html")
-
-
-@app.route("/pi/v2")
-def pi_dashboard_v2():
-    """New precision-industrial dashboard."""
-    return render_template("pi/dashboard.html")
-
-
-@app.route("/binjamin")
-def binjamin_page():
-    """Binjamin — dedicated chat + camera page."""
-    return render_template("pi/binjamin.html")
 
 
 # ---------------------------------------------------------------------------
@@ -590,118 +460,6 @@ def api_update_provider(provider_id):
 
     broadcast_sse("provider_update", {"provider_id": provider_id})
     return jsonify({"status": "updated", "provider_id": provider_id})
-
-
-# ---------------------------------------------------------------------------
-# Dataset Endpoints
-# ---------------------------------------------------------------------------
-
-
-@app.route("/api/dataset/save", methods=["POST"])
-def api_dataset_save():
-    data = request.get_json(force=True)
-    image_b64 = data.get("image", "")
-    category = data.get("category", "")
-
-    if not image_b64 or not category:
-        return jsonify({"error": "Missing image or category"}), 400
-
-    if category not in config.CATEGORIES:
-        return jsonify({"error": f"Invalid category: {category}"}), 400
-
-    if "," in image_b64:
-        image_b64 = image_b64.split(",", 1)[1]
-
-    try:
-        image_data = base64.b64decode(image_b64)
-        filename = f"{int(time.time() * 1000)}.jpg"
-        filepath = os.path.join(config.DATASET_DIR, category, filename)
-
-        with open(filepath, "wb") as f:
-            f.write(image_data)
-
-        return jsonify({"status": "saved", "filename": filename, "category": category})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/dataset/stats", methods=["GET"])
-def api_dataset_stats():
-    stats = {"total": 0}
-    for cat in config.CATEGORIES:
-        cat_dir = os.path.join(config.DATASET_DIR, cat)
-        count = (
-            len([f for f in os.listdir(cat_dir) if f.endswith(".jpg")])
-            if os.path.exists(cat_dir)
-            else 0
-        )
-        stats[cat] = count
-        stats["total"] += count
-    return jsonify(stats)
-
-
-@app.route("/api/dataset/export", methods=["GET"])
-def api_dataset_export():
-    memory_file = io.BytesIO()
-    with zipfile.ZipFile(memory_file, "w", zipfile.ZIP_DEFLATED) as zf:
-        for cat in config.CATEGORIES:
-            cat_dir = os.path.join(config.DATASET_DIR, cat)
-            if os.path.exists(cat_dir):
-                for filename in os.listdir(cat_dir):
-                    if filename.endswith(".jpg"):
-                        filepath = os.path.join(cat_dir, filename)
-                        zf.write(filepath, arcname=os.path.join(cat, filename))
-
-    memory_file.seek(0)
-    return send_file(
-        memory_file,
-        mimetype="application/zip",
-        as_attachment=True,
-        download_name="dataset.zip",
-    )
-
-
-@app.route("/api/dataset/clear", methods=["POST"])
-def api_dataset_clear():
-    for cat in config.CATEGORIES:
-        cat_dir = os.path.join(config.DATASET_DIR, cat)
-        if os.path.exists(cat_dir):
-            for filename in os.listdir(cat_dir):
-                if filename.endswith(".jpg"):
-                    os.remove(os.path.join(cat_dir, filename))
-    return jsonify({"status": "cleared"})
-
-
-@app.route("/api/dataset/images")
-def api_dataset_images():
-    """List all saved dataset images."""
-    images = []
-    for cat in config.CATEGORIES:
-        cat_dir = os.path.join(config.DATASET_DIR, cat)
-        if os.path.exists(cat_dir):
-            for filename in sorted(os.listdir(cat_dir), reverse=True):
-                if filename.endswith(".jpg"):
-                    images.append(
-                        {
-                            "category": cat,
-                            "filename": filename,
-                            "url": f"/api/dataset/image/{cat}/{filename}",
-                        }
-                    )
-    return jsonify(images)
-
-
-@app.route("/api/dataset/image/<category>/<filename>")
-def api_dataset_image(category, filename):
-    """Serve a single dataset image. Validates inputs to prevent path traversal."""
-    if category not in config.CATEGORIES:
-        return jsonify({"error": "Invalid category"}), 400
-    if "/" in filename or "\\" in filename or ".." in filename:
-        return jsonify({"error": "Invalid filename"}), 400
-    filepath = os.path.join(config.DATASET_DIR, category, filename)
-    if not os.path.isfile(filepath):
-        return jsonify({"error": "Not found"}), 404
-    return send_file(filepath, mimetype="image/jpeg")
 
 
 @app.route("/api/providers/<provider_id>/test", methods=["POST"])
@@ -758,43 +516,6 @@ def api_test_provider(provider_id):
         return jsonify({"error": "Connection refused. Check the API URL."}), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 502
-
-
-# ---------------------------------------------------------------------------
-# REST API - Binjamin Chat
-# ---------------------------------------------------------------------------
-
-
-@app.route("/api/chat", methods=["POST"])
-def api_chat():
-    """Send a message to Binjamin and get a response with tool calls."""
-    data = request.get_json(force=True)
-    message = data.get("message", "")
-    image_b64 = data.get("image", None)
-    conversation = data.get("conversation", [])
-
-    if not message and not image_b64:
-        return jsonify({"error": "No message or image provided"}), 400
-
-    # Get active LLM provider
-    provider = database.get_active_provider()
-    if not provider:
-        return jsonify({"error": "No active LLM provider configured"}), 400
-
-    result = binjamin_module.chat(
-        message=message or "What do you see?",
-        image_b64=image_b64,
-        conversation=conversation,
-        provider_id=provider["id"],
-        api_key=provider["api_key"],
-        # Binjamin uses its own default model, not the provider's
-        base_url=provider["base_url"],
-    )
-
-    if result.get("error"):
-        return jsonify(result), 502
-
-    return jsonify(result)
 
 
 # ---------------------------------------------------------------------------

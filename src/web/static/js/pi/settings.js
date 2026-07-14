@@ -1,6 +1,6 @@
 /**
  * Smart Bin — Settings Drawer
- * Providers, dataset, mode, debug.
+ * Providers, debug.
  */
 var SB = window.SB || {};
 
@@ -50,35 +50,6 @@ SB.settings = (function () {
       muted: 'var(--text-muted)',
     };
     el.style.color = colors[type] || colors.muted;
-  }
-
-  // ── Mode ──
-  async function loadMode() {
-    try {
-      const data = await SB.api.mode();
-      SB.state.currentMode = data.mode;
-      updateModeUI();
-    } catch (err) {
-      console.error('Mode load failed:', err);
-    }
-  }
-
-  async function setMode(mode) {
-    try {
-      await SB.api.setMode(mode);
-      SB.state.currentMode = mode;
-      updateModeUI();
-      SB.ui.toast(`Switched to ${mode.toUpperCase()} mode`, 'success');
-    } catch (err) {
-      SB.ui.toast('Mode switch failed', 'error');
-    }
-  }
-
-  function updateModeUI() {
-    const llm = document.getElementById('mode-llm');
-    const yolo = document.getElementById('mode-yolo');
-    if (llm) llm.classList.toggle('active', SB.state.currentMode === 'llm');
-    if (yolo) yolo.classList.toggle('active', SB.state.currentMode === 'yolo');
   }
 
   // ── Providers ──
@@ -210,51 +181,6 @@ SB.settings = (function () {
     }
   }
 
-  // ── Dataset ──
-  async function loadDatasetStats() {
-    try {
-      const stats = await SB.api.datasetStats();
-      SB.state.datasetStats = stats;
-      document.getElementById('ds-general').textContent = stats.general || 0;
-      document.getElementById('ds-recycling').textContent = stats.recycling || 0;
-      document.getElementById('ds-compost').textContent = stats.compost || 0;
-      document.getElementById('ds-total').textContent = stats.total || 0;
-    } catch (err) {
-      console.error('Dataset stats failed:', err);
-    }
-  }
-
-  async function saveDatasetFrame() {
-    const img = document.getElementById('cam-stream');
-    const cat = document.getElementById('dataset-category')?.value;
-    if (!img || !cat) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth || 640;
-    canvas.height = img.naturalHeight || 480;
-    canvas.getContext('2d').drawImage(img, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
-    try {
-      await SB.api.saveDataset(dataUrl, cat);
-      SB.ui.toast('Frame saved to dataset', 'success');
-      loadDatasetStats();
-    } catch (err) {
-      SB.ui.toast('Save failed: ' + err.message, 'error');
-    }
-  }
-
-  async function clearDataset() {
-    if (!confirm('Delete all dataset images?')) return;
-    try {
-      await SB.api.clearDataset();
-      loadDatasetStats();
-      SB.ui.toast('Dataset cleared', 'info');
-    } catch (err) {
-      SB.ui.toast('Clear failed', 'error');
-    }
-  }
-
   // ── Debug ──
   async function runDebug() {
     const endpoint = document.getElementById('debug-endpoint')?.value;
@@ -281,27 +207,16 @@ SB.settings = (function () {
       SB.ui.toast('Health refreshed', 'info');
     });
 
-    document.getElementById('mode-llm')?.addEventListener('click', () => setMode('llm'));
-    document.getElementById('mode-yolo')?.addEventListener('click', () => setMode('yolo'));
-
-    document.getElementById('btn-save-dataset')?.addEventListener('click', saveDatasetFrame);
-    document.getElementById('btn-clear-dataset')?.addEventListener('click', clearDataset);
     document.getElementById('btn-debug-run')?.addEventListener('click', runDebug);
   }
 
   return {
     loadHealth,
-    loadMode,
-    setMode,
-    updateModeUI,
     loadProviders,
     updateProvider,
     saveProvider,
     activateProvider,
     testProvider,
-    loadDatasetStats,
-    saveDatasetFrame,
-    clearDataset,
     runDebug,
     bindDrawer,
   };

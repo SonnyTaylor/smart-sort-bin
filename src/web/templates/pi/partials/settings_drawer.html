@@ -17,41 +17,6 @@
       </div>
     </div>
 
-    <!-- Dataset -->
-    <div class="drawer-section">
-      <div class="drawer-section-title">Dataset</div>
-      <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)">
-        <select id="dataset-category" style="flex:1">
-          <option value="general">🗑️ General</option>
-          <option value="recycling">♻️ Recycling</option>
-          <option value="compost">🌱 Compost</option>
-        </select>
-        <button class="btn btn-primary" id="btn-save-dataset">💾 Save Frame</button>
-      </div>
-      <div class="stat-grid">
-        <div class="stat-item">
-          <span class="label">General</span>
-          <span class="value" id="ds-general">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="label">Recycling</span>
-          <span class="value" id="ds-recycling" style="color:var(--cat-recycling)">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="label">Compost</span>
-          <span class="value" id="ds-compost" style="color:var(--cat-compost)">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="label">Total</span>
-          <span class="value" id="ds-total">0</span>
-        </div>
-      </div>
-      <div style="display:flex;gap:var(--space-2);margin-top:var(--space-4)">
-        <a href="/api/dataset/export" class="btn" style="flex:1;text-align:center;text-decoration:none">⬇ Export ZIP</a>
-        <button class="btn" id="btn-clear-dataset" style="color:var(--status-error);border-color:rgba(239,68,68,0.3)">🗑 Clear</button>
-      </div>
-    </div>
-
     <!-- Debug -->
     <div class="drawer-section">
       <div class="drawer-section-title">Debug</div>
@@ -59,11 +24,8 @@
         <select id="debug-endpoint" style="flex:1">
           <option value="/api/health">GET /api/health</option>
           <option value="/api/stats">GET /api/stats</option>
-          <option value="/api/servos">GET /api/servos</option>
           <option value="/api/providers">GET /api/providers</option>
           <option value="/api/camera">GET /api/camera</option>
-          <option value="/api/dataset/stats">GET /api/dataset/stats</option>
-          <option value="/api/mode">GET /api/mode</option>
         </select>
         <button class="btn" id="btn-debug-run">Run</button>
       </div>
