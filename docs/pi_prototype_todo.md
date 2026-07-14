@@ -1,7 +1,7 @@
 # Pi Prototype — TODO
 
 ## Hardware
-- [x] Raspberry Pi 3B booted and networked (192.168.0.88)
+- [x] Raspberry Pi 3B booted and networked (static LAN IP)
 - [x] USB webcam detected and capturing (`/dev/video0`)
 - [x] Pan servo wired to GPIO 17 (Pin 11)
 - [x] Tilt servo wired to GPIO 27 (Pin 13)

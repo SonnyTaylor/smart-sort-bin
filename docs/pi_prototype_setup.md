@@ -63,9 +63,12 @@ Capacitor:
 - Raspberry Pi OS Lite (64-bit)
 - Hostname: `smartbin`
 - Username: `pi`
-- Password: `Futiz$23`
-- WiFi: `OPTUS_7F6190N` / `brood69634fn`
-- Static IP: `192.168.0.88`
+- Password: set during Raspberry Pi Imager flashing (not stored in this repo)
+- WiFi: your own SSID / passphrase (configured in Imager or `raspi-config`)
+- Static IP: a fixed address on your LAN
+
+> Secrets (SSH password, Wi-Fi passphrase) are intentionally kept out of the repo.
+> For deployment, provide them via environment variables — see below.
 
 ### Installed Packages
 ```bash
@@ -88,23 +91,27 @@ To verify: `ps aux | grep pigpiod`
 ### Why Paramiko?
 I am an AI assistant running in a tool environment. Standard interactive `ssh` commands hang waiting for password input because there is no TTY for me to type into. `sshpass` is not installed. `plink` timed out.
 
-**Paramiko** (Python SSH library) works because it handles authentication programmatically:
+**Paramiko** (Python SSH library) works because it handles authentication programmatically. Credentials come from the environment (`PI_HOST` / `PI_USER` / `PI_PASS`), never hardcoded:
 ```python
-import paramiko
+import os, paramiko
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('192.168.0.88', username='pi', password='Futiz$23')
+client.connect(
+    os.environ["PI_HOST"],
+    username=os.environ.get("PI_USER", "pi"),
+    password=os.environ["PI_PASS"],
+)
 stdin, stdout, stderr = client.exec_command('whoami')
 print(stdout.read().decode())
 ```
 
-For **sudo** commands, I open a PTY and send the password:
+For **sudo** commands, open a PTY and send the password:
 ```python
 transport = client.get_transport()
 chan = transport.open_session()
 chan.get_pty()
 chan.exec_command('sudo apt update')
-chan.send('Futiz$23\n')
+chan.send(os.environ["PI_PASS"] + '\n')
 ```
 
 ## Software Stack
@@ -166,7 +173,7 @@ smart-sort-bin/
 cd /home/pi/smartbin/src/web
 python3 -u app.py --pi
 ```
-Runs on `http://192.168.0.88:8080`
+Runs on `http://<pi-ip>:8080`
 
 ## Servo Control
 

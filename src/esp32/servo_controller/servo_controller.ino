@@ -2,8 +2,8 @@
 #include <WebServer.h>
 
 // ==================== CONFIG ====================
-const char* ssid     = "OPTUS_7F6190N";
-const char* password = "brood69634fn";
+const char* ssid     = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
 const int servoPin   = 13;          // PWM signal pin
 // ================================================
 

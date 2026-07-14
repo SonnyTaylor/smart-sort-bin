@@ -13,6 +13,7 @@ Usage:
 import sys
 import os
 import time
+import getpass
 import argparse
 
 try:
@@ -24,10 +25,22 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-PI_HOST = "192.168.0.88"
-PI_USER = "pi"
-PI_PASS = "Futiz$23"
-PI_DIR = "/home/pi/smartbin"
+# Host/user default to the LAN prototype but can be overridden via env.
+# The password is never hardcoded: set PI_PASS in the environment, or you'll
+# be prompted for it on first use.
+PI_HOST = os.environ.get("PI_HOST", "192.168.0.88")
+PI_USER = os.environ.get("PI_USER", "pi")
+PI_DIR = os.environ.get("PI_DIR", "/home/pi/smartbin")
+
+_PI_PASS = os.environ.get("PI_PASS")
+
+
+def pi_pass():
+    """Return the Pi SSH/sudo password, prompting once if not set via env."""
+    global _PI_PASS
+    if not _PI_PASS:
+        _PI_PASS = getpass.getpass(f"Password for {PI_USER}@{PI_HOST}: ")
+    return _PI_PASS
 
 # Directories to sync (relative to project root). Every file inside is
 # uploaded, so new modules/templates deploy without touching this list.
@@ -76,7 +89,7 @@ def connect():
     """Connect to the Pi via SSH."""
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(PI_HOST, username=PI_USER, password=PI_PASS, timeout=5)
+    client.connect(PI_HOST, username=PI_USER, password=pi_pass(), timeout=5)
     return client
 
 
@@ -268,12 +281,13 @@ WantedBy=multi-user.target
     sftp.close()
 
     # Install with sudo
+    pw = pi_pass()
     cmds = [
-        f"echo {PI_PASS} | sudo -S cp /tmp/smartbin.service /etc/systemd/system/",
-        f"echo {PI_PASS} | sudo -S cp /tmp/pigpiod.service /etc/systemd/system/",
-        f"echo {PI_PASS} | sudo -S systemctl daemon-reload",
-        f"echo {PI_PASS} | sudo -S systemctl enable pigpiod.service smartbin.service",
-        f"echo {PI_PASS} | sudo -S systemctl start pigpiod.service",
+        f"echo {pw} | sudo -S cp /tmp/smartbin.service /etc/systemd/system/",
+        f"echo {pw} | sudo -S cp /tmp/pigpiod.service /etc/systemd/system/",
+        f"echo {pw} | sudo -S systemctl daemon-reload",
+        f"echo {pw} | sudo -S systemctl enable pigpiod.service smartbin.service",
+        f"echo {pw} | sudo -S systemctl start pigpiod.service",
     ]
     for cmd in cmds:
         ssh_exec(client, cmd, timeout=5)

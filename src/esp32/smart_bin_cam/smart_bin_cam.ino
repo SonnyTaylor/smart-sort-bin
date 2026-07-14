@@ -12,8 +12,8 @@
 #include "esp_camera.h"
 
 // ── WiFi ────────────────────────────────────────────────────────────────────
-const char* WIFI_SSID     = "OPTUS_7F6190N";
-const char* WIFI_PASSWORD = "brood69634fn";
+const char* WIFI_SSID     = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // ── Camera (AI-Thinker ESP32-CAM pinout) ──────────────────────────────────
 #define CAM_PWDN    32

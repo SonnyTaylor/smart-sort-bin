@@ -19,11 +19,17 @@ AI-powered smart waste sorting bin running on a **Raspberry Pi 3B + USB webcam**
 | `deploy.py` | Directory-sync deployment (upload src/ + restart Flask) |
 
 ## Pi Details
-- **IP:** `192.168.0.88`
-- **SSH:** `pi` / `Futiz$23`
+- **IP:** LAN static IP (see your own network / router). Prototype used a fixed address on the local subnet.
+- **SSH:** user `pi`. Password is **not** stored in the repo — set it via the `PI_PASS` env var (see below) or enter it when prompted.
 - **Hostname:** `smartbin`
 - **Flask:** port 8080, started with `--pi` flag
-- **Dashboard:** http://192.168.0.88:8080/
+- **Dashboard:** `http://<pi-ip>:8080/`
+
+> Credentials live in the environment, not in git. Set `PI_HOST`, `PI_USER`, `PI_PASS` before deploying:
+> ```bash
+> export PI_HOST=192.168.0.xx PI_USER=pi PI_PASS='your-password'
+> ```
+> If `PI_PASS` is unset, `deploy.py` prompts for it.
 
 ## Hardware Status
 - ✅ Pi booted, networked, SSH accessible
@@ -44,10 +50,14 @@ AI-powered smart waste sorting bin running on a **Raspberry Pi 3B + USB webcam**
 ## How to SSH (for the AI)
 Use **paramiko** — interactive `ssh` hangs waiting for password. Example:
 ```python
-import paramiko
+import os, paramiko
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('192.168.0.88', username='pi', password='Futiz$23')
+client.connect(
+    os.environ["PI_HOST"],
+    username=os.environ.get("PI_USER", "pi"),
+    password=os.environ["PI_PASS"],
+)
 ```
 For sudo, open a PTY and send the password string.
 

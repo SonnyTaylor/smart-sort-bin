@@ -67,6 +67,13 @@ uv.lock
 .python-version
 
 # =========================
+# Embedded / PlatformIO
+# =========================
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# =========================
 # Misc
 # =========================
 *.log
