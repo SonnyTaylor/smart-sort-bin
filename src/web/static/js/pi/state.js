@@ -8,13 +8,12 @@ SB.state = {
   // Connection
   sseConnected: false,
 
-  // Hardware
+  // Servo targets (what the user asked for)
   currentPan: 0.0,
   currentTilt: 0.0,
   currentLED: 'off',
 
-  // Classification
-  activeProvider: '',
+  // Providers
   providers: [],
 
   // Input
@@ -23,8 +22,13 @@ SB.state = {
   gamepadControlActive: false,
   gamepadInvertY: false,
   keyboardEnabled: true,
-  keyboardContinuous: false,
-  joystickEnabled: true,
+
+  // Animations
+  animPlaying: false,
+  animName: null,
+
+  // Calibration (loaded from /api/calibration)
+  calibration: null,
 
   // Activity
   allHistory: [],

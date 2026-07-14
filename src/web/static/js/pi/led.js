@@ -8,30 +8,27 @@ SB.led = (function () {
     try {
       await SB.api.led(color);
       SB.state.currentLED = color;
-      document.getElementById('led-current').textContent = color;
-      // Update swatch active state
-      document.querySelectorAll('.led-swatch').forEach((sw) => sw.classList.remove('active'));
-      // Find swatch by onclick attribute (simple heuristic)
-      const target = Array.from(document.querySelectorAll('.led-swatch')).find(
-        (sw) => sw.getAttribute('onclick')?.includes(`'${color}'`)
-      );
-      if (target) target.classList.add('active');
+      updateUI(color);
     } catch (err) {
       SB.ui.toast('LED error: ' + err.message, 'error');
     }
   }
 
-  async function pulse() {
-    const colors = ['red', 'yellow', 'green', 'blue', 'purple', 'white'];
-    SB.ui.toast('LED pulsing…', 'info');
-    for (const c of colors) {
-      await set(c);
-      await new Promise((r) => setTimeout(r, 300));
-    }
-    await set('off');
+  function updateUI(color) {
+    const label = document.getElementById('led-current');
+    if (label) label.textContent = color;
+    document.querySelectorAll('.led-swatch').forEach((sw) => {
+      sw.classList.toggle('active', sw.dataset.color === color);
+    });
   }
 
-  return { set, pulse };
+  function bind() {
+    document.querySelectorAll('.led-swatch').forEach((sw) => {
+      sw.addEventListener('click', () => set(sw.dataset.color));
+    });
+  }
+
+  return { set, updateUI, bind };
 })();
 
 window.SB = SB;

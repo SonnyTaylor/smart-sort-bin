@@ -15,47 +15,77 @@ SB.sse = (function () {
     source.addEventListener('connected', () => {
       SB.state.sseConnected = true;
       updateIndicator(true);
-      SB.ui.toast('Connected to Smart Bin', 'success');
     });
 
     source.addEventListener('sort_event', (e) => {
       const data = JSON.parse(e.data);
       SB.camera.showResult(data);
       SB.activity.load();
-      SB.activity.loadStats();
+      SB.stats.refresh();
       logEvent('sort_event', data);
-    });
-
-    source.addEventListener('servo_update', (e) => {
-      const data = JSON.parse(e.data);
-      const gpActive =
-        SB.state.gamepadControlActive &&
-        SB.inputGamepad.isActive();
-      if (!gpActive) {
-        if (data.axis === 'pan') SB.state.currentPan = data.value;
-        else if (data.axis === 'tilt') SB.state.currentTilt = data.value;
-        SB.servos.updateDisplays();
-      }
-      logEvent('servo_update', data);
-    });
-
-    source.addEventListener('led_update', (e) => {
-      const data = JSON.parse(e.data);
-      SB.state.currentLED = data.color;
-      document.getElementById('led-current').textContent = data.color;
-      logEvent('led_update', data);
-    });
-
-    source.addEventListener('data_cleared', () => {
-      SB.activity.load();
-      SB.activity.loadStats();
-      logEvent('data_cleared', {});
     });
 
     source.addEventListener('sort_stage', (e) => {
       const data = JSON.parse(e.data);
       SB.camera.handleSortStage(data);
       logEvent('sort_stage', data);
+    });
+
+    source.addEventListener('servo_update', (e) => {
+      const data = JSON.parse(e.data);
+      logEvent('servo_update', data);
+
+      // Animation playback streams both-axis updates — show the ghost dot
+      if (data.source === 'animation') {
+        SB.servos.showGhost(data.pan ?? 0, data.tilt ?? 0);
+        return;
+      }
+      // Updates from other clients: sync local state
+      if (data.axis === 'pan' && data.value !== undefined) {
+        SB.state.currentPan = data.value;
+      } else if (data.axis === 'tilt' && data.value !== undefined) {
+        SB.state.currentTilt = data.value;
+      } else if (data.axis === 'both') {
+        if (data.pan !== undefined) SB.state.currentPan = data.pan;
+        if (data.tilt !== undefined) SB.state.currentTilt = data.tilt;
+      }
+      SB.servos.updateDisplays();
+    });
+
+    source.addEventListener('servo_home', () => {
+      SB.state.currentPan = 0;
+      SB.state.currentTilt = 0;
+      SB.servos.updateDisplays();
+      logEvent('servo_home', {});
+    });
+
+    source.addEventListener('animation_state', (e) => {
+      const data = JSON.parse(e.data);
+      SB.animations.applyState(data);
+      logEvent('animation_state', data);
+    });
+
+    source.addEventListener('led_update', (e) => {
+      const data = JSON.parse(e.data);
+      SB.state.currentLED = data.color;
+      SB.led.updateUI(data.color);
+      logEvent('led_update', data);
+    });
+
+    source.addEventListener('calibration_update', (e) => {
+      SB.calibration.load();
+      logEvent('calibration_update', JSON.parse(e.data));
+    });
+
+    source.addEventListener('data_cleared', () => {
+      SB.activity.load();
+      SB.stats.refresh();
+      logEvent('data_cleared', {});
+    });
+
+    source.addEventListener('provider_update', () => {
+      SB.settings.loadProviders();
+      logEvent('provider_update', {});
     });
 
     source.onerror = () => {
@@ -67,30 +97,22 @@ SB.sse = (function () {
   function updateIndicator(connected) {
     const ind = document.getElementById('sse-indicator');
     const label = document.getElementById('sse-label');
-    const badge = document.getElementById('cam-live-badge');
-    const badgeInd = badge?.querySelector('.indicator');
+    const camDot = document.getElementById('cam-live-dot');
 
-    if (ind) {
-      ind.style.background = connected ? 'var(--status-ok)' : 'var(--status-error)';
-      ind.style.color = connected ? 'var(--status-ok)' : 'var(--status-error)';
-    }
+    if (ind) ind.classList.toggle('ok', connected);
     if (label) label.textContent = connected ? 'Connected' : 'Offline';
-    if (badge) badge.classList.toggle('connected', connected);
-    if (badgeInd) {
-      badgeInd.style.background = connected ? 'var(--status-ok)' : 'var(--status-error)';
-      badgeInd.style.color = connected ? 'var(--status-ok)' : 'var(--status-error)';
-    }
+    if (camDot) camDot.classList.toggle('ok', connected);
   }
 
   function logEvent(type, data) {
     const log = document.getElementById('sse-log');
     if (!log) return;
-    if (log.children.length === 1 && log.children[0].textContent === 'Waiting for events…') {
-      log.innerHTML = '';
+    if (log.children.length === 0 && log.textContent.includes('Waiting')) {
+      log.textContent = '';
     }
     const line = document.createElement('div');
     const t = new Date().toLocaleTimeString([], { hour12: false });
-    line.innerHTML = `<span style="color:var(--text-muted)">[${t}]</span> <span style="color:var(--accent)">${type}</span> ${JSON.stringify(data).slice(0, 120)}`;
+    line.textContent = `[${t}] ${type} ${JSON.stringify(data).slice(0, 110)}`;
     log.insertBefore(line, log.firstChild);
     while (log.children.length > 50) log.lastChild.remove();
   }

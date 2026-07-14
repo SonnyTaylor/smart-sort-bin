@@ -1,58 +1,12 @@
 /**
  * Smart Bin — Settings Drawer
- * Providers, debug.
+ * LLM providers and the debug console.
  */
 var SB = window.SB || {};
 
 SB.settings = (function () {
-  // ── Health ──
-  async function loadHealth() {
-    try {
-      const h = await SB.api.health();
-      const temp = h.cpu_temp_c || 0;
-      const tempEl = document.getElementById('health-temp');
-      const bar = document.getElementById('temp-bar');
-      const headerTemp = document.getElementById('header-cpu');
-
-      if (tempEl) tempEl.textContent = temp + '°C';
-      if (headerTemp) headerTemp.textContent = temp + '°C';
-
-      if (bar) {
-        const pct = Math.min(100, (temp / 80) * 100);
-        bar.style.width = pct + '%';
-        bar.className = 'gauge-bar-fill ' + (temp < 50 ? 'ok' : temp < 65 ? 'warn' : 'critical');
-      }
-
-      const up = h.uptime_seconds || 0;
-      const upStr = SB.ui.formatUptime(up);
-      const upEl = document.getElementById('health-uptime');
-      const headerUp = document.getElementById('header-uptime');
-      if (upEl) upEl.textContent = upStr;
-      if (headerUp) headerUp.textContent = upStr;
-
-      setStatus('health-camera', 'Active', 'ok');
-      setStatus('health-servos', h.pigpio ? 'pigpio' : 'gpiozero', 'ok');
-      setStatus('health-wifi', h.wifi_connected ? 'Connected' : 'Offline', h.wifi_connected ? 'ok' : 'error');
-      setStatus('health-inference', h.inference_ms ? h.inference_ms + 'ms' : 'Idle', 'muted');
-    } catch (e) {
-      console.error('Health load failed:', e);
-    }
-  }
-
-  function setStatus(id, text, type) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = text;
-    const colors = {
-      ok: 'var(--status-ok)',
-      warn: 'var(--status-warn)',
-      error: 'var(--status-error)',
-      muted: 'var(--text-muted)',
-    };
-    el.style.color = colors[type] || colors.muted;
-  }
-
   // ── Providers ──
+
   async function loadProviders() {
     try {
       const list = await SB.api.providers();
@@ -68,7 +22,7 @@ SB.settings = (function () {
     const sel = document.getElementById('provider-select');
     if (!sel) return;
     sel.innerHTML = providers
-      .map((p) => `<option value="${p.id}">${p.name}</option>`)
+      .map((p) => `<option value="${p.id}" ${p.is_active ? 'selected' : ''}>${SB.ui.escapeHtml(p.name)}</option>`)
       .join('');
   }
 
@@ -79,43 +33,46 @@ SB.settings = (function () {
     container.innerHTML = SB.state.providers
       .map((p) => {
         const isLocal = p.id === 'ollama';
-        const keyStatus = isLocal ? 'local' : p.api_key_set ? 'key-set' : 'no-key';
-        const keyText = isLocal ? 'Local' : p.api_key_set ? 'Key Set' : 'No Key';
-        const isActive = p.is_active;
+        const badge = isLocal
+          ? '<span class="badge info">Local</span>'
+          : p.api_key_set
+            ? '<span class="badge ok">Key set</span>'
+            : '<span class="badge error">No key</span>';
         return `
-          <div class="provider-card ${isActive ? 'active' : ''}">
-            <div class="provider-card-header">
-              <span class="provider-card-name">${p.name}</span>
-              <div style="display:flex;gap:var(--space-2)">
-                <span class="provider-badge ${keyStatus}">${keyText}</span>
-                ${isActive ? '<span class="provider-badge active-badge">Active</span>' : ''}
+          <div class="provider-card ${p.is_active ? 'active' : ''}">
+            <div class="provider-head">
+              <span class="provider-name">${SB.ui.escapeHtml(p.name)}</span>
+              <div class="row">
+                ${badge}
+                ${p.is_active ? '<span class="badge neutral">Active</span>' : ''}
               </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+            <div class="provider-fields">
               ${!isLocal ? `
-                <div>
-                  <label style="font-size:0.6875rem;color:var(--text-muted);display:block;margin-bottom:var(--space-1)">API Key</label>
-                  <input type="password" placeholder="${p.api_key_set ? '••••••••' : 'Enter API key…'}"
-                         onchange="SB.settings.updateProvider('${p.id}', 'api_key', this.value)">
+                <div class="field">
+                  <label>API key</label>
+                  <input type="password" placeholder="${p.api_key_set ? '••••••••' : 'Enter API key'}"
+                         onchange="SB.settings.updateProvider('${p.id}', 'api_key', this.value)"
+                         autocomplete="off">
                 </div>
               ` : ''}
-              <div>
-                <label style="font-size:0.6875rem;color:var(--text-muted);display:block;margin-bottom:var(--space-1)">Model</label>
-                <input type="text" value="${p.model || ''}"
+              <div class="field">
+                <label>Model</label>
+                <input type="text" value="${SB.ui.escapeHtml(p.model || '')}"
                        placeholder="${modelPlaceholder(p.id)}"
                        onchange="SB.settings.updateProvider('${p.id}', 'model', this.value)">
               </div>
               ${p.id === 'custom' || p.id === 'ollama' ? `
-                <div>
-                  <label style="font-size:0.6875rem;color:var(--text-muted);display:block;margin-bottom:var(--space-1)">API URL</label>
-                  <input type="text" value="${p.base_url || ''}"
+                <div class="field">
+                  <label>API URL</label>
+                  <input type="text" value="${SB.ui.escapeHtml(p.base_url || '')}"
                          onchange="SB.settings.updateProvider('${p.id}', 'base_url', this.value)">
                 </div>
               ` : ''}
-              <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1)">
-                ${!isActive ? `<button class="btn" onclick="SB.settings.activateProvider('${p.id}')">Set Active</button>` : ''}
-                <button class="btn btn-primary" onclick="SB.settings.saveProvider('${p.id}')">Save</button>
-                <button class="btn" onclick="SB.settings.testProvider('${p.id}')">Test</button>
+              <div class="row" style="margin-top:var(--sp-1)">
+                ${!p.is_active ? `<button class="btn btn-sm" onclick="SB.settings.activateProvider('${p.id}')">Set active</button>` : ''}
+                <button class="btn btn-sm btn-primary" onclick="SB.settings.saveProvider('${p.id}')">Save</button>
+                <button class="btn btn-sm" onclick="SB.settings.testProvider('${p.id}')">Test</button>
               </div>
             </div>
           </div>
@@ -151,7 +108,7 @@ SB.settings = (function () {
       await SB.api.updateProvider(id, pending);
       delete SB._pending[id];
       await loadProviders();
-      SB.ui.toast('Provider settings saved', 'success');
+      SB.ui.toast('Provider saved', 'success');
     } catch (err) {
       SB.ui.toast('Save failed: ' + err.message, 'error');
     }
@@ -171,22 +128,19 @@ SB.settings = (function () {
     SB.ui.toast('Testing connection…', 'info');
     try {
       const res = await SB.api.testProvider(id);
-      if (res.error) {
-        SB.ui.toast('Test failed: ' + res.error, 'error');
-      } else {
-        SB.ui.toast('✓ Connection successful', 'success');
-      }
+      if (res.error) SB.ui.toast('Test failed: ' + res.error, 'error');
+      else SB.ui.toast('Connection successful', 'success');
     } catch (err) {
       SB.ui.toast('Test failed: ' + err.message, 'error');
     }
   }
 
   // ── Debug ──
+
   async function runDebug() {
     const endpoint = document.getElementById('debug-endpoint')?.value;
     const output = document.getElementById('debug-output');
     if (!endpoint || !output) return;
-
     output.textContent = 'Loading…';
     try {
       const data = await SB.api.get(endpoint);
@@ -197,21 +151,20 @@ SB.settings = (function () {
   }
 
   // ── Drawer ──
+
   function bindDrawer() {
     document.getElementById('btn-settings')?.addEventListener('click', SB.ui.openDrawer);
     document.getElementById('btn-close-settings')?.addEventListener('click', SB.ui.closeDrawer);
     document.getElementById('drawer-overlay')?.addEventListener('click', SB.ui.closeDrawer);
-
-    document.getElementById('btn-refresh-health')?.addEventListener('click', () => {
-      loadHealth();
-      SB.ui.toast('Health refreshed', 'info');
-    });
-
     document.getElementById('btn-debug-run')?.addEventListener('click', runDebug);
+
+    // Header provider select switches the active provider
+    document.getElementById('provider-select')?.addEventListener('change', (e) => {
+      if (e.target.value) activateProvider(e.target.value);
+    });
   }
 
   return {
-    loadHealth,
     loadProviders,
     updateProvider,
     saveProvider,

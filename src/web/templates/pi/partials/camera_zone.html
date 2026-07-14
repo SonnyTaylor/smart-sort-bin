@@ -1,56 +1,58 @@
-<section class="zone" id="camera-zone">
-  <div class="zone-header">
-    <span class="zone-title">Camera Feed</span>
-    <div style="display:flex;align-items:center;gap:var(--space-3)">
-      <select id="provider-select">
+<section class="panel" id="camera-panel">
+  <div class="panel-header">
+    <span class="panel-title">
+      <svg class="icon"><use href="#i-camera"/></svg>
+      Camera
+    </span>
+    <div class="panel-actions">
+      <select id="provider-select" style="width:170px" aria-label="Active LLM provider">
         <option value="">Loading providers…</option>
       </select>
-      <button class="btn btn-icon" id="btn-snapshot" title="Snapshot">📸</button>
+      <button class="btn btn-icon" id="btn-compare" title="Compare models" aria-label="Compare models">
+        <svg class="icon"><use href="#i-compare"/></svg>
+      </button>
+      <button class="btn btn-icon" id="btn-snapshot" title="Save snapshot" aria-label="Save snapshot">
+        <svg class="icon"><use href="#i-download"/></svg>
+      </button>
+      <button class="btn btn-icon" id="btn-cam-fullscreen" title="Fullscreen" aria-label="Fullscreen">
+        <svg class="icon"><use href="#i-maximize"/></svg>
+      </button>
     </div>
   </div>
 
-  <div class="camera-zone" id="cam-container">
-    <img id="cam-stream" src="/api/camera/stream" alt="Camera Stream"
-         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 480%22%3E%3Crect fill=%22%230a0a0a%22 width=%22640%22 height=%22480%22/%3E%3Ctext x=%22320%22 y=%22240%22 text-anchor=%22middle%22 fill=%22%23333%22 font-family=%22monospace%22 font-size=%2214%22%3ENO CAMERA SIGNAL%3C/text%3E%3C/svg%3E'">
+  <div class="cam-frame" id="cam-container">
+    <img id="cam-stream" class="stream" src="/api/camera/stream" alt="Live camera stream"
+         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 480%22%3E%3Crect fill=%22%23000%22 width=%22640%22 height=%22480%22/%3E%3Ctext x=%22320%22 y=%22240%22 text-anchor=%22middle%22 fill=%22%234a4a52%22 font-family=%22monospace%22 font-size=%2216%22%3ENo camera signal%3C/text%3E%3C/svg%3E'">
 
-    <!-- Viewfinder overlay -->
-    <div class="viewfinder-overlay">
-      <div class="corner-bracket cb-tl"></div>
-      <div class="corner-bracket cb-tr"></div>
-      <div class="corner-bracket cb-bl"></div>
-      <div class="corner-bracket cb-br"></div>
-    </div>
-
-    <!-- Live badge -->
-    <div class="live-badge" id="cam-live-badge">
-      <span class="indicator indicator-pulse" style="color:var(--status-error);background:var(--status-error)"></span>
+    <div class="cam-badge" id="cam-live-badge">
+      <span class="dot pulse" id="cam-live-dot"></span>
       <span>Live</span>
     </div>
 
-    <!-- Classification result overlay -->
-    <div class="class-overlay" id="class-overlay">
-      <div class="category" id="class-category"></div>
-      <div class="detail" id="class-detail"></div>
+    <!-- Classification result -->
+    <div class="result-overlay" id="class-overlay">
+      <div class="cat" id="class-category"></div>
+      <div class="item" id="class-detail"></div>
       <div class="meta" id="class-meta"></div>
     </div>
 
-    <!-- Sort stage indicator -->
-    <div class="sort-stage-indicator" id="sort-stage" style="display:none;position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-default)">
+    <!-- Sort stage chip -->
+    <div class="stage-chip" id="sort-stage">
+      <span class="spinner"></span>
       <span id="sort-stage-text">Sorting…</span>
     </div>
   </div>
 
   <div class="cam-toolbar">
-    <div class="toolbar-group" style="flex:1">
-      <button class="btn btn-primary btn-large" id="btn-snap-sort" style="flex:1;max-width:280px">
-        <span>🎯</span>
-        <span>Snap &amp; Sort</span>
+    <div class="row grow">
+      <button class="btn btn-primary btn-lg grow" id="btn-snap-sort" style="max-width:260px">
+        <svg class="icon"><use href="#i-zap"/></svg>
+        Snap &amp; Sort
       </button>
-      <button class="btn" id="btn-classify">🔍 Classify Only</button>
-    </div>
-    <div class="toolbar-sep"></div>
-    <div class="toolbar-group">
-      <button class="btn btn-icon" id="btn-cam-fullscreen" title="Fullscreen">⛶</button>
+      <button class="btn btn-lg" id="btn-classify">
+        <svg class="icon"><use href="#i-search"/></svg>
+        Classify
+      </button>
     </div>
   </div>
 </section>

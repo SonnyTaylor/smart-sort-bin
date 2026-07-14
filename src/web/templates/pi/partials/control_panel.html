@@ -1,230 +1,158 @@
-<section class="zone" id="control-zone">
-  <div class="zone-header">
-    <span class="zone-title">Servo Control</span>
-    <div style="display:flex;align-items:center;gap:var(--space-2)">
-      <span class="font-mono" style="font-size:0.6875rem;color:var(--text-muted)">Pan</span>
-      <span id="pan-display" class="font-mono" style="font-size:0.875rem;font-weight:600;min-width:40px;text-align:right">0.00</span>
-      <span class="font-mono" style="font-size:0.6875rem;color:var(--text-muted)">Tilt</span>
-      <span id="tilt-display" class="font-mono" style="font-size:0.875rem;font-weight:600;min-width:40px;text-align:right">0.00</span>
-    </div>
+<section class="panel" id="control-panel">
+  <div class="panel-header">
+    <span class="panel-title">
+      <svg class="icon"><use href="#i-crosshair"/></svg>
+      Servo Control
+    </span>
+    <button class="btn btn-sm" id="btn-home">
+      <svg class="icon"><use href="#i-home"/></svg>
+      Center
+    </button>
   </div>
 
-  <div class="zone-body">
-    <!-- Tab nav -->
-    <div class="tab-list" id="control-tabs">
-      <button class="tab-btn active" data-tab="sliders">Sliders</button>
-      <button class="tab-btn" data-tab="pad">D-Pad</button>
-      <button class="tab-btn" data-tab="presets">Presets</button>
-      <button class="tab-btn" data-tab="effects">Effects</button>
-      <button class="tab-btn" data-tab="inputs">Inputs</button>
+  <div class="panel-body stack-4">
+    <!-- XY pad -->
+    <div class="xy-wrap">
+      <div class="xy-pad" id="xy-pad" tabindex="0" role="application"
+           aria-label="Pan and tilt control pad. Drag to move, arrow keys to nudge.">
+        <div class="xy-grid">
+          <div class="gl v" style="left:25%"></div>
+          <div class="gl v axis" style="left:50%"></div>
+          <div class="gl v" style="left:75%"></div>
+          <div class="gl h" style="top:25%"></div>
+          <div class="gl h axis" style="top:50%"></div>
+          <div class="gl h" style="top:75%"></div>
+          <div class="ring"></div>
+        </div>
+        <span class="xy-label top">Tilt +</span>
+        <span class="xy-label bottom">Tilt −</span>
+        <span class="xy-label left">Pan −</span>
+        <span class="xy-label right">Pan +</span>
+        <div class="xy-ghost" id="xy-ghost"></div>
+        <div class="xy-dot" id="xy-dot" style="left:50%;top:50%"></div>
+      </div>
+
+      <div class="axis-readouts">
+        <div class="axis-readout">
+          <span class="axis-name">Pan</span>
+          <span class="axis-value" id="pan-display">0.00</span>
+        </div>
+        <div class="axis-readout">
+          <span class="axis-name">Tilt</span>
+          <span class="axis-value" id="tilt-display">0.00</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Sliders panel -->
-    <div class="tab-panel active" id="tab-sliders">
-      <div style="display:flex;flex-direction:column;gap:var(--space-6)">
-        <!-- Pan -->
-        <div class="servo-fader">
-          <div class="servo-fader-header">
-            <span class="servo-fader-label">Pan Axis</span>
-            <div style="display:flex;align-items:center;gap:var(--space-2)">
-              <button class="btn btn-icon" style="width:28px;height:28px;font-size:0.625rem" onclick="SB.servos.setAxis('pan', -1)">−1</button>
-              <input type="number" id="pan-input" min="-1" max="1" step="0.01" value="0" style="width:70px;text-align:center">
-              <button class="btn btn-icon" style="width:28px;height:28px;font-size:0.625rem" onclick="SB.servos.setAxis('pan', 1)">+1</button>
-            </div>
-          </div>
-          <input type="range" id="pan-slider" min="-1" max="1" step="0.01" value="0">
-          <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.625rem;color:var(--text-muted)">
-            <span>−1.0</span><span>0.0</span><span>+1.0</span>
-          </div>
+    <!-- Fine control -->
+    <div>
+      <div class="section-label">Fine Control</div>
+      <div class="fine-row">
+        <span class="fine-label">Pan</span>
+        <input type="range" id="pan-slider" min="-1" max="1" step="0.01" value="0" aria-label="Pan">
+        <input type="number" id="pan-input" min="-1" max="1" step="0.01" value="0" aria-label="Pan value">
+      </div>
+      <div class="fine-row">
+        <span class="fine-label">Tilt</span>
+        <input type="range" id="tilt-slider" min="-1" max="1" step="0.01" value="0" aria-label="Tilt">
+        <input type="number" id="tilt-input" min="-1" max="1" step="0.01" value="0" aria-label="Tilt value">
+      </div>
+      <div class="row-between" style="margin-top:var(--sp-3)">
+        <span class="small muted">Nudge step</span>
+        <div class="seg" id="step-seg">
+          <button data-step="0.01">0.01</button>
+          <button data-step="0.05">0.05</button>
+          <button data-step="0.1" class="active">0.1</button>
+          <button data-step="0.25">0.25</button>
         </div>
+      </div>
+    </div>
 
-        <!-- Tilt -->
-        <div class="servo-fader">
-          <div class="servo-fader-header">
-            <span class="servo-fader-label">Tilt Axis</span>
-            <div style="display:flex;align-items:center;gap:var(--space-2)">
-              <button class="btn btn-icon" style="width:28px;height:28px;font-size:0.625rem" onclick="SB.servos.setAxis('tilt', -1)">−1</button>
-              <input type="number" id="tilt-input" min="-1" max="1" step="0.01" value="0" style="width:70px;text-align:center">
-              <button class="btn btn-icon" style="width:28px;height:28px;font-size:0.625rem" onclick="SB.servos.setAxis('tilt', 1)">+1</button>
-            </div>
-          </div>
-          <input type="range" id="tilt-slider" min="-1" max="1" step="0.01" value="0">
-          <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.625rem;color:var(--text-muted)">
-            <span>−1.0</span><span>0.0</span><span>+1.0</span>
-          </div>
-        </div>
+    <!-- Bin presets -->
+    <div>
+      <div class="section-label">Sort To Bin</div>
+      <div class="preset-row" id="preset-row">
+        <button class="preset general" data-category="general">
+          <span class="cat-bar"></span>
+          <span class="preset-name">General</span>
+          <span class="preset-pos" id="preset-pos-general">−0.70</span>
+        </button>
+        <button class="preset recycling" data-category="recycling">
+          <span class="cat-bar"></span>
+          <span class="preset-name">Recycling</span>
+          <span class="preset-pos" id="preset-pos-recycling">0.00</span>
+        </button>
+        <button class="preset compost" data-category="compost">
+          <span class="cat-bar"></span>
+          <span class="preset-name">Compost</span>
+          <span class="preset-pos" id="preset-pos-compost">+0.70</span>
+        </button>
+      </div>
+    </div>
 
-        <!-- Nudge step -->
+    <!-- LED -->
+    <div>
+      <div class="row-between" style="margin-bottom:var(--sp-2)">
+        <span class="section-label" style="margin:0">LED Ring</span>
+        <span class="small muted mono" id="led-current">off</span>
+      </div>
+      <div class="led-row">
+        <button class="led-swatch off" data-color="off" title="Off" aria-label="LED off"></button>
+        <button class="led-swatch" data-color="white" style="background:#e4e4e7;color:#e4e4e7" title="White" aria-label="LED white"></button>
+        <button class="led-swatch" data-color="red" style="background:#f0655d;color:#f0655d" title="Red" aria-label="LED red"></button>
+        <button class="led-swatch" data-color="yellow" style="background:#d9a326;color:#d9a326" title="Yellow" aria-label="LED yellow"></button>
+        <button class="led-swatch" data-color="green" style="background:#46c069;color:#46c069" title="Green" aria-label="LED green"></button>
+        <button class="led-swatch" data-color="blue" style="background:#58a6ff;color:#58a6ff" title="Blue" aria-label="LED blue"></button>
+        <button class="led-swatch" data-color="purple" style="background:#a371f7;color:#a371f7" title="Purple" aria-label="LED purple"></button>
+      </div>
+    </div>
+
+    <!-- Input options -->
+    <details class="opts">
+      <summary>
+        <span class="row"><svg class="icon"><use href="#i-gamepad"/></svg> Inputs — keyboard &amp; gamepad</span>
+      </summary>
+      <div class="opts-body stack-3">
         <div>
-          <span class="servo-fader-label" style="margin-bottom:var(--space-2);display:block">Nudge Step</span>
-          <div style="display:flex;gap:var(--space-1)">
-            <button class="btn nudge-btn" data-step="0.01" style="flex:1;font-size:0.6875rem">0.01</button>
-            <button class="btn nudge-btn" data-step="0.05" style="flex:1;font-size:0.6875rem">0.05</button>
-            <button class="btn nudge-btn active" data-step="0.1" style="flex:1;font-size:0.6875rem">0.1</button>
-            <button class="btn nudge-btn" data-step="0.25" style="flex:1;font-size:0.6875rem">0.25</button>
+          <div class="section-label">Keyboard</div>
+          <div class="small muted" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-1) var(--sp-3);margin-bottom:var(--sp-2)">
+            <div><span class="kbd">W</span><span class="kbd">S</span> Tilt</div>
+            <div><span class="kbd">A</span><span class="kbd">D</span> Pan</div>
+            <div><span class="kbd">Q</span><span class="kbd">E</span> Pan ±0.25</div>
+            <div><span class="kbd">H</span> Center</div>
+            <div><span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> Sort to bin</div>
+            <div><span class="kbd">Space</span> Snapshot</div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- D-Pad panel -->
-    <div class="tab-panel" id="tab-pad">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:var(--space-5)">
-        <div class="dpad">
-          <div class="dpad-empty"></div>
-          <button class="dpad-btn" onclick="SB.servos.nudge('tilt', 0.1)">▲</button>
-          <div class="dpad-empty"></div>
-          <button class="dpad-btn" onclick="SB.servos.nudge('pan', -0.1)">◀</button>
-          <button class="dpad-btn home" onclick="SB.servos.home()" title="Home">●</button>
-          <button class="dpad-btn" onclick="SB.servos.nudge('pan', 0.1)">▶</button>
-          <div class="dpad-empty"></div>
-          <button class="dpad-btn" onclick="SB.servos.nudge('tilt', -0.1)">▼</button>
-          <div class="dpad-empty"></div>
-        </div>
-        <button class="btn" onclick="SB.servos.testDump()" style="width:100%">🔄 Test Dump Sequence</button>
-      </div>
-    </div>
-
-    <!-- Presets panel -->
-    <div class="tab-panel" id="tab-presets">
-      <div style="display:flex;flex-direction:column;gap:var(--space-5)">
-        <div class="bin-layout">
-          <button class="bin-slot general" onclick="SB.servos.moveToCategory('general')">
-            <span class="icon">🗑️</span>
-            <span class="label">General</span>
-            <span class="position">pan −0.7</span>
-          </button>
-          <button class="bin-slot recycling" onclick="SB.servos.moveToCategory('recycling')">
-            <span class="icon">♻️</span>
-            <span class="label">Recycling</span>
-            <span class="position">pan 0.0</span>
-          </button>
-          <button class="bin-slot compost" onclick="SB.servos.moveToCategory('compost')">
-            <span class="icon">🌱</span>
-            <span class="label">Compost</span>
-            <span class="position">pan +0.7</span>
-          </button>
-        </div>
-        <div style="background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:var(--space-4)">
-          <div style="font-family:var(--font-mono);font-size:0.625rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:var(--space-3)">Sort Sequence</div>
-          <div style="display:flex;flex-direction:column;gap:var(--space-2);font-size:0.8125rem;color:var(--text-secondary)">
-            <div>1. 📷 Camera classifies item</div>
-            <div>2. ↔️ Pan to bin third</div>
-            <div>3. ↕️ Tilt to dump item</div>
-            <div>4. ↕️ Tilt back to rest</div>
-            <div>5. ↔️ Pan back to center</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Effects panel -->
-    <div class="tab-panel" id="tab-effects">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
-        <span class="servo-fader-label">Servo Effects</span>
-        <button class="btn" id="btn-fun-stop" style="display:none;font-size:0.75rem;padding:4px 12px;border-color:var(--status-error);color:var(--status-error)" onclick="SB.fun.stop()">■ Stop</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px" id="fun-grid"></div>
-    </div>
-
-    <!-- Inputs panel -->
-    <div class="tab-panel" id="tab-inputs">
-      <div style="display:flex;flex-direction:column;gap:var(--space-5)">
-        <!-- Virtual Joystick -->
-        <div style="text-align:center">
-          <span class="servo-fader-label" style="margin-bottom:var(--space-3);display:block">Virtual Joystick</span>
-          <div class="joystick-zone" id="joystick">
-            <div class="joystick-knob" id="joystick-knob"></div>
-          </div>
-          <div style="margin-top:var(--space-2);font-family:var(--font-mono);font-size:0.6875rem;color:var(--text-muted)">
-            Pan <span id="joy-pan" class="font-mono" style="color:var(--text-primary);font-weight:600">0.00</span>
-            &nbsp;Tilt <span id="joy-tilt" class="font-mono" style="color:var(--text-primary);font-weight:600">0.00</span>
-          </div>
-          <label style="display:flex;align-items:center;justify-content:center;gap:var(--space-2);margin-top:var(--space-2);font-size:0.75rem;color:var(--text-muted);cursor:pointer">
-            <input type="checkbox" id="joy-enabled" checked style="accent-color:var(--accent)">
-            <span>Joystick enabled</span>
+          <label class="check">
+            <input type="checkbox" id="kb-enabled" checked>
+            Keyboard control
           </label>
         </div>
 
-        <!-- Keyboard shortcuts -->
-        <div style="background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:var(--space-4)">
-          <div style="font-family:var(--font-mono);font-size:0.625rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:var(--space-3)">Keyboard Shortcuts</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);font-size:0.8125rem;color:var(--text-secondary)">
-            <div><kbd class="kbd">W</kbd><kbd class="kbd">S</kbd> Tilt ±</div>
-            <div><kbd class="kbd">A</kbd><kbd class="kbd">D</kbd> Pan ±</div>
-            <div><kbd class="kbd">Q</kbd><kbd class="kbd">E</kbd> Pan ±0.25</div>
-            <div><kbd class="kbd">H</kbd> Home</div>
-            <div><kbd class="kbd">1</kbd><kbd class="kbd">2</kbd><kbd class="kbd">3</kbd> Sort</div>
-            <div><kbd class="kbd">Space</kbd> Snap</div>
+        <div>
+          <div class="row-between" style="margin-bottom:var(--sp-2)">
+            <span class="section-label" style="margin:0">Gamepad</span>
+            <span class="small muted" id="gamepad-name">Not connected</span>
           </div>
-          <div style="margin-top:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)">
-            <label style="display:flex;align-items:center;gap:var(--space-2);font-size:0.75rem;color:var(--text-muted);cursor:pointer">
-              <input type="checkbox" id="kb-enabled" checked style="accent-color:var(--accent)">
-              <span>Keyboard enabled</span>
+          <div class="stack-3" id="gamepad-detail" style="display:none">
+            <div class="mono small muted" style="display:grid;grid-template-columns:1fr 1fr;gap:2px">
+              <span>LX <span id="gp-lx" style="color:var(--text-1)">0.00</span></span>
+              <span>LY <span id="gp-ly" style="color:var(--text-1)">0.00</span></span>
+            </div>
+            <div class="small muted">A center · B/X/Y sort general/recycling/compost · LB/RB pan ±0.25</div>
+          </div>
+          <div class="stack-3" style="gap:var(--sp-2);margin-top:var(--sp-2)">
+            <label class="check">
+              <input type="checkbox" id="gp-enabled">
+              Gamepad control
             </label>
-            <label style="display:flex;align-items:center;gap:var(--space-2);font-size:0.75rem;color:var(--text-muted);cursor:pointer">
-              <input type="checkbox" id="kb-continuous" style="accent-color:var(--accent)">
-              <span>Hold to move (continuous)</span>
+            <label class="check">
+              <input type="checkbox" id="gp-invert-y">
+              Invert Y axis
             </label>
           </div>
         </div>
-
-        <!-- Gamepad -->
-        <div style="background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:var(--space-4)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3)">
-            <span style="font-family:var(--font-mono);font-size:0.625rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted)">Gamepad</span>
-            <button class="btn" id="btn-gamepad-connect" style="font-size:0.6875rem;padding:var(--space-1) var(--space-3)">Connect</button>
-          </div>
-          <div id="gamepad-info">
-            <div style="font-size:0.8125rem;color:var(--text-muted)">Press a button on your controller to connect</div>
-          </div>
-          <div id="gamepad-axes" style="display:none;margin-top:var(--space-3)">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);font-family:var(--font-mono);font-size:0.75rem;color:var(--text-secondary)">
-              <div>LX: <span id="gp-lx" style="color:var(--text-primary)">0.00</span></div>
-              <div>LY: <span id="gp-ly" style="color:var(--text-primary)">0.00</span></div>
-              <div>RX: <span id="gp-rx" style="color:var(--text-primary)">0.00</span></div>
-              <div>RY: <span id="gp-ry" style="color:var(--text-primary)">0.00</span></div>
-            </div>
-            <div style="margin-top:var(--space-3);font-size:0.75rem;color:var(--text-muted);display:flex;flex-direction:column;gap:4px">
-              <div><span style="color:var(--text-secondary)">A</span> = Home | <span style="color:var(--text-secondary)">B</span> = Sort General</div>
-              <div><span style="color:var(--text-secondary)">X</span> = Sort Recycling | <span style="color:var(--text-secondary)">Y</span> = Sort Compost</div>
-              <div><span style="color:var(--text-secondary)">LB/RB</span> = Pan ±0.25</div>
-            </div>
-            <div style="margin-top:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)">
-              <label style="display:flex;align-items:center;gap:var(--space-2);font-size:0.75rem;color:var(--text-muted);cursor:pointer">
-                <input type="checkbox" id="gp-enabled" style="accent-color:var(--accent)">
-                <span>Gamepad control active</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:var(--space-2);font-size:0.75rem;color:var(--text-muted);cursor:pointer">
-                <input type="checkbox" id="gp-invert-y" style="accent-color:var(--accent)">
-                <span>Invert Y axis</span>
-              </label>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
-
-    <!-- LED Control -->
-    <div style="margin-top:var(--space-5);padding-top:var(--space-5);border-top:1px solid var(--border-subtle)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3)">
-        <span class="zone-title" style="padding:0;border:none">LED Ring</span>
-        <span class="font-mono" style="font-size:0.6875rem;color:var(--text-muted)">Current: <span id="led-current" style="color:var(--text-primary)">off</span></span>
-      </div>
-      <div class="led-grid">
-        <button class="led-swatch off" onclick="SB.led.set('off')" title="Off"></button>
-        <button class="led-swatch" style="background:#e0e0e0" onclick="SB.led.set('white')" title="White"></button>
-        <button class="led-swatch" style="background:var(--cat-general);color:var(--cat-general)" onclick="SB.led.set('red')" title="Red"></button>
-        <button class="led-swatch" style="background:#eab308;color:#eab308" onclick="SB.led.set('yellow')" title="Yellow"></button>
-        <button class="led-swatch" style="background:var(--cat-compost);color:var(--cat-compost)" onclick="SB.led.set('green')" title="Green"></button>
-        <button class="led-swatch" style="background:#3b82f6;color:#3b82f6" onclick="SB.led.set('blue')" title="Blue"></button>
-        <button class="led-swatch" style="background:#a855f7;color:#a855f7" onclick="SB.led.set('purple')" title="Purple"></button>
-      </div>
-      <div style="display:flex;gap:var(--space-2);margin-top:var(--space-3)">
-        <button class="btn btn-cat btn-cat-general" onclick="SB.led.set('red')">⚠️ Alert</button>
-        <button class="btn btn-cat btn-cat-compost" onclick="SB.led.set('green')">✅ Success</button>
-        <button class="btn" onclick="SB.led.pulse()">💫 Pulse</button>
-      </div>
-    </div>
+    </details>
   </div>
 </section>

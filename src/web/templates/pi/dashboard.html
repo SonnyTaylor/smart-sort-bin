@@ -1,21 +1,44 @@
 {% extends "pi/base.html" %}
 
 {% block content %}
-<div class="dashboard">
+<div class="shell">
   {% include "pi/partials/header.html" %}
 
-  <main class="dashboard-main">
-    <div class="dashboard-primary">
-      {% include "pi/partials/camera_zone.html" %}
-      {% include "pi/partials/activity_panel.html" %}
-    </div>
+  <div class="grid-main">
+    {% include "pi/partials/camera_zone.html" %}
+    {% include "pi/partials/control_panel.html" %}
+  </div>
 
-    <aside class="dashboard-sidebar">
-      {% include "pi/partials/system_panel.html" %}
-      {% include "pi/partials/control_panel.html" %}
-    </aside>
-  </main>
+  <!-- Bottom tabbed panels -->
+  <nav class="tabstrip" id="main-tabs" role="tablist">
+    <button class="tab active" data-tab="activity" role="tab">
+      <svg class="icon"><use href="#i-activity"/></svg> Activity
+    </button>
+    <button class="tab" data-tab="stats" role="tab">
+      <svg class="icon"><use href="#i-chart"/></svg> Stats
+    </button>
+    <button class="tab" data-tab="animations" role="tab">
+      <svg class="icon"><use href="#i-sparkle"/></svg> Animations
+    </button>
+    <button class="tab" data-tab="calibration" role="tab">
+      <svg class="icon"><use href="#i-wrench"/></svg> Calibration
+    </button>
+  </nav>
 
-  {% include "pi/partials/settings_drawer.html" %}
+  <div id="tab-activity" class="tab-panel active">
+    {% include "pi/partials/activity_panel.html" %}
+  </div>
+  <div id="tab-stats" class="tab-panel">
+    {% include "pi/partials/stats_panel.html" %}
+  </div>
+  <div id="tab-animations" class="tab-panel">
+    {% include "pi/partials/animations_panel.html" %}
+  </div>
+  <div id="tab-calibration" class="tab-panel">
+    {% include "pi/partials/calibration_panel.html" %}
+  </div>
 </div>
+
+{% include "pi/partials/settings_drawer.html" %}
+{% include "pi/partials/compare_modal.html" %}
 {% endblock %}

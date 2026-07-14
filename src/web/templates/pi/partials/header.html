@@ -1,25 +1,21 @@
-<header class="dashboard-header">
+<header class="topbar">
   <div class="brand">
-    <div class="brand-icon">🗑️</div>
+    <div class="brand-mark"><svg class="icon"><use href="#i-bin"/></svg></div>
     <div>
-      <div class="brand-title">Smart Bin</div>
-      <div class="brand-subtitle">Control Surface · Pi 3B</div>
+      <div class="brand-name">Smart Bin</div>
+      <div class="brand-sub">Pi 3B · Control</div>
     </div>
   </div>
 
-  <div class="header-status">
-    <div class="status-pill">
-      <span id="sse-indicator" class="indicator indicator-pulse" style="color:var(--status-error);background:var(--status-error)"></span>
+  <div class="topbar-status">
+    <span class="pill">
+      <span id="sse-indicator" class="dot pulse"></span>
       <span id="sse-label">Offline</span>
-    </div>
-    <div class="status-pill">
-      <span>CPU</span>
-      <span id="header-cpu" class="value">--°C</span>
-    </div>
-    <div class="status-pill">
-      <span>Up</span>
-      <span id="header-uptime" class="value">--</span>
-    </div>
-    <button class="btn btn-icon" id="btn-settings" title="Settings">⚙️</button>
+    </span>
+    <span class="pill">CPU <span id="header-cpu" class="value">--</span></span>
+    <span class="pill">Up <span id="header-uptime" class="value">--</span></span>
+    <button class="btn btn-icon" id="btn-settings" title="Settings" aria-label="Settings">
+      <svg class="icon"><use href="#i-settings"/></svg>
+    </button>
   </div>
 </header>

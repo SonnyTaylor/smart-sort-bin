@@ -1,0 +1,44 @@
+<div class="modal-overlay" id="compare-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="compare-title">
+    <div class="modal-header">
+      <span class="modal-title" id="compare-title">Compare Models</span>
+      <button class="btn btn-sm btn-icon btn-ghost" id="btn-compare-close" aria-label="Close">
+        <svg class="icon"><use href="#i-x"/></svg>
+      </button>
+    </div>
+    <div class="modal-body stack-4">
+      <div class="small muted">
+        Runs the current camera frame through two providers at once and shows both classifications.
+      </div>
+
+      <div class="compare-grid">
+        <div class="stack-3" style="gap:var(--sp-2)">
+          <div class="section-label">Provider A</div>
+          <select id="compare-a"></select>
+          <input type="text" id="compare-model-a" placeholder="Model override (optional)">
+        </div>
+        <div class="stack-3" style="gap:var(--sp-2)">
+          <div class="section-label">Provider B</div>
+          <select id="compare-b"></select>
+          <input type="text" id="compare-model-b" placeholder="Model override (optional)">
+        </div>
+      </div>
+
+      <div class="row-between">
+        <label class="check">
+          <input type="checkbox" id="compare-explain">
+          Explain each classification
+        </label>
+        <button class="btn btn-primary" id="btn-compare-run">
+          <svg class="icon"><use href="#i-play"/></svg>
+          Run comparison
+        </button>
+      </div>
+
+      <div class="compare-grid" id="compare-results" style="display:none">
+        <div class="compare-result" id="compare-result-a"></div>
+        <div class="compare-result" id="compare-result-b"></div>
+      </div>
+    </div>
+  </div>
+</div>

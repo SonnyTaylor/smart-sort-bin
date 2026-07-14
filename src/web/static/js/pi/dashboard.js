@@ -6,39 +6,44 @@ var SB = window.SB || {};
 
 SB.dashboard = (function () {
   function init() {
-    // UI
-    SB.ui.initTabs('control-tabs');
+    // UI chrome
+    SB.ui.initTabs('main-tabs');
     SB.settings.bindDrawer();
-    SB.activity.bind();
 
-    // Inputs
+    // Controls
     SB.servos.bind();
     SB.camera.bind();
+    SB.compare.bind();
     SB.inputKeyboard.bind();
     SB.inputGamepad.bind();
+    SB.led.bind();
 
-    // Data
-    SB.settings.loadHealth();
-    SB.activity.loadStats();
+    // Panels
+    SB.activity.bind();
+    SB.stats.bind();
+    SB.animations.bind();
+    SB.calibration.bind();
+
+    // Initial data
+    SB.stats.loadHealth();
+    SB.stats.refresh();
     SB.activity.load();
     SB.settings.loadProviders();
+    SB.animations.load();
+    SB.calibration.load();
 
-    // Effects grid
-    if (SB.fun && SB.fun.renderGrid) SB.fun.renderGrid();
-
-    // SSE
+    // Live updates
     SB.sse.connect();
 
-    // Auto-refresh
-    setInterval(() => SB.settings.loadHealth(), 5000);
-    setInterval(() => SB.activity.loadStats(), 10000);
+    // Background refresh
+    setInterval(() => SB.stats.loadHealth(), 5000);
+    setInterval(() => SB.stats.loadStats(), 15000);
 
-    console.log('[SmartBin] Dashboard initialized');
+    console.log('[SmartBin] Dashboard ready');
   }
 
   return { init };
 })();
 
-// Boot
 document.addEventListener('DOMContentLoaded', SB.dashboard.init);
 window.SB = SB;

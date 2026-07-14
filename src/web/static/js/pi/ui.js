@@ -1,6 +1,6 @@
 /**
  * Smart Bin — UI Utilities
- * Toasts, drawer, tabs, and general DOM helpers.
+ * Toasts, drawer, tabs, formatting helpers.
  */
 var SB = window.SB || {};
 
@@ -38,22 +38,28 @@ SB.ui = (function () {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const buttons = container.querySelectorAll('.tab-btn');
+    const buttons = container.querySelectorAll('.tab');
     buttons.forEach((btn) => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
         if (!tab) return;
-
-        // Deactivate all
         buttons.forEach((b) => b.classList.remove('active'));
-        const parent = container.parentElement;
-        const panels = parent ? parent.querySelectorAll('.tab-panel') : [];
-        panels.forEach((p) => p.classList.remove('active'));
-
-        // Activate target
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
         btn.classList.add('active');
-        const panel = document.getElementById(`tab-${tab}`);
-        if (panel) panel.classList.add('active');
+        document.getElementById(`tab-${tab}`)?.classList.add('active');
+      });
+    });
+  }
+
+  // ── Segmented controls ──
+  function initSeg(containerId, onSelect) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        container.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        onSelect(btn);
       });
     });
   }
@@ -79,13 +85,23 @@ SB.ui = (function () {
     return `${Math.floor(diff / 86400)}d`;
   }
 
+  function escapeHtml(str) {
+    return String(str ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;');
+  }
+
   return {
     toast,
     openDrawer,
     closeDrawer,
     initTabs,
+    initSeg,
     formatUptime,
     formatTimeRelative,
+    escapeHtml,
   };
 })();
 

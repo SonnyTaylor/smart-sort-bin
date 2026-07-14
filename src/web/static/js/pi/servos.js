@@ -1,207 +1,243 @@
 /**
  * Smart Bin — Servo Control
- * Sliders, D-pad, joystick, presets, nudge, home.
+ * XY pad, sliders, presets, and a throttled sender.
+ *
+ * All inputs route through setTarget(): the UI updates instantly, and a
+ * single loop POSTs the latest values at most every SEND_INTERVAL ms.
+ * No more one-request-per-pixel bursts; the backend slew thread handles
+ * physical smoothing.
  */
 var SB = window.SB || {};
 
 SB.servos = (function () {
-  const DEADZONE = 0.15;
+  const SEND_INTERVAL = 60; // ms between servo POSTs while input is moving
+
+  let dirty = false;
+  let sending = false;
+  let sendTimer = null;
+
+  // ── Throttled sender ──
+
+  function setTarget(pan, tilt) {
+    if (pan !== null && pan !== undefined) {
+      SB.state.currentPan = clamp(pan);
+    }
+    if (tilt !== null && tilt !== undefined) {
+      SB.state.currentTilt = clamp(tilt);
+    }
+    dirty = true;
+    updateDisplays();
+    scheduleSend();
+  }
+
+  function clamp(v) {
+    return Math.max(-1, Math.min(1, Math.round(parseFloat(v) * 100) / 100));
+  }
+
+  function scheduleSend() {
+    if (sendTimer) return;
+    sendTimer = setTimeout(flush, SEND_INTERVAL);
+  }
+
+  async function flush() {
+    sendTimer = null;
+    if (!dirty || sending) {
+      if (dirty) scheduleSend();
+      return;
+    }
+    dirty = false;
+    sending = true;
+    const pan = SB.state.currentPan;
+    const tilt = SB.state.currentTilt;
+    try {
+      await SB.api.move(pan, tilt);
+    } catch (err) {
+      console.error('Servo send failed:', err);
+    } finally {
+      sending = false;
+      if (dirty) scheduleSend(); // send whatever changed while in flight
+    }
+  }
+
+  // ── Display sync ──
 
   function updateDisplays() {
     const pan = SB.state.currentPan;
     const tilt = SB.state.currentTilt;
 
-    const panDisp = document.getElementById('pan-display');
-    const tiltDisp = document.getElementById('tilt-display');
-    const panSlider = document.getElementById('pan-slider');
-    const tiltSlider = document.getElementById('tilt-slider');
-    const panInput = document.getElementById('pan-input');
-    const tiltInput = document.getElementById('tilt-input');
-    const joyPan = document.getElementById('joy-pan');
-    const joyTilt = document.getElementById('joy-tilt');
-
-    if (panDisp) panDisp.textContent = pan.toFixed(2);
-    if (tiltDisp) tiltDisp.textContent = tilt.toFixed(2);
-    if (panSlider) panSlider.value = pan;
-    if (tiltSlider) tiltSlider.value = tilt;
-    if (panInput) panInput.value = pan.toFixed(2);
-    if (tiltInput) tiltInput.value = tilt.toFixed(2);
-    if (joyPan) joyPan.textContent = pan.toFixed(2);
-    if (joyTilt) joyTilt.textContent = tilt.toFixed(2);
+    setText('pan-display', pan.toFixed(2));
+    setText('tilt-display', tilt.toFixed(2));
+    setValue('pan-slider', pan);
+    setValue('tilt-slider', tilt);
+    setValue('pan-input', pan.toFixed(2));
+    setValue('tilt-input', tilt.toFixed(2));
+    positionDot(pan, tilt);
   }
 
-  async function send(axis, value) {
-    value = Math.max(-1, Math.min(1, parseFloat(value)));
-    if (axis === 'pan') SB.state.currentPan = value;
-    else SB.state.currentTilt = value;
-    updateDisplays();
-    try {
-      await SB.api.setServo(axis, value);
-    } catch (err) {
-      console.error('Servo error:', err);
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function setValue(id, value) {
+    const el = document.getElementById(id);
+    if (el && document.activeElement !== el) el.value = value;
+  }
+
+  // ── XY pad ──
+
+  function positionDot(pan, tilt) {
+    const dot = document.getElementById('xy-dot');
+    if (!dot) return;
+    // pan -1..1 → 0..100% left; tilt +1 (up) → 0% top
+    dot.style.left = `${((pan + 1) / 2) * 100}%`;
+    dot.style.top = `${((1 - tilt) / 2) * 100}%`;
+  }
+
+  function showGhost(pan, tilt) {
+    const ghost = document.getElementById('xy-ghost');
+    if (!ghost) return;
+    ghost.classList.add('visible');
+    ghost.style.left = `${((pan + 1) / 2) * 100}%`;
+    ghost.style.top = `${((1 - tilt) / 2) * 100}%`;
+    clearTimeout(showGhost._hide);
+    showGhost._hide = setTimeout(() => ghost.classList.remove('visible'), 600);
+  }
+
+  function initPad() {
+    const pad = document.getElementById('xy-pad');
+    if (!pad) return;
+
+    let dragging = false;
+
+    function fromEvent(e) {
+      const rect = pad.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;   // 0..1
+      const y = (e.clientY - rect.top) / rect.height;   // 0..1
+      const pan = clamp(x * 2 - 1);
+      const tilt = clamp(1 - y * 2);
+      setTarget(pan, tilt);
     }
+
+    pad.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      pad.classList.add('dragging');
+      pad.setPointerCapture(e.pointerId);
+      fromEvent(e);
+    });
+
+    pad.addEventListener('pointermove', (e) => {
+      if (dragging) fromEvent(e);
+    });
+
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      pad.classList.remove('dragging');
+      fromEvent(e);
+    }
+
+    pad.addEventListener('pointerup', endDrag);
+    pad.addEventListener('pointercancel', () => {
+      dragging = false;
+      pad.classList.remove('dragging');
+    });
+
+    // Arrow keys nudge when the pad is focused
+    pad.addEventListener('keydown', (e) => {
+      const step = SB.state.nudgeStep;
+      switch (e.key) {
+        case 'ArrowLeft': e.preventDefault(); nudge('pan', -1); break;
+        case 'ArrowRight': e.preventDefault(); nudge('pan', 1); break;
+        case 'ArrowUp': e.preventDefault(); nudge('tilt', 1); break;
+        case 'ArrowDown': e.preventDefault(); nudge('tilt', -1); break;
+        case 'Home': e.preventDefault(); home(); break;
+      }
+    });
   }
 
-  function nudge(axis, delta) {
+  // ── Actions ──
+
+  function nudge(axis, direction) {
     const step = SB.state.nudgeStep;
-    const current = axis === 'pan' ? SB.state.currentPan : SB.state.currentTilt;
-    const newVal = Math.max(-1, Math.min(1, +(current + delta * step).toFixed(2)));
-    send(axis, newVal);
+    if (axis === 'pan') setTarget(SB.state.currentPan + direction * step, null);
+    else setTarget(null, SB.state.currentTilt + direction * step);
   }
 
-  function setAxis(axis, val) {
-    send(axis, val);
+  function setAxis(axis, value) {
+    if (axis === 'pan') setTarget(value, null);
+    else setTarget(null, value);
   }
 
   function home() {
     SB.state.currentPan = 0;
     SB.state.currentTilt = 0;
+    dirty = false; // don't race the home request with a stale move
     updateDisplays();
-    SB.api.home().catch((err) => console.error('Home error:', err));
-    SB.ui.toast('Servos homed', 'success');
+    SB.api.home().catch((err) => console.error('Home failed:', err));
   }
 
-  async function moveToCategory(cat) {
-    const presets = {
-      general: { pan: -0.7 },
-      recycling: { pan: 0 },
-      compost: { pan: 0.7 },
-    };
-    const p = presets[cat];
-    if (!p) return;
-    await send('pan', p.pan);
-    await new Promise((r) => setTimeout(r, 600));
-    await send('tilt', -0.6);
-    await new Promise((r) => setTimeout(r, 1000));
-    await send('tilt', 0);
-    await new Promise((r) => setTimeout(r, 500));
-    await send('pan', 0);
-    SB.ui.toast(`${cat} sorted`, 'success');
+  async function sortToBin(category) {
+    try {
+      SB.ui.toast(`Sorting to ${category}…`, 'info');
+      await SB.api.testCalibration(category);
+      SB.state.currentPan = 0;
+      SB.state.currentTilt = 0;
+      updateDisplays();
+    } catch (err) {
+      SB.ui.toast(`Sort failed: ${err.message}`, 'error');
+    }
   }
 
-  async function testDump() {
-    const cat = 'general';
-    const presets = {
-      general: { pan: -0.7 },
-      recycling: { pan: 0 },
-      compost: { pan: 0.7 },
-    };
-    SB.ui.toast('Test dump sequence…', 'info');
-    await send('pan', presets[cat].pan);
-    await new Promise((r) => setTimeout(r, 600));
-    await send('tilt', -0.6);
-    await new Promise((r) => setTimeout(r, 1000));
-    await send('tilt', 0);
-    await new Promise((r) => setTimeout(r, 500));
-    await send('pan', 0);
-    SB.ui.toast('Test dump complete', 'success');
-  }
-
-  function setNudgeStep(step) {
-    SB.state.nudgeStep = step;
-    document.querySelectorAll('.nudge-btn').forEach((btn) => {
-      btn.classList.toggle('active', parseFloat(btn.dataset.step) === step);
-      if (btn.classList.contains('active')) {
-        btn.style.borderColor = 'var(--accent)';
-        btn.style.color = 'var(--accent)';
-      } else {
-        btn.style.borderColor = '';
-        btn.style.color = '';
-      }
-    });
-  }
-
-  // ── Joystick ──
-  function initJoystick() {
-    const zone = document.getElementById('joystick');
-    const knob = document.getElementById('joystick-knob');
-    if (!zone || !knob) return;
-
-    let dragging = false;
-    const maxRadius = 50;
-
-    function updateFromXY(dx, dy) {
-      const pan = Math.max(-1, Math.min(1, dx / maxRadius));
-      const tilt = Math.max(-1, Math.min(1, -(dy / maxRadius)));
-      if (Math.abs(pan) > DEADZONE || Math.abs(tilt) > DEADZONE) {
-        SB.state.currentPan = +pan.toFixed(2);
-        SB.state.currentTilt = +tilt.toFixed(2);
-        updateDisplays();
-        if (SB.state.joystickEnabled) {
-          send('pan', SB.state.currentPan);
-          send('tilt', SB.state.currentTilt);
-        }
+  function updatePresetLabels() {
+    const cal = SB.state.calibration;
+    if (!cal) return;
+    for (const cat of ['general', 'recycling', 'compost']) {
+      const el = document.getElementById(`preset-pos-${cat}`);
+      const pan = cal.categories?.[cat]?.pan;
+      if (el && pan !== undefined) {
+        el.textContent = (pan > 0 ? '+' : '') + pan.toFixed(2);
       }
     }
-
-    function onDown(e) {
-      if (!SB.state.joystickEnabled) return;
-      dragging = true;
-      knob.classList.add('active');
-      onMove(e);
-    }
-
-    function onMove(e) {
-      if (!dragging) return;
-      const rect = zone.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      let dx = clientX - cx;
-      let dy = clientY - cy;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > maxRadius) {
-        dx = (dx / dist) * maxRadius;
-        dy = (dy / dist) * maxRadius;
-      }
-      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-      updateFromXY(dx, dy);
-    }
-
-    function onUp() {
-      if (!dragging) return;
-      dragging = false;
-      knob.classList.remove('active');
-      knob.style.transform = 'translate(-50%, -50%)';
-      home();
-    }
-
-    zone.addEventListener('mousedown', onDown);
-    zone.addEventListener('touchstart', onDown, { passive: false });
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('mouseup', onUp);
-    document.addEventListener('touchend', onUp);
   }
+
+  // ── Bindings ──
 
   function bind() {
-    // Sliders
-    document.getElementById('pan-slider')?.addEventListener('input', (e) => send('pan', e.target.value));
-    document.getElementById('tilt-slider')?.addEventListener('input', (e) => send('tilt', e.target.value));
+    initPad();
+
+    // Sliders — live but throttled through setTarget
+    document.getElementById('pan-slider')?.addEventListener('input', (e) => setTarget(e.target.value, null));
+    document.getElementById('tilt-slider')?.addEventListener('input', (e) => setTarget(null, e.target.value));
 
     // Number inputs
-    document.getElementById('pan-input')?.addEventListener('change', (e) => send('pan', e.target.value));
-    document.getElementById('tilt-input')?.addEventListener('change', (e) => send('tilt', e.target.value));
+    document.getElementById('pan-input')?.addEventListener('change', (e) => setTarget(e.target.value, null));
+    document.getElementById('tilt-input')?.addEventListener('change', (e) => setTarget(null, e.target.value));
 
-    // Nudge buttons
-    document.querySelectorAll('.nudge-btn').forEach((btn) => {
-      btn.addEventListener('click', () => setNudgeStep(parseFloat(btn.dataset.step)));
+    // Nudge step
+    SB.ui.initSeg('step-seg', (btn) => {
+      SB.state.nudgeStep = parseFloat(btn.dataset.step);
     });
 
-    initJoystick();
+    // Presets
+    document.querySelectorAll('#preset-row .preset').forEach((btn) => {
+      btn.addEventListener('click', () => sortToBin(btn.dataset.category));
+    });
+
+    // Home
+    document.getElementById('btn-home')?.addEventListener('click', home);
   }
 
   return {
     bind,
-    updateDisplays,
-    send,
+    setTarget,
     nudge,
     setAxis,
     home,
-    moveToCategory,
-    testDump,
-    setNudgeStep,
+    sortToBin,
+    updateDisplays,
+    updatePresetLabels,
+    showGhost,
   };
 })();
 

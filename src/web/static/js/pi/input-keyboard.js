@@ -1,63 +1,73 @@
 /**
  * Smart Bin — Keyboard Input
- * WASD pan/tilt, shortcuts for sort/home/snapshot.
+ * WASD pan/tilt with hold-to-repeat, shortcuts for sort/center/snapshot.
  */
 var SB = window.SB || {};
 
 SB.inputKeyboard = (function () {
-  const keys = new Set();
-  let continuousInterval = null;
+  const held = new Set();
+  let repeatTimer = null;
+
+  const MOVE_KEYS = new Set(['w', 'a', 's', 'd']);
+
+  function applyHeld() {
+    if (held.has('w')) SB.servos.nudge('tilt', 1);
+    if (held.has('s')) SB.servos.nudge('tilt', -1);
+    if (held.has('a')) SB.servos.nudge('pan', -1);
+    if (held.has('d')) SB.servos.nudge('pan', 1);
+  }
 
   function onKeyDown(e) {
     if (!SB.state.keyboardEnabled) return;
     if (e.target.matches('input, select, textarea')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-    keys.add(e.key.toLowerCase());
+    const key = e.key.toLowerCase();
 
-    const big = 0.25;
-    const small = SB.state.nudgeStep;
-
-    switch (e.key.toLowerCase()) {
-      case 'w': SB.servos.nudge('tilt', 1); break;
-      case 's': SB.servos.nudge('tilt', -1); break;
-      case 'a': SB.servos.nudge('pan', -1); break;
-      case 'd': SB.servos.nudge('pan', 1); break;
-      case 'q': SB.servos.setAxis('pan', Math.max(-1, SB.state.currentPan - big)); break;
-      case 'e': SB.servos.setAxis('pan', Math.min(1, SB.state.currentPan + big)); break;
-      case 'h': SB.servos.home(); break;
-      case ' ': e.preventDefault(); SB.camera.snapshot(); break;
-      case '1': SB.servos.moveToCategory('general'); break;
-      case '2': SB.servos.moveToCategory('recycling'); break;
-      case '3': SB.servos.moveToCategory('compost'); break;
+    if (MOVE_KEYS.has(key)) {
+      if (!held.has(key)) {
+        held.add(key);
+        SB.servos.nudge(
+          key === 'w' ? 'tilt' : key === 's' ? 'tilt' : 'pan',
+          key === 'w' || key === 'd' ? 1 : -1
+        );
+      }
+      // Hold to repeat
+      if (!repeatTimer) {
+        repeatTimer = setInterval(applyHeld, 120);
+      }
+      return;
     }
 
-    if (SB.state.keyboardContinuous && !continuousInterval) {
-      continuousInterval = setInterval(() => {
-        if (keys.has('w')) SB.servos.nudge('tilt', 1);
-        if (keys.has('s')) SB.servos.nudge('tilt', -1);
-        if (keys.has('a')) SB.servos.nudge('pan', -1);
-        if (keys.has('d')) SB.servos.nudge('pan', 1);
-      }, 150);
+    switch (key) {
+      case 'q': SB.servos.setAxis('pan', SB.state.currentPan - 0.25); break;
+      case 'e': SB.servos.setAxis('pan', SB.state.currentPan + 0.25); break;
+      case 'h': SB.servos.home(); break;
+      case ' ': e.preventDefault(); SB.camera.snapshot(); break;
+      case '1': SB.servos.sortToBin('general'); break;
+      case '2': SB.servos.sortToBin('recycling'); break;
+      case '3': SB.servos.sortToBin('compost'); break;
     }
   }
 
   function onKeyUp(e) {
-    keys.delete(e.key.toLowerCase());
-    if (keys.size === 0 && continuousInterval) {
-      clearInterval(continuousInterval);
-      continuousInterval = null;
+    held.delete(e.key.toLowerCase());
+    if (held.size === 0 && repeatTimer) {
+      clearInterval(repeatTimer);
+      repeatTimer = null;
     }
   }
 
   function bind() {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', () => {
+      held.clear();
+      if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
+    });
 
     document.getElementById('kb-enabled')?.addEventListener('change', (e) => {
       SB.state.keyboardEnabled = e.target.checked;
-    });
-    document.getElementById('kb-continuous')?.addEventListener('change', (e) => {
-      SB.state.keyboardContinuous = e.target.checked;
     });
   }
 
