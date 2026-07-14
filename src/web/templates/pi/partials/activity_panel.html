@@ -1,0 +1,23 @@
+<section class="panel">
+  <div class="panel-header">
+    <span class="panel-title">
+      Activity
+      <span class="badge neutral" id="activity-count">0</span>
+    </span>
+    <div class="panel-actions">
+      <div class="seg" id="activity-filters">
+        <button data-filter="all" class="active">All</button>
+        <button data-filter="general">General</button>
+        <button data-filter="recycling">Recycling</button>
+        <button data-filter="compost">Compost</button>
+      </div>
+      <button class="btn btn-sm btn-icon btn-danger" id="btn-clear-log" title="Clear history" aria-label="Clear history">
+        <svg class="icon"><use href="#i-trash"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="feed" id="activity-feed" style="max-height:360px;overflow-y:auto">
+    <div class="feed-empty">No sorts yet. Put something in front of the camera and hit Snap &amp; Sort.</div>
+  </div>
+</section>

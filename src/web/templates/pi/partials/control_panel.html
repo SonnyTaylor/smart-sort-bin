@@ -1,0 +1,158 @@
+<section class="panel" id="control-panel">
+  <div class="panel-header">
+    <span class="panel-title">
+      <svg class="icon"><use href="#i-crosshair"/></svg>
+      Servo Control
+    </span>
+    <button class="btn btn-sm" id="btn-home">
+      <svg class="icon"><use href="#i-home"/></svg>
+      Center
+    </button>
+  </div>
+
+  <div class="panel-body stack-4">
+    <!-- XY pad -->
+    <div class="xy-wrap">
+      <div class="xy-pad" id="xy-pad" tabindex="0" role="application"
+           aria-label="Pan and tilt control pad. Drag to move, arrow keys to nudge.">
+        <div class="xy-grid">
+          <div class="gl v" style="left:25%"></div>
+          <div class="gl v axis" style="left:50%"></div>
+          <div class="gl v" style="left:75%"></div>
+          <div class="gl h" style="top:25%"></div>
+          <div class="gl h axis" style="top:50%"></div>
+          <div class="gl h" style="top:75%"></div>
+          <div class="ring"></div>
+        </div>
+        <span class="xy-label top">Tilt +</span>
+        <span class="xy-label bottom">Tilt −</span>
+        <span class="xy-label left">Pan −</span>
+        <span class="xy-label right">Pan +</span>
+        <div class="xy-ghost" id="xy-ghost"></div>
+        <div class="xy-dot" id="xy-dot" style="left:50%;top:50%"></div>
+      </div>
+
+      <div class="axis-readouts">
+        <div class="axis-readout">
+          <span class="axis-name">Pan</span>
+          <span class="axis-value" id="pan-display">0.00</span>
+        </div>
+        <div class="axis-readout">
+          <span class="axis-name">Tilt</span>
+          <span class="axis-value" id="tilt-display">0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fine control -->
+    <div>
+      <div class="section-label">Fine Control</div>
+      <div class="fine-row">
+        <span class="fine-label">Pan</span>
+        <input type="range" id="pan-slider" min="-1" max="1" step="0.01" value="0" aria-label="Pan">
+        <input type="number" id="pan-input" min="-1" max="1" step="0.01" value="0" aria-label="Pan value">
+      </div>
+      <div class="fine-row">
+        <span class="fine-label">Tilt</span>
+        <input type="range" id="tilt-slider" min="-1" max="1" step="0.01" value="0" aria-label="Tilt">
+        <input type="number" id="tilt-input" min="-1" max="1" step="0.01" value="0" aria-label="Tilt value">
+      </div>
+      <div class="row-between" style="margin-top:var(--sp-3)">
+        <span class="small muted">Nudge step</span>
+        <div class="seg" id="step-seg">
+          <button data-step="0.01">0.01</button>
+          <button data-step="0.05">0.05</button>
+          <button data-step="0.1" class="active">0.1</button>
+          <button data-step="0.25">0.25</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bin presets -->
+    <div>
+      <div class="section-label">Sort To Bin</div>
+      <div class="preset-row" id="preset-row">
+        <button class="preset general" data-category="general">
+          <span class="cat-bar"></span>
+          <span class="preset-name">General</span>
+          <span class="preset-pos" id="preset-pos-general">−0.70</span>
+        </button>
+        <button class="preset recycling" data-category="recycling">
+          <span class="cat-bar"></span>
+          <span class="preset-name">Recycling</span>
+          <span class="preset-pos" id="preset-pos-recycling">0.00</span>
+        </button>
+        <button class="preset compost" data-category="compost">
+          <span class="cat-bar"></span>
+          <span class="preset-name">Compost</span>
+          <span class="preset-pos" id="preset-pos-compost">+0.70</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LED -->
+    <div>
+      <div class="row-between" style="margin-bottom:var(--sp-2)">
+        <span class="section-label" style="margin:0">LED Ring</span>
+        <span class="small muted mono" id="led-current">off</span>
+      </div>
+      <div class="led-row">
+        <button class="led-swatch off" data-color="off" title="Off" aria-label="LED off"></button>
+        <button class="led-swatch" data-color="white" style="background:#e4e4e7;color:#e4e4e7" title="White" aria-label="LED white"></button>
+        <button class="led-swatch" data-color="red" style="background:#f0655d;color:#f0655d" title="Red" aria-label="LED red"></button>
+        <button class="led-swatch" data-color="yellow" style="background:#d9a326;color:#d9a326" title="Yellow" aria-label="LED yellow"></button>
+        <button class="led-swatch" data-color="green" style="background:#46c069;color:#46c069" title="Green" aria-label="LED green"></button>
+        <button class="led-swatch" data-color="blue" style="background:#58a6ff;color:#58a6ff" title="Blue" aria-label="LED blue"></button>
+        <button class="led-swatch" data-color="purple" style="background:#a371f7;color:#a371f7" title="Purple" aria-label="LED purple"></button>
+      </div>
+    </div>
+
+    <!-- Input options -->
+    <details class="opts">
+      <summary>
+        <span class="row"><svg class="icon"><use href="#i-gamepad"/></svg> Inputs — keyboard &amp; gamepad</span>
+      </summary>
+      <div class="opts-body stack-3">
+        <div>
+          <div class="section-label">Keyboard</div>
+          <div class="small muted" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-1) var(--sp-3);margin-bottom:var(--sp-2)">
+            <div><span class="kbd">W</span><span class="kbd">S</span> Tilt</div>
+            <div><span class="kbd">A</span><span class="kbd">D</span> Pan</div>
+            <div><span class="kbd">Q</span><span class="kbd">E</span> Pan ±0.25</div>
+            <div><span class="kbd">H</span> Center</div>
+            <div><span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> Sort to bin</div>
+            <div><span class="kbd">Space</span> Snapshot</div>
+          </div>
+          <label class="check">
+            <input type="checkbox" id="kb-enabled" checked>
+            Keyboard control
+          </label>
+        </div>
+
+        <div>
+          <div class="row-between" style="margin-bottom:var(--sp-2)">
+            <span class="section-label" style="margin:0">Gamepad</span>
+            <span class="small muted" id="gamepad-name">Not connected</span>
+          </div>
+          <div class="stack-3" id="gamepad-detail" style="display:none">
+            <div class="mono small muted" style="display:grid;grid-template-columns:1fr 1fr;gap:2px">
+              <span>LX <span id="gp-lx" style="color:var(--text-1)">0.00</span></span>
+              <span>LY <span id="gp-ly" style="color:var(--text-1)">0.00</span></span>
+            </div>
+            <div class="small muted">A center · B/X/Y sort general/recycling/compost · LB/RB pan ±0.25</div>
+          </div>
+          <div class="stack-3" style="gap:var(--sp-2);margin-top:var(--sp-2)">
+            <label class="check">
+              <input type="checkbox" id="gp-enabled">
+              Gamepad control
+            </label>
+            <label class="check">
+              <input type="checkbox" id="gp-invert-y">
+              Invert Y axis
+            </label>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</section>

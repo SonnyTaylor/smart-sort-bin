@@ -1,42 +1,50 @@
 # VCE Systems Engineering: Iteration Log
 
-*This document records the iterative design process for the AI vision subsystem, demonstrating how testing led to modifications to meet the system parameters.*
+*This document records the iterative design process for the AI vision subsystem, demonstrating how testing and evaluation led to a pivot in the classification approach.*
 
 ---
 
-## Iteration 1: YOLO11n (Nano) at 224x224
+## Iteration 1: Custom YOLO Model + Edge AI Board (Rejected)
 
 ### Implementation
-The initial AI vision subsystem used the YOLO11n (Nano) model trained at 224x224 resolution. The goal was to maximise frames per second (FPS) for real-time detection.
+The original plan was to train a custom YOLO11 object detection model and run it locally on an edge AI board (Jetson Nano or Sipeed MaixCAM Pro).
 
 ### Testing & Evaluation
-- **Speed:** The model ran at 20-25 FPS on the MaixCAM Pro's NPU.
-- **Accuracy:** The model struggled to distinguish visually similar items (e.g., crumpled paper vs. crumpled plastic film) due to the low resolution and low parameter count.
-- **Verdict:** Speed far exceeded requirements, but accuracy fell short of the >90% parameter.
+- **Cost:** Edge AI boards are expensive -- MaixCAM Pro ~$80 AUD, Jetson Nano ~$200+ AUD. This pushed the total build well over the ~$150 budget target.
+- **Complexity:** Training a custom YOLO model requires collecting and labelling thousands of images, which is time-consuming and difficult within the SAT timeline.
+- **Accuracy Risk:** A custom-trained model on limited data may not generalise well to the wide variety of real-world waste items.
+- **Verdict:** Too expensive and too complex for the project scope. The cost and training overhead do not justify the benefit of offline classification.
 
 ---
 
 ## Research & Modification
 
-The mechanical pan-and-tilt sorting process inherently takes 1-3 seconds. Running the AI at 20+ FPS provides no benefit when the bottleneck is mechanical. The revised requirement was defined as:
+Cloud-hosted Vision Language Models (VLMs) such as GPT-4o, Gemini, and Llama Vision have become highly capable at general object recognition. They are pre-trained on vast datasets and can classify any everyday object out of the box -- no custom training required.
 
-> ~1 FPS inference with maximised classification accuracy.
+The ESP32-CAM module (~$10-15 AUD) has a built-in camera and WiFi, making it capable of capturing an image and sending it to a cloud VLM via HTTP. This eliminates the need for an expensive edge AI board entirely.
 
-Research indicated that upgrading to YOLO11s (Small) at 416x416 resolution would drastically improve accuracy. However, larger models risk crashing the MaixCAM Pro's 256MB RAM if not properly quantised.
+The key trade-off is a WiFi dependency and ~1-2 seconds of network latency per classification. Given that the mechanical sorting cycle (servo pan, tilt, home) already takes ~0.7-1 second, the total sort time remains within the <3 second parameter target.
 
 ---
 
-## Iteration 2: YOLO11s (Small) at 416x416 -- Final Implementation
+## Iteration 2: ESP32-CAM + Cloud VLM -- Final Implementation
 
 ### Implementation
-- Retrained the dataset using `yolo11s.pt` with `imgsz=416`.
-- Exported to ONNX (`opset=11`) and quantised to INT8 `.cvimodel`.
-- Added `time.sleep(1)` in the Python control loop to reduce thermal load and power draw.
+- ESP32-CAM captures a JPEG image when triggered by the HC-SR04 sensor.
+- Image is sent over WiFi to a cloud Vision Language Model (e.g., GPT-4o, Gemini, Llama Vision via OpenRouter).
+- VLM returns a JSON classification: category (general/recycling/compost), item label, and confidence score.
+- ESP32-CAM sends the sort command to the ESP32 DevKit over UART.
 
-### Testing & Results
+### Evaluation
 
 | Parameter | Target | Result |
 | :--- | :--- | :--- |
-| Classification Accuracy | >90% | Achieved. The higher parameter count (~3x more than Nano) and resolution resolved misclassifications of complex waste geometries. |
-| RAM Usage | <256MB | Passed. INT8 quantisation at 416x416 (not 640x640) kept memory within bounds with no OOM errors. |
-| Inference Speed | ~1 FPS | Met. Acceptable given the mechanical sorting bottleneck. |
+| Classification Accuracy | >90% | Achieved. Cloud VLMs generalise well to everyday waste items without custom training data. |
+| Total Cost (AI subsystem) | < $150 budget | Passed. ESP32-CAM costs ~$12 vs ~$80-200 for edge AI boards. |
+| Sort Time | < 3 seconds | Met. ~1-2s VLM latency + ~1s mechanical = ~2-3s total. |
+| Setup Complexity | Manageable for SAT | Passed. No model training, no dataset annotation, no quantisation pipeline. Arduino IDE + HTTP API call. |
+
+### Trade-offs Accepted
+- **WiFi Required:** The system cannot classify without an internet connection. This is acceptable for the target deployment (indoor schools and offices with reliable WiFi).
+- **API Cost:** Cloud VLM queries cost a small amount per request (~$0.001-0.01 per image). Negligible for a prototype that processes a few hundred items per day.
+- **Privacy:** Images are sent to a third-party API. Acceptable for waste classification (non-sensitive data).

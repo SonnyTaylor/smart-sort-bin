@@ -2,31 +2,33 @@
 AI Smart Bin - Web Dashboard
 
 Flask application serving the control dashboard and REST API.
-Run with: uv run app.py
+Run with: uv run app.py [--mock | --pi]
 """
 
+import base64
 import json
 import queue
 import time
-import os
-import shutil
-import io
-import zipfile
-import base64
 from concurrent.futures import ThreadPoolExecutor
 
-from flask import Flask, Response, jsonify, render_template, request, send_file
+from flask import Flask, Response, jsonify, redirect, render_template, request
 
 import config
 import database
 import llm
-import mock_hardware
+import animations
+
+# Allow importing from src/pi when running on the Pi
+if config.PI_MODE:
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from pi import hardware as hw
+else:
+    import mock_hardware as hw
 
 app = Flask(__name__)
-
-# Ensure dataset directories exist
-for cat in config.CATEGORIES:
-    os.makedirs(os.path.join(config.DATASET_DIR, cat), exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # SSE (Server-Sent Events) infrastructure
@@ -48,6 +50,10 @@ def broadcast_sse(event_type, data):
         _sse_clients.remove(q)
 
 
+# Animation engine (server-side keyframe playback)
+player = animations.init(hw, broadcast_sse)
+
+
 # ---------------------------------------------------------------------------
 # Pages
 # ---------------------------------------------------------------------------
@@ -55,7 +61,13 @@ def broadcast_sse(event_type, data):
 
 @app.route("/")
 def index():
-    return render_template("dashboard.html")
+    return render_template("pi/dashboard.html")
+
+
+@app.route("/pi")
+@app.route("/pi/v2")
+def legacy_dashboard_redirect():
+    return redirect("/", code=301)
 
 
 # ---------------------------------------------------------------------------
@@ -89,61 +101,47 @@ def api_stats_hourly():
 
 
 # ---------------------------------------------------------------------------
-# REST API - Mode
-# ---------------------------------------------------------------------------
-
-
-@app.route("/api/mode", methods=["GET"])
-def api_get_mode():
-    return jsonify({"mode": database.get_mode()})
-
-
-@app.route("/api/mode", methods=["POST"])
-def api_set_mode():
-    data = request.get_json(force=True)
-    mode = data.get("mode", "")
-    try:
-        database.set_mode(mode)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    broadcast_sse("mode_change", {"mode": mode})
-    return jsonify({"mode": mode})
-
-
-# ---------------------------------------------------------------------------
 # REST API - System Health
 # ---------------------------------------------------------------------------
 
 
 @app.route("/api/health")
 def api_health():
-    return jsonify(mock_hardware.get_system_health())
+    return jsonify(hw.get_system_health())
 
 
 # ---------------------------------------------------------------------------
-# REST API - Camera / Webcam
+# REST API - Camera
 # ---------------------------------------------------------------------------
 
 
 @app.route("/api/camera")
 def api_camera():
-    return jsonify(mock_hardware.get_camera_frame())
+    return jsonify(hw.get_camera_frame())
 
 
 @app.route("/api/camera/stream")
 def api_camera_stream():
-    """Stream MJPEG frames from the physical camera. (Mocked)"""
+    """Stream MJPEG frames from the camera (serves cached frames from background capture)."""
 
     def generate():
+        last_sent = None
         while True:
-            # On real hardware this fetches the MaixCAM's active buffer
-            frame_bytes = mock_hardware.get_camera_jpeg_bytes()
-            yield (
-                b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
-            )
-            time.sleep(1.0)  # Mock 1fps stream
+            frame_bytes = hw.get_camera_jpeg_bytes()
+            if frame_bytes and frame_bytes != last_sent:
+                yield (
+                    b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
+                )
+                last_sent = frame_bytes
+            else:
+                time.sleep(0.1)
 
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+
+# ---------------------------------------------------------------------------
+# REST API - Classification
+# ---------------------------------------------------------------------------
 
 
 @app.route("/api/classify", methods=["POST"])
@@ -156,10 +154,9 @@ def api_classify():
     data = request.get_json(force=True)
 
     if data.get("source") == "device":
-        # Capture from hardware (mocked here)
-        raw_jpeg = mock_hardware.get_camera_jpeg_bytes()
-        import base64
-
+        raw_jpeg = hw.get_camera_jpeg_bytes()
+        if not raw_jpeg:
+            return jsonify({"error": "Camera capture failed"}), 500
         image_b64 = base64.b64encode(raw_jpeg).decode("utf-8")
     else:
         image_b64 = data.get("image", "")
@@ -197,20 +194,18 @@ def api_classify():
         database.log_sort(
             category=item["category"],
             confidence=item["confidence"],
-            mode=config.MODE_LLM,
+            mode="llm",
             label=item.get("label", ""),
             duration_ms=duration_ms,
         )
 
     event = {
         "items": items,
-        "mode": config.MODE_LLM,
         "duration_ms": duration_ms,
         "raw_response": result.get("raw_response", ""),
     }
     broadcast_sse("sort_event", event)
 
-    # Return the full payload to the caller, including image if needed
     response_data = dict(event)
     if data.get("source") == "device":
         response_data["image"] = image_b64
@@ -228,10 +223,18 @@ def api_compare():
     """
     Classify the same image with two different providers in parallel.
     Expects JSON: {"image": "<base64 jpeg>", "provider_a": "<id>", "provider_b": "<id>"}
+    OR {"source": "device", ...} to use the internal camera.
     """
     data = request.get_json(force=True)
 
-    image_b64 = data.get("image", "")
+    if data.get("source") == "device":
+        raw_jpeg = hw.get_camera_jpeg_bytes()
+        if not raw_jpeg:
+            return jsonify({"error": "Camera capture failed"}), 500
+        image_b64 = base64.b64encode(raw_jpeg).decode("utf-8")
+    else:
+        image_b64 = data.get("image", "")
+
     provider_a_id = data.get("provider_a", "")
     provider_b_id = data.get("provider_b", "")
 
@@ -271,6 +274,8 @@ def api_compare():
     if model_b_override:
         provider_b = dict(provider_b, model=model_b_override)
 
+    explain = data.get("explain", False)
+
     def run_classify(provider):
         start = time.time()
         result = llm.classify_image(
@@ -279,6 +284,7 @@ def api_compare():
             api_key=provider["api_key"],
             model=provider["model"],
             base_url=provider["base_url"],
+            explain=explain,
         )
         duration_ms = int((time.time() - start) * 1000)
         result["duration_ms"] = duration_ms
@@ -301,22 +307,56 @@ def api_compare():
 # ---------------------------------------------------------------------------
 
 
+def _interrupt_animation():
+    """Manual servo input takes priority over a running animation."""
+    if player.status().get("playing"):
+        player.stop(and_home=False)
+
+
 @app.route("/api/servos", methods=["GET"])
 def api_get_servos():
-    return jsonify(database.get_servo_angles())
+    """Current servo position (actual + target)."""
+    return jsonify(hw.get_position())
 
 
-@app.route("/api/servos", methods=["POST"])
-def api_set_servo():
+@app.route("/api/servos/move", methods=["POST"])
+def api_move_servos():
+    """Set one or both axes in a single request.
+    Expects JSON: {"pan": -1..1, "tilt": -1..1} (either may be omitted)
+    """
     data = request.get_json(force=True)
-    category = data.get("category", "")
-    angle = data.get("angle", 0)
-    try:
-        database.set_servo_angle(category, angle)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    broadcast_sse("servo_update", {"category": category, "angle": angle})
-    return jsonify({"category": category, "angle": angle})
+    _interrupt_animation()
+    result = {}
+    if "pan" in data:
+        hw.set_pan(data["pan"])
+        result["pan"] = data["pan"]
+    if "tilt" in data:
+        hw.set_tilt(data["tilt"])
+        result["tilt"] = data["tilt"]
+    if not result:
+        return jsonify({"error": "Provide pan and/or tilt"}), 400
+    broadcast_sse("servo_update", {"axis": "both", **result})
+    return jsonify(result)
+
+
+@app.route("/api/servos/pan", methods=["POST"])
+def api_set_pan():
+    data = request.get_json(force=True)
+    value = data.get("value", 0)
+    _interrupt_animation()
+    hw.set_pan(value)
+    broadcast_sse("servo_update", {"axis": "pan", "value": value})
+    return jsonify({"axis": "pan", "value": value})
+
+
+@app.route("/api/servos/tilt", methods=["POST"])
+def api_set_tilt():
+    data = request.get_json(force=True)
+    value = data.get("value", 0)
+    _interrupt_animation()
+    hw.set_tilt(value)
+    broadcast_sse("servo_update", {"axis": "tilt", "value": value})
+    return jsonify({"axis": "tilt", "value": value})
 
 
 @app.route("/api/sort", methods=["POST"])
@@ -325,13 +365,235 @@ def api_manual_sort():
         return jsonify(
             {"status": "mock", "message": "Mock mode - no hardware connected"}
         ), 200
-    return jsonify({"error": "Manual sort not implemented for real hardware yet"}), 501
+
+    _interrupt_animation()
+
+    # Step 1: Capture photo
+    raw_jpeg = hw.capture_photo()
+    if not raw_jpeg:
+        return jsonify({"error": "Camera capture failed"}), 500
+    image_b64 = base64.b64encode(raw_jpeg).decode("utf-8")
+
+    provider = database.get_active_provider()
+    if not provider:
+        return jsonify({"error": "No active LLM provider configured"}), 400
+    if not provider["api_key"]:
+        return jsonify({"error": f"No API key set for {provider['name']}"}), 400
+
+    # Step 2: Classify (LED = blue)
+    hw.set_led("blue")
+    broadcast_sse("sort_stage", {"stage": "classifying"})
+    start_ms = time.time()
+    result = llm.classify_image(
+        image_b64=image_b64,
+        provider_id=provider["id"],
+        api_key=provider["api_key"],
+        model=provider["model"],
+        base_url=provider["base_url"],
+    )
+    duration_ms = int((time.time() - start_ms) * 1000)
+
+    if result.get("error"):
+        hw.set_led("purple")
+        broadcast_sse("sort_stage", {"stage": "error", "error": result["error"]})
+        return jsonify(result), 502
+
+    items = result.get("items", [])
+    for item in items:
+        database.log_sort(
+            category=item["category"],
+            confidence=item["confidence"],
+            mode="llm",
+            label=item.get("label", ""),
+            duration_ms=duration_ms,
+        )
+
+    # Step 3: Sort (pan → dump → return → home) using calibrated positions
+    if items:
+        cat = items[0]["category"]
+        color_map = {"general": "red", "recycling": "yellow", "compost": "green"}
+        led_color = color_map.get(cat, "white")
+
+        cal = database.get_calibration()
+        preset = cal["categories"].get(cat, {})
+        timing = cal["timing"]
+
+        # Pan to bin third
+        broadcast_sse("sort_stage", {"stage": "sorting", "category": cat, "action": "panning"})
+        hw.set_led("yellow")
+        hw.set_pan(preset.get("pan", 0))
+        time.sleep(timing["pan_settle_s"])
+
+        # Tilt to dump
+        broadcast_sse("sort_stage", {"stage": "sorting", "category": cat, "action": "dumping"})
+        hw.set_led(led_color)
+        hw.set_tilt(preset.get("tilt_dump", -0.6))
+        time.sleep(timing["dump_hold_s"])
+
+        # Return tilt
+        broadcast_sse("sort_stage", {"stage": "sorting", "category": cat, "action": "returning"})
+        hw.set_tilt(preset.get("tilt_rest", 0))
+        time.sleep(timing["return_s"])
+
+        # Pan home
+        hw.set_pan(0.0)
+        time.sleep(timing["pan_settle_s"])
+
+        hw.set_led(led_color)
+        broadcast_sse("sort_stage", {"stage": "done", "category": cat})
+    else:
+        hw.set_led("white")
+        broadcast_sse("sort_stage", {"stage": "done", "category": None})
+
+    event = {
+        "items": items,
+        "duration_ms": duration_ms,
+        "raw_response": result.get("raw_response", ""),
+    }
+    broadcast_sse("sort_event", event)
+    return jsonify(event)
+
+
+@app.route("/api/led", methods=["POST"])
+def api_set_led():
+    """Set the LED ring color."""
+    data = request.get_json(force=True)
+    color = data.get("color", "off")
+    hw.set_led(color)
+    broadcast_sse("led_update", {"color": color})
+    return jsonify({"color": color})
 
 
 @app.route("/api/home", methods=["POST"])
 def api_home():
+    _interrupt_animation()
+    hw.center_servos()
+    hw.set_led("white")
     broadcast_sse("servo_home", {"status": "homed"})
     return jsonify({"status": "homed"})
+
+
+# ---------------------------------------------------------------------------
+# REST API - Animations
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/animations", methods=["GET"])
+def api_get_animations():
+    """List built-in animations, saved custom sequences, and playback state."""
+    return jsonify({
+        "builtins": player.list_animations(),
+        "custom": database.get_sequences(),
+        "state": player.status(),
+    })
+
+
+@app.route("/api/animations/play", methods=["POST"])
+def api_play_animation():
+    """Play an animation.
+    Expects JSON: {"name": "<builtin>"} OR {"id": <custom sequence id>}
+    OR {"keyframes": [...], "loop": bool} for a live preview.
+    """
+    data = request.get_json(force=True)
+    try:
+        if data.get("keyframes"):
+            player.play_keyframes(
+                data["keyframes"],
+                loop=data.get("loop", False),
+                name="preview",
+                label=data.get("label", "Preview"),
+            )
+        elif data.get("id") is not None:
+            seq = database.get_sequence(data["id"])
+            if not seq:
+                return jsonify({"error": f"Sequence not found: {data['id']}"}), 404
+            player.play_keyframes(
+                seq["keyframes"],
+                loop=seq["loop"],
+                name=f"custom:{seq['id']}",
+                label=seq["name"],
+            )
+        elif data.get("name"):
+            player.play_builtin(data["name"])
+        else:
+            return jsonify({"error": "Provide name, id, or keyframes"}), 400
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify(player.status())
+
+
+@app.route("/api/animations/stop", methods=["POST"])
+def api_stop_animation():
+    stopped = player.stop()
+    return jsonify({"stopped": stopped, "state": player.status()})
+
+
+@app.route("/api/animations/custom", methods=["POST"])
+def api_save_sequence():
+    """Create or update a custom sequence.
+    Expects JSON: {"name": str, "keyframes": [...], "loop": bool, "id": optional}
+    """
+    data = request.get_json(force=True)
+    try:
+        seq_id = database.save_sequence(
+            name=data.get("name"),
+            keyframes=data.get("keyframes"),
+            loop=data.get("loop", False),
+            seq_id=data.get("id"),
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"status": "saved", "id": seq_id})
+
+
+@app.route("/api/animations/custom/<int:seq_id>", methods=["DELETE"])
+def api_delete_sequence(seq_id):
+    database.delete_sequence(seq_id)
+    return jsonify({"status": "deleted", "id": seq_id})
+
+
+# ---------------------------------------------------------------------------
+# REST API - Calibration
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/calibration", methods=["GET"])
+def api_get_calibration():
+    return jsonify(database.get_calibration())
+
+
+@app.route("/api/calibration", methods=["PUT", "PATCH"])
+def api_set_calibration():
+    """Update calibration values (partial updates allowed).
+    Expects JSON: {"categories": {"general": {"pan": -0.7, ...}}, "timing": {...}}
+    """
+    data = request.get_json(force=True)
+    try:
+        result = database.set_calibration(data)
+    except (ValueError, TypeError) as e:
+        return jsonify({"error": str(e)}), 400
+    broadcast_sse("calibration_update", result)
+    return jsonify(result)
+
+
+@app.route("/api/calibration/reset", methods=["POST"])
+def api_reset_calibration():
+    result = database.reset_calibration()
+    broadcast_sse("calibration_update", result)
+    return jsonify(result)
+
+
+@app.route("/api/calibration/test/<category>", methods=["POST"])
+def api_test_calibration(category):
+    """Run the full sort sequence for a category using stored calibration."""
+    cal = database.get_calibration()
+    if category not in cal["categories"]:
+        return jsonify({"error": f"Invalid category: {category}"}), 400
+    _interrupt_animation()
+    broadcast_sse("sort_stage", {"stage": "sorting", "category": category, "action": "testing"})
+    hw.move_to_category(category, presets=cal["categories"], timing=cal["timing"])
+    broadcast_sse("sort_stage", {"stage": "done", "category": category})
+    return jsonify({"status": "done", "category": category})
 
 
 # ---------------------------------------------------------------------------
@@ -366,118 +628,6 @@ def api_update_provider(provider_id):
 
     broadcast_sse("provider_update", {"provider_id": provider_id})
     return jsonify({"status": "updated", "provider_id": provider_id})
-
-
-# ---------------------------------------------------------------------------
-# Dataset Endpoints
-# ---------------------------------------------------------------------------
-
-
-@app.route("/api/dataset/save", methods=["POST"])
-def api_dataset_save():
-    data = request.get_json(force=True)
-    image_b64 = data.get("image", "")
-    category = data.get("category", "")
-
-    if not image_b64 or not category:
-        return jsonify({"error": "Missing image or category"}), 400
-
-    if category not in config.CATEGORIES:
-        return jsonify({"error": f"Invalid category: {category}"}), 400
-
-    if "," in image_b64:
-        image_b64 = image_b64.split(",", 1)[1]
-
-    try:
-        image_data = base64.b64decode(image_b64)
-        filename = f"{int(time.time() * 1000)}.jpg"
-        filepath = os.path.join(config.DATASET_DIR, category, filename)
-
-        with open(filepath, "wb") as f:
-            f.write(image_data)
-
-        return jsonify({"status": "saved", "filename": filename, "category": category})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/dataset/stats", methods=["GET"])
-def api_dataset_stats():
-    stats = {"total": 0}
-    for cat in config.CATEGORIES:
-        cat_dir = os.path.join(config.DATASET_DIR, cat)
-        count = (
-            len([f for f in os.listdir(cat_dir) if f.endswith(".jpg")])
-            if os.path.exists(cat_dir)
-            else 0
-        )
-        stats[cat] = count
-        stats["total"] += count
-    return jsonify(stats)
-
-
-@app.route("/api/dataset/export", methods=["GET"])
-def api_dataset_export():
-    memory_file = io.BytesIO()
-    with zipfile.ZipFile(memory_file, "w", zipfile.ZIP_DEFLATED) as zf:
-        for cat in config.CATEGORIES:
-            cat_dir = os.path.join(config.DATASET_DIR, cat)
-            if os.path.exists(cat_dir):
-                for filename in os.listdir(cat_dir):
-                    if filename.endswith(".jpg"):
-                        filepath = os.path.join(cat_dir, filename)
-                        zf.write(filepath, arcname=os.path.join(cat, filename))
-
-    memory_file.seek(0)
-    return send_file(
-        memory_file,
-        mimetype="application/zip",
-        as_attachment=True,
-        download_name="dataset.zip",
-    )
-
-
-@app.route("/api/dataset/clear", methods=["POST"])
-def api_dataset_clear():
-    for cat in config.CATEGORIES:
-        cat_dir = os.path.join(config.DATASET_DIR, cat)
-        if os.path.exists(cat_dir):
-            for filename in os.listdir(cat_dir):
-                if filename.endswith(".jpg"):
-                    os.remove(os.path.join(cat_dir, filename))
-    return jsonify({"status": "cleared"})
-
-
-@app.route("/api/dataset/images")
-def api_dataset_images():
-    """List all saved dataset images."""
-    images = []
-    for cat in config.CATEGORIES:
-        cat_dir = os.path.join(config.DATASET_DIR, cat)
-        if os.path.exists(cat_dir):
-            for filename in sorted(os.listdir(cat_dir), reverse=True):
-                if filename.endswith(".jpg"):
-                    images.append(
-                        {
-                            "category": cat,
-                            "filename": filename,
-                            "url": f"/api/dataset/image/{cat}/{filename}",
-                        }
-                    )
-    return jsonify(images)
-
-
-@app.route("/api/dataset/image/<category>/<filename>")
-def api_dataset_image(category, filename):
-    """Serve a single dataset image. Validates inputs to prevent path traversal."""
-    if category not in config.CATEGORIES:
-        return jsonify({"error": "Invalid category"}), 400
-    if "/" in filename or "\\" in filename or ".." in filename:
-        return jsonify({"error": "Invalid filename"}), 400
-    filepath = os.path.join(config.DATASET_DIR, category, filename)
-    if not os.path.isfile(filepath):
-        return jsonify({"error": "Not found"}), 404
-    return send_file(filepath, mimetype="image/jpeg")
 
 
 @app.route("/api/providers/<provider_id>/test", methods=["POST"])
@@ -574,13 +724,16 @@ def api_events():
 
 
 def main():
+    import logging
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
     database.init_db()
 
     if config.MOCK_MODE:
         print("[mock] Running in mock mode (no hardware)")
 
-    print(f"[dashboard] http://localhost:{config.PORT}")
-    app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG, threaded=True)
+    print(f"[dashboard] http://0.0.0.0:{config.PORT}")
+    app.run(host=config.HOST, port=config.PORT, debug=False, threaded=True)
 
 
 if __name__ == "__main__":

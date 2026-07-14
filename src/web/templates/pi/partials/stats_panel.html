@@ -1,0 +1,79 @@
+<div class="stack-4">
+  <section class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Sorting Stats</span>
+      <button class="btn btn-sm btn-icon" id="btn-refresh-stats" title="Refresh" aria-label="Refresh stats">
+        <svg class="icon"><use href="#i-refresh"/></svg>
+      </button>
+    </div>
+    <div class="panel-body stack-4">
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-label">Total sorted</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label c-general">General</div>
+          <div class="stat-value" id="stat-general">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label c-recycling">Recycling</div>
+          <div class="stat-value" id="stat-recycling">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label c-compost">Compost</div>
+          <div class="stat-value" id="stat-compost">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg confidence</div>
+          <div class="stat-value" id="stat-confidence">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg latency</div>
+          <div class="stat-value" id="stat-latency">--</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Sorts — last 24 hours</div>
+        <div class="chart-box" id="hourly-chart">
+          <div class="chart-empty">No data yet</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <span class="panel-title">System</span>
+    </div>
+    <div class="panel-body stack-4">
+      <div>
+        <div class="row-between" style="margin-bottom:var(--sp-2)">
+          <span class="small muted">CPU temperature</span>
+          <span class="mono" id="health-temp" style="font-weight:600">--</span>
+        </div>
+        <div class="gauge"><div class="gauge-fill" id="temp-bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-label">Uptime</div>
+          <div class="stat-value" id="health-uptime" style="font-size:1rem">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Servos</div>
+          <div class="stat-value" id="health-servos" style="font-size:1rem">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Wi-Fi</div>
+          <div class="stat-value" id="health-wifi" style="font-size:1rem">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Mode</div>
+          <div class="stat-value" id="health-mode" style="font-size:1rem">--</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

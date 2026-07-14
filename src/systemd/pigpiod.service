@@ -1,0 +1,12 @@
+[Unit]
+Description=pigpio Daemon
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/pigpiod
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

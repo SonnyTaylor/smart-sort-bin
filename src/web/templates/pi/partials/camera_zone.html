@@ -1,0 +1,58 @@
+<section class="panel" id="camera-panel">
+  <div class="panel-header">
+    <span class="panel-title">
+      <svg class="icon"><use href="#i-camera"/></svg>
+      Camera
+    </span>
+    <div class="panel-actions">
+      <select id="provider-select" style="width:170px" aria-label="Active LLM provider">
+        <option value="">Loading providers…</option>
+      </select>
+      <button class="btn btn-icon" id="btn-compare" title="Compare models" aria-label="Compare models">
+        <svg class="icon"><use href="#i-compare"/></svg>
+      </button>
+      <button class="btn btn-icon" id="btn-snapshot" title="Save snapshot" aria-label="Save snapshot">
+        <svg class="icon"><use href="#i-download"/></svg>
+      </button>
+      <button class="btn btn-icon" id="btn-cam-fullscreen" title="Fullscreen" aria-label="Fullscreen">
+        <svg class="icon"><use href="#i-maximize"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="cam-frame" id="cam-container">
+    <img id="cam-stream" class="stream" src="/api/camera/stream" alt="Live camera stream"
+         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 480%22%3E%3Crect fill=%22%23000%22 width=%22640%22 height=%22480%22/%3E%3Ctext x=%22320%22 y=%22240%22 text-anchor=%22middle%22 fill=%22%234a4a52%22 font-family=%22monospace%22 font-size=%2216%22%3ENo camera signal%3C/text%3E%3C/svg%3E'">
+
+    <div class="cam-badge" id="cam-live-badge">
+      <span class="dot pulse" id="cam-live-dot"></span>
+      <span>Live</span>
+    </div>
+
+    <!-- Classification result -->
+    <div class="result-overlay" id="class-overlay">
+      <div class="cat" id="class-category"></div>
+      <div class="item" id="class-detail"></div>
+      <div class="meta" id="class-meta"></div>
+    </div>
+
+    <!-- Sort stage chip -->
+    <div class="stage-chip" id="sort-stage">
+      <span class="spinner"></span>
+      <span id="sort-stage-text">Sorting…</span>
+    </div>
+  </div>
+
+  <div class="cam-toolbar">
+    <div class="row grow">
+      <button class="btn btn-primary btn-lg grow" id="btn-snap-sort" style="max-width:260px">
+        <svg class="icon"><use href="#i-zap"/></svg>
+        Snap &amp; Sort
+      </button>
+      <button class="btn btn-lg" id="btn-classify">
+        <svg class="icon"><use href="#i-search"/></svg>
+        Classify
+      </button>
+    </div>
+  </div>
+</section>

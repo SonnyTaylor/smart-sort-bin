@@ -1,0 +1,45 @@
+<!-- Drawer overlay -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+
+<!-- Settings drawer -->
+<aside class="drawer" id="settings-drawer" aria-label="Settings">
+  <div class="drawer-header">
+    <span class="drawer-title">Settings</span>
+    <button class="btn btn-sm btn-icon btn-ghost" id="btn-close-settings" aria-label="Close settings">
+      <svg class="icon"><use href="#i-x"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+    <!-- Providers -->
+    <div class="drawer-section">
+      <div class="section-label">LLM Providers</div>
+      <div id="provider-list">
+        <div class="small muted">Loading providers…</div>
+      </div>
+    </div>
+
+    <!-- Debug -->
+    <div class="drawer-section">
+      <div class="section-label">Debug</div>
+      <div class="row" style="margin-bottom:var(--sp-2)">
+        <select id="debug-endpoint" class="grow">
+          <option value="/api/health">GET /api/health</option>
+          <option value="/api/stats">GET /api/stats</option>
+          <option value="/api/servos">GET /api/servos</option>
+          <option value="/api/providers">GET /api/providers</option>
+          <option value="/api/camera">GET /api/camera</option>
+          <option value="/api/animations">GET /api/animations</option>
+          <option value="/api/calibration">GET /api/calibration</option>
+        </select>
+        <button class="btn" id="btn-debug-run">Run</button>
+      </div>
+      <pre class="debug-output" id="debug-output">Select an endpoint and hit Run.</pre>
+
+      <div style="margin-top:var(--sp-4)">
+        <div class="section-label">SSE Events</div>
+        <div class="debug-output" id="sse-log" style="max-height:160px">Waiting for events…</div>
+      </div>
+    </div>
+  </div>
+</aside>

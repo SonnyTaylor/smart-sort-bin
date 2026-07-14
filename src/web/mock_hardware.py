@@ -57,3 +57,67 @@ def get_camera_frame():
 def get_camera_jpeg_bytes() -> bytes:
     """Return raw JPEG bytes for the MJPEG stream or classification."""
     return base64.b64decode(_MOCK_JPEG_B64)
+
+
+# ── Mock servo / LED / sort functions ──
+
+_pan = 0.0
+_tilt = 0.0
+_led_color = "off"
+
+
+CATEGORY_PRESETS = {
+    "general":   {"pan": -0.7, "tilt_dump": -0.6, "tilt_rest": 0.0},
+    "recycling": {"pan":  0.0, "tilt_dump": -0.6, "tilt_rest": 0.0},
+    "compost":   {"pan":  0.7, "tilt_dump": -0.6, "tilt_rest": 0.0},
+}
+
+
+def set_pan(value, immediate=False):
+    global _pan
+    _pan = max(-1.0, min(1.0, float(value)))
+
+
+def set_tilt(value, immediate=False):
+    global _tilt
+    _tilt = max(-1.0, min(1.0, float(value)))
+
+
+def get_position():
+    return {"pan": round(_pan, 3), "tilt": round(_tilt, 3),
+            "pan_target": round(_pan, 3), "tilt_target": round(_tilt, 3)}
+
+
+def set_led(color_name):
+    global _led_color
+    _led_color = color_name
+
+
+def capture_photo():
+    return get_camera_jpeg_bytes()
+
+
+def center_servos():
+    global _pan, _tilt
+    _pan = 0.0
+    _tilt = 0.0
+
+
+def move_to_category(category, presets=None, timing=None):
+    preset = (presets or CATEGORY_PRESETS).get(category)
+    if not preset:
+        return
+    set_pan(preset["pan"])
+    set_tilt(preset["tilt_dump"])
+    time.sleep(0.3)
+    set_tilt(preset.get("tilt_rest", 0.0))
+    set_pan(0.0)
+
+
+def dump_only(category, presets=None, timing=None):
+    preset = (presets or CATEGORY_PRESETS).get(category)
+    if not preset:
+        return
+    set_tilt(preset["tilt_dump"])
+    time.sleep(0.3)
+    set_tilt(preset.get("tilt_rest", 0.0))

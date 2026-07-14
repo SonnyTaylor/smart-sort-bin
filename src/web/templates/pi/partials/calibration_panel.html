@@ -1,0 +1,41 @@
+<section class="panel">
+  <div class="panel-header">
+    <span class="panel-title">Bin Calibration</span>
+    <div class="panel-actions">
+      <button class="btn btn-sm" id="btn-cal-reset">Reset defaults</button>
+      <button class="btn btn-sm btn-primary" id="btn-cal-save">
+        <svg class="icon"><use href="#i-save"/></svg>
+        Save
+      </button>
+    </div>
+  </div>
+
+  <div class="panel-body stack-4">
+    <div class="small muted">
+      Jog the head with the control pad, then hit <strong>Set</strong> to capture the current
+      position into a field. <strong>Test</strong> runs the full sort sequence for that bin.
+    </div>
+
+    <div class="cal-grid" id="cal-grid">
+      <!-- Category cards rendered by calibration.js -->
+    </div>
+
+    <div>
+      <div class="section-label">Sequence Timing</div>
+      <div class="cal-timing">
+        <div class="timing-field">
+          <label for="cal-pan-settle">Pan settle (s)</label>
+          <input type="number" id="cal-pan-settle" min="0" max="5" step="0.1" value="0.5">
+        </div>
+        <div class="timing-field">
+          <label for="cal-dump-hold">Dump hold (s)</label>
+          <input type="number" id="cal-dump-hold" min="0" max="5" step="0.1" value="1.0">
+        </div>
+        <div class="timing-field">
+          <label for="cal-return">Return (s)</label>
+          <input type="number" id="cal-return" min="0" max="5" step="0.1" value="0.5">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
