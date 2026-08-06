@@ -60,6 +60,16 @@ lip_h        = 7;      // height of the tabs that stop the base sliding off
 bin_wall_max = 8;      // thickest bin wall the clamp must grip
                        //   ecobin corflute is 4.5, cardboard 3-6
 
+/* ---------- YOUR BIN ----------
+   Outside dimensions. These do not change any printed part, they only
+   work out how long to cut each pipe, and draw the bin in the preview.
+   The three legs land at different distances on a rectangle, which is
+   the whole reason the legs are pipes you cut rather than printed arms. */
+
+bin_x        = 347;    // outside, long side   (60L ecobin)
+bin_y        = 277;    // outside, short side
+bin_t        = 4.5;    // wall thickness
+
 
 /* ---------- PIPE ---------- */
 
@@ -82,7 +92,10 @@ bolt_a       = 8;      // foot bolt, inner
 bolt_b       = 24;     // foot bolt, outer
 csk_d        = 6.4;    // M3 countersunk head, sits flush in the plate top
 jaw_t        = 5;      // jaw plate thickness
-jaw_w        = 20;     // jaw plate width
+jaw_w        = 20;     // inner jaw width (carries the rib)
+post_w       = 9;      // outer jaw width. Deliberately narrow: a skewed
+                       //   wall sweeps sideways across the jaw, and a wide
+                       //   outer plate would block it before it seats.
 jaw_h        = 25;     // how far the jaws reach down the bin wall
 rib_r        = 3;      // the rounded rib that gives line contact
 screw        = 3.4;    // M3 clearance
@@ -104,6 +117,20 @@ leg_ang   = [60, 180, 300];
 
 function bore_z(base) = base + bore_d / 2 + wall;
 function block_h(base) = bore_z(base) + peak_cut + wall;
+
+// Gap must clear the worst case: the thickest wall, skewed as far as a
+// rectangular bin can skew it, sweeping sideways across the outer post.
+jaw_gap = rib_r + post_w * tan(30) + bin_wall_max / cos(30) + 1;
+
+// How far out each leg has to reach before it meets a wall. On a rectangle
+// this differs per leg, which is why the three pipes are cut to different
+// lengths. This is what stops the clamps sitting on a circle.
+function leg_reach(a) =
+    min(abs(cos(a)) < 0.001 ? 1e6 : (bin_x / 2 - bin_t) / abs(cos(a)),
+        abs(sin(a)) < 0.001 ? 1e6 : (bin_y / 2 - bin_t) / abs(sin(a)));
+
+jaw_offset = foot_x0 + 9 + jaw_t + rib_r;    // printed hardware at both ends
+function pipe_for(a) = leg_reach(a) - jaw_offset;
 
 
 // A sideways hole with a flat-topped 45 degree peak, so it prints
@@ -218,8 +245,7 @@ module bracket() {
 module clamp() {
     // Shown jaws-up, which is how it prints. Flipped over in use.
     j0 = socket_len;                          // inner jaw, abuts the block
-    gap = bin_wall_max + rib_r + 2;
-    j1 = j0 + jaw_t + gap;                    // outer jaw
+    j1 = j0 + jaw_t + jaw_gap;                // outer jaw
 
     socket_body(base = 0, stop = 1);
 
@@ -228,9 +254,12 @@ module clamp() {
             // strip tying the two jaws together along the bed
             translate([j0, -jaw_w / 2, 0])
                 cube([j1 + jaw_t - j0, jaw_w, plate_t]);
-            for (x = [j0, j1])
-                translate([x, -jaw_w / 2, 0])
-                    cube([jaw_t, jaw_w, jaw_h]);
+            // inner jaw, full width
+            translate([j0, -jaw_w / 2, 0])
+                cube([jaw_t, jaw_w, jaw_h]);
+            // outer jaw, narrow so a skewed wall can pass it
+            translate([j1, -post_w / 2, 0])
+                cube([jaw_t, post_w, jaw_h]);
             // The rounded rib. This is the whole trick: it touches the bin
             // wall along a vertical line, so the wall can sit at any angle.
             translate([j0 + jaw_t, 0, 0])
@@ -252,18 +281,20 @@ else if (PART == "clamp")   clamp();
 else {
     // Assembly view, everything in its in-use position. Bracket and clamp
     // are both flipped over, so the pipe hangs below the plate.
-    pipe_len = 105;                      // ecobin long-side leg
-    engage   = socket_len - 4;
-    axis_z   = -bore_z(foot_t);
-    clamp_x  = foot_x0 + 5 + pipe_len - engage;
-    jaw_r    = clamp_x + socket_len + jaw_t + rib_r;
+    // Each leg gets its OWN pipe length, worked out from the bin above.
+    engage = socket_len - 4;
+    axis_z = -bore_z(foot_t);
+    z_rim  = axis_z + bore_z(0) - plate_t;
 
-    echo(str("CUT PIPES TO:  (centre-to-rim) - ", jaw_r - pipe_len, " mm"));
-    echo(str("check: a ", pipe_len, "mm pipe grips the rim at ",
-             jaw_r, "mm from centre"));
+    echo(str("BIN ", bin_x, " x ", bin_y, " outside, ", bin_t, "mm wall"));
+    for (a = leg_ang)
+        echo(str("   leg ", a, "deg  reaches ", leg_reach(a),
+                 "mm  ->  CUT PIPE ", pipe_for(a), " mm"));
 
     plate();
-    for (a = leg_ang)
+    for (a = leg_ang) {
+        pl      = pipe_for(a);
+        clamp_x = foot_x0 + 5 + pl - engage;
         rotate([0, 0, a]) {
             translate([foot_x0, 0, 0])
                 rotate([180, 0, 0])
@@ -272,12 +303,24 @@ else {
             translate([foot_x0 + 5, 0, axis_z])
                 rotate([0, 90, 0])
                     color("silver")
-                        cylinder(d = pipe_od, h = pipe_len);
+                        cylinder(d = pipe_od, h = pl);
 
             translate([clamp_x, 0, axis_z + bore_z(0)])
                 rotate([180, 0, 0])
                     color("orange") clamp();
         }
+    }
+
+    // the bin, top 120mm only, so you can see the clamps land on flat wall
+    color("Tomato", 0.35)
+        translate([0, 0, z_rim - 120])
+            difference() {
+                translate([-bin_x / 2, -bin_y / 2, 0])
+                    cube([bin_x, bin_y, 120]);
+                translate([-bin_x / 2 + bin_t, -bin_y / 2 + bin_t, -1])
+                    cube([bin_x - bin_t * 2, bin_y - bin_t * 2, 122]);
+            }
+
     // the pan-tilt base, drawn so you can see the fit
     color("DeepSkyBlue", 0.3)
         translate([0, 0, plate_t])
