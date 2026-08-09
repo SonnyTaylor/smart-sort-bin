@@ -15,8 +15,8 @@ convert a mesh into a body it can cut, fillet and put in a drawing.
 
 1. **Insert > Insert Mesh**, pick the file, units **millimeters**.
 2. Right-click the mesh body > **Convert Mesh** (or Mesh tab > Modify > Convert Mesh).
-3. Method: **Prismatic** for `plate` / `bracket` / `clamp` / `tray_spacer` —
-   they are flat faces, holes and cylinders, and prismatic rebuilds those as
+3. Method: **Prismatic** for `plate`, `bracket`, `clamp` and `tray_spacer`.
+   They are flat faces, holes and cylinders, and prismatic rebuilds those as
    real geometry. Use **Faceted** for `tray`, whose surface is genuinely curved.
 4. Uncheck "Operate on a new body" if you want it to replace the mesh.
 
@@ -26,7 +26,7 @@ You get a solid body: measurable, cuttable, usable in assemblies and drawings.
 
 You do not get the parameters. Fusion has no idea `plate` was built from
 `base_dia` and `wall`. To change a dimension, edit the `.scad` file and
-re-export — do not try to edit the converted body and keep the two in sync.
+re-export. Do not try to edit the converted body and keep the two in sync.
 
 ## Re-exporting
 
