@@ -38,6 +38,9 @@
                   one the camera sees and the item slides on,
                   prints upward and comes out clean.
      1 x spacer   sets the gap between tray and servo bracket.
+                  OPTIONAL. Four M3 nylon standoffs of the same height do
+                  exactly this job and are already threaded, so you skip the
+                  print and the four inserts. See spacer_h below.
 
    PRINT IT IN A PLAIN LIGHT COLOUR. The camera classifies the
    item against this background, so a busy or shiny surface
@@ -74,7 +77,14 @@ spacer_h   = 15;    // gap between tray underside and the tilt plate.
    One in each end of the spacer, so the tray screws down into the top and the
    servo bracket screws up into the bottom. Two short screws instead of one
    long one through the lot, and no nut to hold underneath where you cannot
-   see it. Set false and it goes back to clearance holes and nuts. */
+   see it. Set false and it goes back to clearance holes and nuts.
+
+   None of this applies if you use four M3 nylon standoffs instead of printing
+   the spacer. A standoff is already a threaded pillar, so it is the same joint
+   with none of the work. Same screws either way: M3 x 12 countersunk down from
+   the tray, M3 x 8 up from under the servo bracket. The one rule is the same
+   too, and it is the reason spacer_h went up: the two screws must not meet in
+   the middle. */
 
 use_inserts = true;
 insert_d   = 4.2;   // hole for the insert. MEASURE YOURS, they vary

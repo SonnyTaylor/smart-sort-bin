@@ -44,8 +44,9 @@
       3 x M3 x 8 self-tapping   retain the pan-tilt base. No insert here:
                                 the tabs are one wall thick, 3.2mm, and an
                                 M3 insert is about 4mm long.
-      3 x M3 x 20               thumbscrews, pinch the bin wall. The longest
-                                screw here, and bin_wall_max is what sets it.
+      3 x M3 x 16 or 20         thumbscrews, pinch the bin wall. 16 touches a
+                                4.5mm wall with 2.4mm of travel left, 20 gives
+                                6.4mm. bin_wall_max is what sets this.
 
    Render and read the console. It works the lengths out for your settings
    rather than making you trust the list above.
@@ -365,9 +366,12 @@ echo(str("plastic around a ", insert_d, "mm hole:  thumbscrew post ",
 echo(str("SCREWS  foot csk ", plate_t + insert_len, " to ", plate_t + foot_t,
          "mm   pipe lock ", wall + lock_boss_h + 1.5,
          "mm   tab ", wall + 2, "mm"));
-echo(str("        thumbscrew ", jaw_t + jaw_gap - bin_t,
-         "mm just touches a ", bin_t, "mm wall, so use ",
-         jaw_t + jaw_gap - bin_t + 3, "mm to have travel left"));
+// jaw_gap is measured from the rib's CENTRE, so the actual opening the screw
+// has to cross is jaw_gap - rib_r. Getting that wrong overstates the screw by
+// a whole rib radius, which is how this asked for an M3 x 25 it never needed.
+echo(str("        clear jaw opening ", jaw_gap - rib_r,
+         "mm, so the thumbscrew touches a ", bin_t, "mm wall at ",
+         jaw_t + jaw_gap - rib_r - bin_t, "mm.  M3 x 16 or 20."));
 
 if (PART == "plate")        plate();
 else if (PART == "bracket") bracket();
