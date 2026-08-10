@@ -128,6 +128,23 @@ module saddle() {
 }
 
 
+// A rounded rectangle, as four corner posts bridged by two slabs.
+// This is exactly hull() of the same four posts: at $fn = 32 each post has a
+// vertex square on every axis, so the slab edges meet the posts on their flats
+// with nothing sticking out. Written the long way because hull() does not
+// convert to STEP, and both the boss and the spacer want this shape.
+module rrect(dx, dy, d, h) {
+    r = d / 2;
+    union() {
+        for (x = [-dx / 2, dx / 2], y = [-dy / 2, dy / 2])
+            translate([x, y, 0])
+                cylinder(d = d, h = h, $fn = 32);
+        translate([-dx / 2, -dy / 2 - r, 0]) cube([dx, dy + 2 * r, h]);
+        translate([-dx / 2 - r, -dy / 2, 0]) cube([dx + 2 * r, dy, h]);
+    }
+}
+
+
 module tray() {
     difference() {
         union() {
@@ -136,11 +153,7 @@ module tray() {
             // material to sit in rather than 3mm of shell. It is hidden
             // by the spacer, so it costs nothing.
             translate([0, 0, -shell_t - boss_h])
-                hull()
-                    for (x = [-bolt_dx / 2 - 5, bolt_dx / 2 + 5],
-                         y = [-bolt_dy / 2 - 5, bolt_dy / 2 + 5])
-                        translate([x, y, 0])
-                            cylinder(d = 10, h = boss_h + shell_t + 1, $fn = 32);
+                rrect(bolt_dx + 10, bolt_dy + 10, 10, boss_h + shell_t + 1);
         }
 
         // mounting bolts, countersunk from above so the heads finish
@@ -158,11 +171,7 @@ module tray() {
 
 module spacer() {
     difference() {
-        hull()
-            for (x = [-bolt_dx / 2, bolt_dx / 2],
-                 y = [-bolt_dy / 2, bolt_dy / 2])
-                translate([x, y, 0])
-                    cylinder(d = 11, h = spacer_h, $fn = 32);
+        rrect(bolt_dx, bolt_dy, 11, spacer_h);
         for (x = [-bolt_dx / 2, bolt_dx / 2], y = [-bolt_dy / 2, bolt_dy / 2])
             translate([x, y, -1])
                 cylinder(d = bolt_d, h = spacer_h + 2, $fn = 24);

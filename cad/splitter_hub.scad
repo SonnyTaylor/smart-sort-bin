@@ -135,21 +135,29 @@ function pipe_for(a) = leg_reach(a) - jaw_offset;
 
 // A sideways hole with a flat-topped 45 degree peak, so it prints
 // without support and still takes a round pipe. Bore along +X.
+//
+// The outline is one closed polygon: the circle's arc the long way round the
+// bottom, then the two 45 degree faces of the peak, then the flat that tops it
+// off. It used to be a circle unioned with a triangle and then cut by a
+// square. That drew the same shape, but a 2D boolean inside linear_extrude is
+// the thing that stops the part converting to STEP, so it is spelled out.
 module teardrop_x(d, len) {
-    r = d / 2;
+    r    = d / 2;
+    step = 360 / $fn;
+    k0   = round($fn * 3 / 8);          // 135 deg, where the peak meets the arc
+    k1   = round($fn * 9 / 8);          // 405 deg, i.e. 45 deg the long way
+    // Never let the flat top rise above the peak itself, or the outline
+    // would cross over itself on a small bore.
+    pc   = min(peak_cut, r * sqrt(2) - 0.01);
+    xt   = r * sqrt(2) - pc;            // half width of the flat, on a 45 deg slope
+
     rotate([0, 90, 0])
         rotate([0, 0, 90])
             linear_extrude(len)
-                intersection() {
-                    union() {
-                        circle(r = r);
-                        polygon([[-r * 0.7071, r * 0.7071],
-                                 [ r * 0.7071, r * 0.7071],
-                                 [0, r * 1.4142]]);
-                    }
-                    translate([-r * 2, -r * 2])
-                        square([r * 4, r * 2 + peak_cut]);
-                }
+                polygon(concat(
+                    [for (k = [k0 : k1]) [r * cos(step * k), r * sin(step * k)]],
+                    [[xt, pc], [-xt, pc]]
+                ));
 }
 
 
@@ -160,13 +168,22 @@ module teardrop_x(d, len) {
 module socket_body(base = 0, stop = -1) {
     bz = bore_z(base);
     bh = block_h(base);
+    h  = bh - base;
+    y0 = socket_od / 2;          // full width down at the bed
+    y1 = socket_od / 2 - 3;      // tucked in at the top
     difference() {
-        hull() {
-            translate([0, -socket_od / 2, base])
-                cube([socket_len, socket_od, 0.1]);
-            translate([0, -socket_od / 2 + 3, bh - 0.1])
-                cube([socket_len, socket_od - 6, 0.1]);
-        }
+        // The tapered block, drawn as one profile swept along X. This used to
+        // be a hull() of two thin slabs. Same solid to the last micron, but
+        // hull() is the one operation that will not convert to STEP, so the
+        // shape is written out directly instead. The 0.1mm ledge at the bottom
+        // is the old slab thickness, kept so the part does not move; above it
+        // the wall runs dead straight to the top corner, which is what the
+        // hull actually did.
+        translate([0, 0, base])
+            rotate([90, 0, 90])
+                linear_extrude(socket_len)
+                    polygon([[-y0, 0], [y0, 0], [y0, 0.1],
+                             [y1, h], [-y1, h], [-y0, 0.1]]);
         translate([stop < 0 ? 5 : -1, 0, bz])
             teardrop_x(bore_d, stop == 0 ? socket_len + 2 : socket_len - 4);
         // grub screw locking the pipe, driven in from the side
