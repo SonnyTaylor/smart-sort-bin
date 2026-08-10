@@ -67,7 +67,12 @@ PART = "preview";   // "preview" | "plate" | "bracket" | "clamp"
 
 /* ---------- MEASURE THESE ---------- */
 
-base_dia     = 124.5;  // pan-tilt base outside diameter (measured)
+base_dia     = 125.6;  // pan-tilt base outside diameter, plus clearance.
+                       //   The supplied Tracker.step measures 125.00 exactly.
+                       //   This was 124.5, taken off the real thing with
+                       //   calipers, which put the retaining tabs 0.25mm
+                       //   inside the base on every side: it would not have
+                       //   dropped in. 125.6 leaves 0.3mm a side to seat.
 lip_h        = 7;      // height of the tabs that stop the base sliding off
 bin_wall_max = 6;      // thickest bin wall the clamp must grip.
                        //   ecobin corflute is 4.5, cardboard 3-6, so 6 covers
