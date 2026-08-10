@@ -54,7 +54,12 @@ PART = "tray";      // "tray" | "spacer" | "preview"
 bolt_dx    = 32;    // hole spacing across the tray
 bolt_dy    = 15;    // hole spacing along the tray
 bolt_d     = 3.4;   // M3 clearance
-bolt_csk   = 6.4;   // M3 countersunk head
+bolt_csk   = 6.4;   // M3 countersunk head, reached 1.8mm up from bolt_d
+csk_run    = 6;     // how far the countersink cone is actually run.
+                    //   The saddle is curved, so a cone stopping at a fixed
+                    //   height leaves a lip on the high side and the head
+                    //   will not drop in. Running it long costs nothing and
+                    //   does not move where the head seats.
 spacer_h   = 12;    // gap between tray underside and the tilt plate.
                     //   Enough that the tray clears the bracket arms
                     //   at full tilt. Measure, then reprint if wrong.
@@ -104,11 +109,15 @@ function gz(i, j) = rise(gy(i, j)) - sag(gx(i));
 function T(i, j) = i * ny + j;
 function B(i, j) = nx * ny + i * ny + j;
 
-module saddle() {
+// floor_z = undef gives the 3mm shell, which is the tray itself. Give it a
+// number instead and you get a solid block under the same top surface, which
+// is what caps the boss.
+module grid_solid(floor_z = undef) {
     polyhedron(
         points = concat(
             [for (i = [0:nx-1], j = [0:ny-1]) [gx(i), gy(i,j), gz(i,j)]],
-            [for (i = [0:nx-1], j = [0:ny-1]) [gx(i), gy(i,j), gz(i,j) - shell_t]]
+            [for (i = [0:nx-1], j = [0:ny-1])
+                [gx(i), gy(i,j), floor_z == undef ? gz(i,j) - shell_t : floor_z]]
         ),
         faces = concat(
             // the surface the rubbish sits on
@@ -126,6 +135,12 @@ module saddle() {
         convexity = 10
     );
 }
+
+module saddle() { grid_solid(); }
+
+// Everything below the top surface. Nothing that gets intersected with this
+// can break through the face the camera looks at.
+module under_surface() { grid_solid(-40); }
 
 
 // A rounded rectangle, as four corner posts bridged by two slabs.
@@ -149,11 +164,20 @@ module tray() {
     difference() {
         union() {
             saddle();
-            // small boss under the middle, so the bolts have real
-            // material to sit in rather than 3mm of shell. It is hidden
-            // by the spacer, so it costs nothing.
-            translate([0, 0, -shell_t - boss_h])
-                rrect(bolt_dx + 10, bolt_dy + 10, 10, boss_h + shell_t + 1);
+            // Small boss under the middle, so the bolts have real material to
+            // sit in rather than 3mm of shell.
+            //
+            // It MUST be capped by the tray's own top surface. Left uncapped
+            // it stands 1mm proud of the saddle, which puts a flat plateau in
+            // the middle of the sorting surface and, worse, buries the
+            // countersinks inside it: above them the hole is only bolt_d wide,
+            // so a countersunk M3 head cannot physically pass. The tray could
+            // not be bolted on at all.
+            intersection() {
+                translate([0, 0, -shell_t - boss_h])
+                    rrect(bolt_dx + 10, bolt_dy + 10, 10, boss_h + shell_t + 1);
+                under_surface();
+            }
         }
 
         // mounting bolts, countersunk from above so the heads finish
@@ -163,7 +187,9 @@ module tray() {
                 translate([0, 0, -shell_t - boss_h - 1])
                     cylinder(d = bolt_d, h = boss_h + shell_t + 3, $fn = 24);
                 translate([0, 0, -1.7])
-                    cylinder(d1 = bolt_d, d2 = bolt_csk, h = 1.8, $fn = 24);
+                    cylinder(d1 = bolt_d,
+                             d2 = bolt_d + (bolt_csk - bolt_d) * csk_run / 1.8,
+                             h = csk_run, $fn = 24);
             }
     }
 }
