@@ -44,12 +44,8 @@
       3 x M3 x 8 self-tapping   retain the pan-tilt base. No insert here:
                                 the tabs are one wall thick, 3.2mm, and an
                                 M3 insert is about 4mm long.
-      3 x M3 x 25               thumbscrews, pinch the bin wall. The only
-                                long one, and only because jaw_gap is sized
-                                for a bin_wall_max wall skewed as far as a
-                                rectangle can skew it. Drop bin_wall_max to
-                                the bin you actually own and this gets
-                                shorter with it.
+      3 x M3 x 20               thumbscrews, pinch the bin wall. The longest
+                                screw here, and bin_wall_max is what sets it.
 
    Render and read the console. It works the lengths out for your settings
    rather than making you trust the list above.
@@ -72,8 +68,16 @@ PART = "preview";   // "preview" | "plate" | "bracket" | "clamp"
 
 base_dia     = 124.5;  // pan-tilt base outside diameter (measured)
 lip_h        = 7;      // height of the tabs that stop the base sliding off
-bin_wall_max = 8;      // thickest bin wall the clamp must grip
-                       //   ecobin corflute is 4.5, cardboard 3-6
+bin_wall_max = 6;      // thickest bin wall the clamp must grip.
+                       //   ecobin corflute is 4.5, cardboard 3-6, so 6 covers
+                       //   everything this is actually going on.
+                       //
+                       //   This one number sets how long the thumbscrew has to
+                       //   be, because the jaw gap has to clear a wall this
+                       //   thick skewed as far as a rectangular bin can skew
+                       //   it. It was 8, which wanted an M3 x 25. At 6 an
+                       //   M3 x 20 does it with 3mm of travel spare. Raise it
+                       //   for a chunkier bin and buy longer screws.
 
 /* ---------- YOUR BIN ----------
    Outside dimensions. These do not change any printed part, they only

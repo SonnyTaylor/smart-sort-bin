@@ -60,9 +60,25 @@ csk_run    = 6;     // how far the countersink cone is actually run.
                     //   height leaves a lip on the high side and the head
                     //   will not drop in. Running it long costs nothing and
                     //   does not move where the head seats.
-spacer_h   = 12;    // gap between tray underside and the tilt plate.
+spacer_h   = 15;    // gap between tray underside and the tilt plate.
                     //   Enough that the tray clears the bracket arms
                     //   at full tilt. Measure, then reprint if wrong.
+                    //
+                    //   Was 12. It went up because the two screws now come in
+                    //   from opposite ends, and at 12 their tips met in the
+                    //   middle and neither could pull tight. Taller is the
+                    //   safe direction: it only ever adds clearance.
+
+
+/* ---------- BRASS HEAT-SET INSERTS ----------
+   One in each end of the spacer, so the tray screws down into the top and the
+   servo bracket screws up into the bottom. Two short screws instead of one
+   long one through the lot, and no nut to hold underneath where you cannot
+   see it. Set false and it goes back to clearance holes and nuts. */
+
+use_inserts = true;
+insert_d   = 4.2;   // hole for the insert. MEASURE YOURS, they vary
+insert_len = 4;     // how deep it sits
 
 
 /* ---------- SHAPE ---------- */
@@ -198,9 +214,13 @@ module tray() {
 module spacer() {
     difference() {
         rrect(bolt_dx, bolt_dy, 11, spacer_h);
+        // With inserts this is the insert bore, one pressed into each end.
+        // The middle is left as bare hole, which is where the two screw tips
+        // end up and is why spacer_h has to be more than twice their reach.
         for (x = [-bolt_dx / 2, bolt_dx / 2], y = [-bolt_dy / 2, bolt_dy / 2])
             translate([x, y, -1])
-                cylinder(d = bolt_d, h = spacer_h + 2, $fn = 24);
+                cylinder(d = use_inserts ? insert_d : bolt_d,
+                         h = spacer_h + 2, $fn = 24);
     }
 }
 
@@ -215,6 +235,16 @@ echo(str("ends curl DOWN ", drop_end, "mm, steepest ",
          " deg  (keep under ~19 or it creeps off by itself)"));
 echo(str("overall ", tray_l, " x ", tray_w, " x ",
          rise_side + drop_end + shell_t, "mm"));
+
+// Screw lengths for the spacer, and the check that the two do not meet.
+bracket_t = 2;      // the metal servo bracket's top plate. Measure yours.
+echo(str("SPACER SCREWS  from above ", shell_t + boss_h + insert_len,
+         "mm minimum (countersunk), from below ", bracket_t + insert_len, "mm minimum"));
+echo(str("  an M3x12 above reaches ", 12 - shell_t - boss_h,
+         "mm in and an M3x8 below reaches ", 8 - bracket_t,
+         "mm in, spacer is ", spacer_h, "mm, leaving ",
+         spacer_h - (12 - shell_t - boss_h) - (8 - bracket_t),
+         "mm between the tips.  Must stay above zero."));
 
 if (PART == "tray")        tray();
 else if (PART == "spacer") spacer();
