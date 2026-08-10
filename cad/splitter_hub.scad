@@ -37,12 +37,22 @@
      15 x M3 brass heat-set inserts
                                 6 in the bracket feet, 6 in the pipe lock
                                 pads, 3 in the clamp outer jaws
-      6 x M3 x 12 countersunk   bracket feet, down through the plate
-      6 x M3 x 12               pipe locks, down through the pads
-      3 x M3 x 25               thumbscrews, pinch the bin wall
-      3 x M3 x 10 self-tapping  retain the pan-tilt base. No insert here:
+      6 x M3 x 8 countersunk    bracket feet, down through the plate.
+                                NOT longer. Past 9mm it bottoms out in the
+                                5mm foot and stops pulling the joint tight.
+      6 x M3 x 8                pipe locks, down through the pads
+      3 x M3 x 8 self-tapping   retain the pan-tilt base. No insert here:
                                 the tabs are one wall thick, 3.2mm, and an
                                 M3 insert is about 4mm long.
+      3 x M3 x 25               thumbscrews, pinch the bin wall. The only
+                                long one, and only because jaw_gap is sized
+                                for a bin_wall_max wall skewed as far as a
+                                rectangle can skew it. Drop bin_wall_max to
+                                the bin you actually own and this gets
+                                shorter with it.
+
+   Render and read the console. It works the lengths out for your settings
+   rather than making you trust the list above.
 
    PIPE LENGTH
      length = distance_from_centre_to_rim - 50
@@ -346,6 +356,14 @@ echo(str("threaded depth  bracket foot ", foot_t,
 echo(str("plastic around a ", insert_d, "mm hole:  thumbscrew post ",
          (post_w - insert_d) / 2, "mm   lock pad ",
          (lock_boss_d - insert_d) / 2, "mm   (want 2mm or more)"));
+
+// Screw lengths, worked out rather than remembered.
+echo(str("SCREWS  foot csk ", plate_t + insert_len, " to ", plate_t + foot_t,
+         "mm   pipe lock ", wall + lock_boss_h + 1.5,
+         "mm   tab ", wall + 2, "mm"));
+echo(str("        thumbscrew ", jaw_t + jaw_gap - bin_t,
+         "mm just touches a ", bin_t, "mm wall, so use ",
+         jaw_t + jaw_gap - bin_t + 3, "mm to have travel left"));
 
 if (PART == "plate")        plate();
 else if (PART == "bracket") bracket();
