@@ -33,11 +33,16 @@
    flat-topped peak is what lets a sideways hole print without
    support. A round pipe still slides in.
 
-   HARDWARE
-      6 x M3 x 12 countersunk   bracket feet, through the plate
-      6 x M3 x 16               grub screws, lock the pipes
+   HARDWARE   (as set up, i.e. with use_inserts on)
+     15 x M3 brass heat-set inserts
+                                6 in the bracket feet, 6 in the pipe lock
+                                pads, 3 in the clamp outer jaws
+      6 x M3 x 12 countersunk   bracket feet, down through the plate
+      6 x M3 x 12               pipe locks, down through the pads
       3 x M3 x 25               thumbscrews, pinch the bin wall
-      3 x M3 x 10               retain the pan-tilt base
+      3 x M3 x 10 self-tapping  retain the pan-tilt base. No insert here:
+                                the tabs are one wall thick, 3.2mm, and an
+                                M3 insert is about 4mm long.
 
    PIPE LENGTH
      length = distance_from_centre_to_rim - 50
@@ -101,7 +106,26 @@ rib_r        = 3;      // the rounded rib that gives line contact
 screw        = 3.4;    // M3 clearance
 pinch_screw  = 2.7;    // M3 self-tapping into PLA
 grub         = 2.7;    // M3 self-tapping, locks the pipe
+lock_boss_d  = 10;     // pad carrying the pipe lock screw
+lock_boss_h  = 3;      // how far that pad stands off the block
 $fn          = 48;
+
+
+/* ---------- BRASS HEAT-SET INSERTS ----------
+   Set false and every threaded hole goes back to a self-tapping screw
+   straight into PLA.
+
+   MEASURE YOUR OWN INSERTS. M3 inserts vary a lot between suppliers:
+   4.0 to 4.6mm outside, 3 to 6mm long. insert_d wants to be a couple of
+   tenths under the outside diameter so the brass melts its way in.
+
+   Inserts are used in the three places with the plastic to take them:
+   the bracket feet, the pipe locks and the thumbscrews. NOT in the plate
+   tabs, which are only one wall thick, so those stay self-tapping. */
+
+use_inserts  = true;
+insert_d     = 4.2;    // hole for the insert
+insert_len   = 4;      // how deep it sits, used to check there is room
 
 
 /* ------------------------------------------------------------
@@ -172,24 +196,38 @@ module socket_body(base = 0, stop = -1) {
     y0 = socket_od / 2;          // full width down at the bed
     y1 = socket_od / 2 - 3;      // tucked in at the top
     difference() {
-        // The tapered block, drawn as one profile swept along X. This used to
-        // be a hull() of two thin slabs. Same solid to the last micron, but
-        // hull() is the one operation that will not convert to STEP, so the
-        // shape is written out directly instead. The 0.1mm ledge at the bottom
-        // is the old slab thickness, kept so the part does not move; above it
-        // the wall runs dead straight to the top corner, which is what the
-        // hull actually did.
-        translate([0, 0, base])
-            rotate([90, 0, 90])
-                linear_extrude(socket_len)
-                    polygon([[-y0, 0], [y0, 0], [y0, 0.1],
-                             [y1, h], [-y1, h], [-y0, 0.1]]);
+        union() {
+            // The tapered block, drawn as one profile swept along X. This used
+            // to be a hull() of two thin slabs. Same solid to the last micron,
+            // but hull() is the one operation that will not convert to STEP,
+            // so the shape is written out directly instead. The 0.1mm ledge at
+            // the bottom is the old slab thickness, kept so the part does not
+            // move; above it the wall runs dead straight to the top corner,
+            // which is what the hull actually did.
+            translate([0, 0, base])
+                rotate([90, 0, 90])
+                    linear_extrude(socket_len)
+                        polygon([[-y0, 0], [y0, 0], [y0, 0.1],
+                                 [y1, h], [-y1, h], [-y0, 0.1]]);
+            // Pad for the pipe lock screw.
+            //
+            // The screw used to go in from the side, where it had 1.56mm of
+            // plastic to bite: the bore is at its widest exactly where the
+            // block has tapered in. That is three threads, in PLA, holding a
+            // leg on. It strips if you lean on the screwdriver.
+            //
+            // Coming down through the top instead gives the full wall, and
+            // this pad adds the rest. The block's top is a flat horizontal
+            // face, so the pad prints with no overhang anywhere.
+            translate([socket_len - 9, 0, bh - 0.01])
+                cylinder(d = lock_boss_d, h = lock_boss_h + 0.01);
+        }
         translate([stop < 0 ? 5 : -1, 0, bz])
             teardrop_x(bore_d, stop == 0 ? socket_len + 2 : socket_len - 4);
-        // grub screw locking the pipe, driven in from the side
-        translate([socket_len - 9, socket_od, bz])
-            rotate([90, 0, 0])
-                cylinder(d = grub, h = socket_od * 2);
+        // pipe lock, driven down through the pad and onto the pipe
+        translate([socket_len - 9, 0, bz])
+            cylinder(d = use_inserts ? insert_d : grub,
+                     h = bh + lock_boss_h - bz + 1);
     }
 }
 
@@ -251,9 +289,13 @@ module bracket() {
     difference() {
         translate([0, -foot_w / 2, 0])
             cube([socket_len, foot_w, foot_t]);
+        // With inserts these take the thread, so the countersunk screw comes
+        // down through the plate and pulls straight into brass. Without them
+        // the hole is clearance and you are holding a nut under a bracket you
+        // cannot see or reach once the legs are on.
         for (x = [bolt_a, bolt_b])
             translate([x, 0, -1])
-                cylinder(d = screw, h = foot_t + 2);
+                cylinder(d = use_inserts ? insert_d : screw, h = foot_t + 2);
     }
     socket_body(base = foot_t, stop = -1);
 }
@@ -282,15 +324,28 @@ module clamp() {
             translate([j0 + jaw_t, 0, 0])
                 cylinder(r = rib_r, h = jaw_h);
         }
-        // thumbscrew through the outer jaw, pushes a point at the rib
+        // Thumbscrew through the outer jaw, pushes a point at the rib. This is
+        // the one you undo and redo every time the bin moves, so it is the
+        // joint most worth putting brass in. The post is only post_w wide, so
+        // an insert leaves about 2.4mm of plastic around it.
         translate([j1 + jaw_t + 1, 0, jaw_h / 2])
             rotate([0, -90, 0])
-                cylinder(d = pinch_screw, h = jaw_t + 3);
+                cylinder(d = use_inserts ? insert_d : pinch_screw, h = jaw_t + 3);
     }
 }
 
 
 /* ---------- output ---------- */
+
+// How much depth each threaded hole actually has. An M3 insert is about
+// insert_len long and wants a couple of mm of plastic around it.
+echo(str("threaded depth  bracket foot ", foot_t,
+         "mm   pipe lock ", wall + lock_boss_h,
+         "mm   thumbscrew ", jaw_t,
+         "mm   plate tab ", wall, "mm (self-tapping, too thin for brass)"));
+echo(str("plastic around a ", insert_d, "mm hole:  thumbscrew post ",
+         (post_w - insert_d) / 2, "mm   lock pad ",
+         (lock_boss_d - insert_d) / 2, "mm   (want 2mm or more)"));
 
 if (PART == "plate")        plate();
 else if (PART == "bracket") bracket();
