@@ -94,4 +94,7 @@ smart-sort-bin/
 - [Project Plan](PLAN.md) — original architecture, mechanism design, AI strategy
 - [Pi Setup](docs/pi_prototype_setup.md) — wiring, OS config, troubleshooting
 - [Handoff](docs/handoff.md) — current state, how to deploy, next tasks
+- [Mechanical Design](docs/07_mechanical_design.md): how the sorting mechanism works, with verified clearances
+- [Mechanical Iteration Log](docs/08_mechanical_iteration_log.md): eight faults found and corrected before printing
+- [CAD](cad/README.md): parts, hardware list and assembly order
 - [Risk Assessment](docs/01_risk_assessment.md) · [Testing Plan](docs/02_testing_plan.md) · [Budget](docs/03_budget.md) · [Iteration Log](docs/04_iteration_log.md) · [Future Scope](docs/05_future_scope.md)

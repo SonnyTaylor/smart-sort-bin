@@ -1,91 +1,90 @@
 # CAD
 
-The mechanical parts, written as code. Change a number at the top of a `.scad`
-file and the shape rebuilds itself, which is why bin size is one line rather
-than a remodelling job.
+The mechanical parts. **Autodesk Fusion is the source of truth.** The models
+live in the Autodesk project *Systems engineerring*; everything in this folder
+is exported from there.
 
-| File | What it draws |
+## The parts
+
+| Fusion document | Qty | Size | What it does |
+| :--- | :---: | :--- | :--- |
+| Smart Bin - hub plate | 1 | 132 dia x 11 | Carries the pan-tilt, spans the bin on three legs |
+| Smart Bin - leg bracket | 3 | 32 x 26.4 x 36.4 | Bolts under the plate, takes a pipe |
+| Smart Bin - bin clamp | 3 | 58.1 x 26.4 x 31.4 | Grips the bin rim at the far end of each pipe |
+| Smart Bin - sorting tray | 1 | 120 x 90 x 18 | The saddle the rubbish lands on |
+| Smart Bin - tray mount | 1 | 52 x 45 x 18 | Joins the tray to the tilt arm |
+| Smart Bin - assembly | | | All of the above in position, plus the bin |
+
+Not printed: three lengths of 20mm PVC electrical conduit, the pan-tilt
+tracker, and two MG996R servos.
+
+## Folders
+
+| Folder | Use |
 | :--- | :--- |
-| `splitter_hub.scad` | The tripod that clamps to the bin rim: `plate`, `bracket`, `clamp` |
-| `tray.scad` | The saddle the rubbish lands on: `tray`, `spacer` |
-| `ameru_tray.scad` | Stale. An earlier attempt at the tray, kept only for reference |
+| `stl/` | **Print from here.** Exported from Fusion at high refinement |
+| `step/` | Solid models for anyone who wants to open the parts elsewhere |
+| `*.scad` | Superseded. The OpenSCAD source the hub and tray were originally developed in, kept as the design record |
+| `fusion/`, `csg_to_step.py` | Superseded. The old pipeline that got OpenSCAD parts into Fusion, before the parts were rebuilt natively |
 
-## Which folder do I want
+`stl/tray_spacer.stl` and `stl/spacer.stl` are the old spacer block, replaced by
+the tray mount. They can go.
 
-| Folder | Format | Use it for |
-| :--- | :--- | :--- |
-| `stl/` | mesh | **Printing.** Full resolution, straight from the source |
-| `step/` | solid | **Fusion 360 and other CAD.** Real faces and edges |
-| `fusion/` | mesh | Fusion fallback for the tray, which has no STEP |
+## Exporting after a change
 
-`csg/` also appears when you run the conversion. It is a scratch folder the
-tool writes and reads on the way through, and it is not committed.
+Fusion, with the part document open: **Utilities > Make > 3D Print** for STL, or
+**File > Export** for STEP. Save into `stl/` and `step/` with the same name, and
+commit, so the repo always matches what is in Fusion.
 
-## Getting parts into Fusion 360
+Renders for the portfolio come out of the assembly document and land in
+`../portfolio/images/cad_*.png`.
 
-Use `step/` where it exists. File > Open, and it arrives as a proper solid:
-selectable round faces, edges you can fillet, dimensions you can pull off it
-for a drawing. Four of the five parts are there.
+## Cutting the pipes
 
-The tray is the exception and always will be. Its surface is defined in
-`tray.scad` as a grid of points rather than as circles and planes, so there is
-no exact shape to hand over. Use `fusion/tray.stl` (Insert > Insert Mesh, then
-Convert Mesh, method **Faceted**). It is the same shape as `stl/tray.stl` on a
-coarser grid, within 0.02 mm, because Fusion makes a face per triangle and the
-print version's 23,000 of them bring it to a halt.
+Three different lengths, because a three-legged thing does not sit on a
+rectangle symmetrically. For the 60L ecobin (347 x 277 outside, 4.5mm corflute):
 
-Either way you get geometry, not parameters. Fusion has no idea the plate came
-from `base_dia = 124.5`. To change a dimension, change it in the `.scad` and
-re-export.
+| Leg | Cut to |
+| :--- | :--- |
+| 60 deg | 103.73 mm |
+| 180 deg | 118.00 mm |
+| 300 deg | 103.73 mm |
 
-## Re-exporting
+Change the bin and these change. The old `splitter_hub.scad` still works out the
+figures from bin dimensions if you need them for a different bin.
 
-Meshes, straight from OpenSCAD:
+## Hardware
 
-```bash
-OS="/c/Program Files/OpenSCAD/openscad.exe"
-R="C:/Users/Sonny Taylor/Code/smart-sort-bin"          # absolute paths only
-for p in plate bracket clamp; do
-  "$OS" -o "$R/cad/stl/$p.stl" -D "PART=\"$p\"" --export-format binstl cad/splitter_hub.scad
-done
-"$OS" -o "$R/cad/stl/tray.stl"        -D 'PART="tray"'   --export-format binstl cad/tray.scad
-"$OS" -o "$R/cad/stl/tray_spacer.stl" -D 'PART="spacer"' --export-format binstl cad/tray.scad
-"$OS" -o "$R/cad/fusion/tray.stl" -D 'PART="tray"' -D nx=64 -D ny=26 --export-format binstl cad/tray.scad
-```
+19 x M3 brass heat-set inserts: 6 in the bracket feet, 6 in the pipe lock pads,
+3 in the clamp jaws, 4 in the tray mount.
 
-Solids, via FreeCAD. One command, it calls OpenSCAD itself:
+| Qty | Screw | Into |
+| ---: | :--- | :--- |
+| 6 | M3 x 8 countersunk | plate, down into the bracket feet. **Not longer:** past 9mm it bottoms out |
+| 6 | M3 x 8 | pipe locks, down through the pads onto the conduit |
+| 3 | M3 x 8 self-tapping | plate tabs, pinching the pan-tilt base. No insert, the tab is one 3.2mm wall |
+| 2 | M3 x 8 | tray mount, down into the tilt arm |
+| 4 | M3 x 12 countersunk | tray, down into the mount |
+| 3 | M3 x 16 or 20 | clamp thumbscrews. 16 leaves 2.4mm of travel, 20 leaves 6.4mm |
 
-```bash
-"/c/Users/Sonny Taylor/AppData/Local/Programs/FreeCAD 1.1/bin/FreeCADCmd.exe" cad/csg_to_step.py
-cat cad/step/report.txt
-```
+## Assembly order
 
-FreeCAD prints a wall of its own noise and swallows the script's output, hence
-the report file. It looks like this:
+1. Melt the inserts in. Everything is easier before anything is bolted together.
+2. Bracket feet to the plate, countersunk screws from above so the heads finish
+   flush and the pan-tilt base still sits flat on them.
+3. Pipes into the brackets, lock screws down through the pads.
+4. Clamps onto the far ends of the pipes, lock screws down.
+5. Drop the assembly over the bin and nip up the three thumbscrews.
+6. Pan-tilt base into the plate's three tabs, pinned with the three tab screws.
+7. Tray mount over the end of the tilt arm, two screws down into it. **Do this
+   before the tray goes on**, or you cannot reach them.
+8. Tray onto the mount, four countersunk screws.
 
-```
-OK    plate           32150 mm3    54 faces  [Cone 6, Cylinder 22, Plane 26]
-```
+## Two things to check before you print
 
-Those face types are the thing to read. Cylinders and cones mean real geometry
-came through. A part that is nothing but planes has been quietly meshed, and is
-not worth having as STEP. Every solid is also checked against the matching mesh
-and anything more than 0.5% out is reported instead of being written.
+**The mount's socket** is a 19.6 x 34.6mm pocket over a 19 x 34mm arm, so 0.3mm
+a side. Measure your arm first; printers vary and this is a slip fit.
 
-## Two rules for editing the .scad files
-
-Both exist so the parts keep converting to STEP. FreeCAD's CSG reader is the
-weak link in the chain and these are the two things it cannot follow.
-
-**No `hull()`.** Write the shape out instead. The tapered socket block in
-`splitter_hub.scad` is a swept profile and the rounded rectangles in
-`tray.scad` are `rrect()`, four corner posts bridged by two slabs. Both are
-exactly what the hull was, and `rrect()` is genuinely better here: hull gave
-130 flat facets where the real shape has 4 cylinders.
-
-**No 2D booleans inside `linear_extrude()`.** Build the outline as one
-polygon. The teardrop pipe bore used to be a circle unioned with a triangle and
-cut by a square, and that alone stopped two parts converting.
-
-Neither rule cost anything. After both rewrites every part came out identical
-to the old one to within 0.0003%, which is floating point noise.
+**The inserts.** M3 inserts run 4.0 to 4.6mm outside depending on supplier. Every
+insert hole here is 4.2mm. Measure yours, and if they differ the holes need
+changing before you print anything.
