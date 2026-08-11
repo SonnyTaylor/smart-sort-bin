@@ -1,4 +1,4 @@
-"""Export the seven printed parts out of Fusion into cad/stl/ and cad/step/.
+"""Export the nine printed parts out of Fusion into cad/stl/ and cad/step/.
 
 Fusion is the design source of truth, so the "current" panel of every evolution
 render is drawn from these exports rather than from the old OpenSCAD files.
@@ -32,8 +32,14 @@ PARTS = {
     "camera clamp": "camera_clamp",
     "camera head": "camera_head",
     "sorting tray": "tray",
-    "tray mount": "tray_mount",
+    "pan ring": "pan_ring",
+    "tilt yoke": "tilt_yoke",
+    "tilt cradle": "tilt_cradle",
 }
+
+# "tray mount" is deliberately absent. The tilt cradle replaced it when the
+# head was rebuilt, but cad/stl/tray_mount.stl stays in git because the
+# design-evolution render of the mount family draws its old version from it.
 
 
 def run(_context: str):
