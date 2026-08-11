@@ -7,8 +7,13 @@ We pivoted from the original ESP32-CAM + ESP32-C3 dual-board design to a **stand
 - **USB webcam** for image capture
 - **OpenRouter API** for AI waste classification
 - **GPIO servos** (pan/tilt) via pigpio hardware PWM
-- **WS2812B LED ring** for status indication
 - **Flask web dashboard** for manual control and monitoring
+
+**Not being fitted:** the WS2812B LED ring and the HC-SR04 ultrasonic sensor.
+Both were in the design and both were dropped; the reasoning is in
+[build_log.md](build_log.md). The LED wiring and states are still written up
+below because the code and the dashboard controls are still there, so it is a
+solder job and nothing else if it ever goes on.
 
 ## Hardware
 
@@ -16,10 +21,10 @@ We pivoted from the original ESP32-CAM + ESP32-C3 dual-board design to a **stand
 | Part | Spec | Notes |
 |------|------|-------|
 | Raspberry Pi 3B | 1GB RAM, 4× USB | Main controller |
-| USB Webcam | Generic 640×480 | `/dev/video0` via OpenCV |
+| USB Webcam | Generic 640×480 | `/dev/video0` via `v4l2-ctl` mmap streaming, not OpenCV |
 | Pan Servo | MG996R | GPIO 17 (Pin 11), signal only |
 | Tilt Servo | MG996R | GPIO 27 (Pin 13), signal only |
-| LED Ring | WS2812B 16-LED | GPIO 18 (Pin 12), signal only |
+| LED Ring | WS2812B 16-LED | GPIO 18 (Pin 12), signal only. **Not being fitted** |
 | Capacitor | 1000µF electrolytic | Across 5V/GND rail near servos |
 | Power | USB-C PD trigger board | Set to **5V ONLY** |
 
@@ -41,7 +46,7 @@ Servo 2 (Tilt):
   Brown  ──► Breadboard BLUE
   Signal ──► Pi Pin 13 (GPIO 27)
 
-LED Ring:
+LED Ring (not being fitted, kept for reference):
   5V     ──► Breadboard RED
   GND    ──► Breadboard BLUE
   DIN    ──► Pi Pin 12 (GPIO 18)
@@ -205,7 +210,12 @@ Edit `CATEGORY_PRESETS` in `src/pi/hardware.py` to adjust:
 - `tilt_rest`: horizontal position
 - Timing: `SORT_PAN_SETTLE_S`, `SORT_DUMP_HOLD_S`, `SORT_RETURN_S`
 
-## LED States (when wired)
+## LED States
+
+The ring is **not being fitted**, so none of this happens in hardware. The
+`/api/led` endpoint and the dashboard swatches still work and still drive these
+colors, so the table is what would light up if the ring were ever soldered on.
+
 | State | Color |
 |-------|-------|
 | Idle | White (dim) |

@@ -11,10 +11,17 @@
 - [x] Pan-tilt bracket physically assembled
 - [x] Servo jitter fixed (pigpio hardware-timed PWM)
 - [ ] Mount USB webcam on pan-tilt bracket
-- [ ] Wire WS2812B LED ring to GPIO 18 (Pin 12)
-- [ ] Test LED ring colors from software
 - [ ] Add physical power switch or shutdown button
-- [ ] Enclose in temporary housing for demo
+- [ ] Print the fourteen pieces. Orientation, supports and settings are in
+      [`cad/README.md`](../cad/README.md); start with one bracket
+
+### Dropped
+- ~~Wire WS2812B LED ring to GPIO 18~~ and ~~test its colors~~. Not being
+  fitted. The code and the dashboard controls stay, so it is a solder job if it
+  ever goes on. See [build_log.md](build_log.md)
+- ~~HC-SR04 ultrasonic item detection~~. Never wired, and now dropped
+- ~~Enclose in temporary housing for demo~~. Superseded by the printed
+  electronics box
 
 ## Software
 - [x] Real hardware abstraction (`src/pi/hardware.py`)
@@ -33,7 +40,6 @@
 - [ ] Calibrate servo positions for actual bin thirds (use Calibration tab)
 - [ ] Add confidence threshold filter (ignore < 0.7)
 - [ ] Error handling for camera disconnection
-- [ ] LED animations once ring is wired
 
 ## AI / VLM
 - [x] OpenRouter provider configured

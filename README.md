@@ -35,7 +35,7 @@ The prototype runs entirely on a **Raspberry Pi 3B**, pivoted from the original 
 | Raspberry Pi 3B | Runs Flask server, classification pipeline, servo control |
 | USB webcam | Frame capture via `v4l2-ctl` mmap streaming |
 | 2x MG996R servos | Pan (GPIO 17) and tilt (GPIO 27) via pigpio hardware PWM |
-| WS2812B LED ring | Status colors (GPIO 18, not wired yet) |
+| WS2812B LED ring | Status colors (GPIO 18). Dropped from the build, code kept |
 | USB-C PD trigger board | External 5V rail for servos |
 
 ## Web Dashboard

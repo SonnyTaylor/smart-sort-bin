@@ -11,7 +11,7 @@ the dashboard, drives the servos and calls the vision model.
 | `src/web/llm.py` | Vision model providers and the waste-sorting prompt |
 | `src/web/config.py` | Settings |
 | `src/web/mock_hardware.py` | Stand-in hardware so it runs on a laptop |
-| `src/pi/hardware.py` | The real thing: pigpio servos, v4l2 camera, LED ring |
+| `src/pi/hardware.py` | The real thing: pigpio servos, v4l2 camera, LED ring. The ring is **not fitted** and `LEDController` is a no-op, by decision. Leave it in |
 | `src/systemd/` | Service files, installed by the deploy script's `--setup` |
 | `src/esp32/` | **Dead.** Firmware from the abandoned two-board design, kept because the PowerPoint refers to that iteration. Do not extend it |
 
