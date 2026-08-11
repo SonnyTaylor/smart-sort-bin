@@ -169,6 +169,34 @@ above the bin rim against 147mm before.
 | Plastic in the head | 138.4 cm3 | 100.8 cm3 |
 | Printed parts in the head | 4 bought + mount | 3 |
 
+### How far it can actually tip
+
+The dump angle is a software number set from the Calibration tab, and **the
+mechanism runs out before the servo does.** Measured by swinging the exported
+tray mesh about the tilt axis, which was read off the cradle's horn pocket and
+the yoke's idler boss at x=0, z=58, and checking it against the pan ring and
+the hub plate:
+
+| `tilt_dump` | Angle | Tray's lowest point | Gap to the pan ring |
+| ---: | ---: | ---: | ---: |
+| -0.60, the default | 54 deg | z = 18.3 | **8.3 mm** |
+| -0.67 | 60 deg | z = 13.5 | 5.1 mm |
+| -0.78 | 70 deg | z = 6.7 | 1.6 mm |
+
+Contact lands somewhere near -0.85. Under about 2mm these figures are vertex
+to vertex on a tessellated mesh and should not be read finer than that.
+
+**Keep `tilt_dump` at -0.70 or shallower.** The Calibration tab accepts
+anything down to -1.0 and there is nothing in the mechanism to stop the tray
+arriving at the pan ring. This is deliberately not clamped in code: what a
+given number means in degrees depends on which spline tooth the horn went onto,
+so the real limit has to be found when the head is first assembled and centred.
+Find it then, by hand, before running a sort.
+
+This is also the answer to whether the head can be made shorter. It cannot, by
+much. Lowering the tilt axis spends that 8.3mm one for one, so there is about
+5mm in it before the tray starts clipping the ring at the normal dump angle.
+
 ### The bearing
 
 The yoke's weight sits on the pan ring's top face, not on the servo horn. A
