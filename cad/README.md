@@ -218,3 +218,110 @@ sellers. Measure yours and say so if it is not a 25mm round one.
 **The inserts.** M3 inserts run 4.0 to 4.6mm outside depending on supplier. Every
 insert hole here is 4.2mm. Measure yours, and if they differ the holes need
 changing before you print anything.
+
+## Printing
+
+Printer is a **Bambu Lab P1S**, 0.4mm nozzle, PLA. Fourteen pieces off eleven
+designs. Everything fits the 256mm bed with room to spare; the longest part is
+the electronics box at 190mm.
+
+Every orientation and support call below was worked out from the exported
+meshes, not from looking at renders. For each of the six ways a part can sit,
+the downward-facing area was measured and split into patches that share an
+edge, so a window's short bridge is not confused with a curved surface hanging
+in air. A patch is treated as bridgeable up to 12mm across its narrow way.
+
+### Orientation and support, part by part
+
+The STLs are exported in the orientation the part is modelled in, so "as
+loaded" means drop it on the plate and print. Where a rotation is needed, apply
+it in the slicer and **check the height matches**: that is how you know you
+rotated the right way, since the wrong way round gives the same footprint.
+
+| Part | Qty | Rotate | Height when right | Support |
+| :--- | :---: | :--- | ---: | :--- |
+| plate | 1 | As loaded, either way up | 4.0mm | None |
+| bracket | 3 | -90 about Y | 32.0mm | None |
+| clamp | 2 | As loaded | 31.4mm | None |
+| camera_clamp | 1 | 180 about X | 66.4mm | One patch, 20 x 21mm |
+| camera_head | 1 | As loaded | 38.0mm | None |
+| pan_ring | 1 | As loaded | 11.5mm | None |
+| tilt_yoke | 1 | As loaded | 62.5mm | One patch, 25.5 x 25.5mm |
+| tilt_cradle | 1 | 180 about X | 31.0mm | None |
+| tray | 1 | As loaded, trough up | 18.0mm | Yes, most of the underside |
+| box_hanger | 1 | 180 about X | 26.0mm | None |
+| electronics_box | 1 | As loaded, open side up | 42.5mm | None |
+
+**Eight of the eleven need no support at all**, which is the payoff from the
+45 degree flanks the sockets were given when they were shelled. Three do:
+
+- **camera_clamp**: 363 mm2 at 27mm up, the roof that closes the camera post's
+  socket and stops the pipe pushing through. Flat and 20mm across, too wide to
+  bridge.
+- **tilt_yoke**: 427 mm2 at 3mm up, the roof of the 25.5mm servo horn pocket.
+- **tray**: about 8.6 cm2, nearly the whole underside.
+
+Turn support **off** for everything else. Left on auto, the slicer will put
+support inside the pipe sockets and the insert holes, and digging it back out
+of a 20mm bore is worse than the problem it solves.
+
+### The tray is the awkward one
+
+It is a saddle: a trough running the long way that the rubbish lands in, with
+the sides raised 7.7mm to stop things rolling off, and both ends falling away
+5.8mm so the load slides out when it tips. That shape has **no flat face
+anywhere**, so laid down it touches the bed on two end edges and nothing else.
+
+Print it **trough up, with supports**, and add a brim. Two reasons, and neither
+is about saving support material:
+
+- The trough is the surface rubbish has to slide off. Support marks belong on
+  the underside, which only meets the cradle at four bolt pads.
+- Laid flat the layers stack the way the load presses them together. Stood on
+  end, which does cut the support from 8.6 to 0.3 cm2, the layers become
+  vertical planes and the saddle can split along one under a side load, on a
+  part 120mm tall standing on 36 mm2 of bed.
+
+If it does come out badly, standing it on end is the fallback, not the plan.
+
+### Settings
+
+Starting point, not gospel. Nothing here has been printed yet.
+
+| | |
+| :--- | :--- |
+| Layer | 0.2mm |
+| Walls | 4 on the brackets, clamps, yoke and cradle. 3 elsewhere |
+| Infill | 25% gyroid on anything holding a load, 15% for the electronics box |
+| Brim | Tray and camera clamp only |
+
+Four walls where the brass inserts go, because an insert melted into a 4.2mm
+hole eats most of a 3-wall skin and the screw then pulls out through the side.
+
+**Leave the door open and the glass lid off.** The P1S is enclosed, and PLA on
+a long print in a hot chamber softens in the throat and jams. None of these
+parts needs the enclosure.
+
+### What to print first
+
+**One bracket.** It is the smallest structural part at 14.7 cm3, and it is the
+only one that tests all three of the unknowns above at once: an insert hole, a
+socket that has to fit real 20mm conduit, and an M3 lock screw. Melt an insert
+in, push an offcut of conduit into the socket, and drive the lock screw before
+committing the other thirteen pieces.
+
+If those three fit, the rest follows in assembly order: plate, the other two
+brackets, two clamps, camera clamp, then the head parts, then the tray, then
+the box and hanger last since neither holds anything up.
+
+### How much filament
+
+| | cm3 | PLA at 1.24 g/cm3 |
+| :--- | ---: | ---: |
+| All 14 pieces, solid | 354.5 | 440 g |
+| Sliced estimate, walls and infill | | **200 to 265 g** |
+
+The solid figure is measured off the meshes and is exact. The sliced figure is
+an estimate at 45 to 60% of solid, which is the usual range for parts this
+chunky at these wall and infill settings. Only the slicer knows the real
+number. Either way a 1kg spool covers the build with room for a reprint.

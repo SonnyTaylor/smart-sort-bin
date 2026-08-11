@@ -40,6 +40,9 @@ it does not get used.
 Also not yet bought or made: the 60L bin, the three lengths of 20mm PVC
 conduit, the M3 brass inserts, and the bags and bulldog clips.
 
+How to print them, which way up each one goes and what to print first is in
+[../cad/README.md](../cad/README.md).
+
 So at this date the mechanism has been **designed and checked, not built or
 tested**. Anything written up about it should say so.
 
@@ -56,6 +59,86 @@ stiff enough, or that items land where the maths says. Those need the printer.
 ---
 
 ## Entries
+
+### 12 August 2026: how to print the fourteen pieces, worked out from the meshes
+
+Everything was modelled, checked and exported, and **nothing said which way up
+any of it goes on the bed**. Printing was the next job and the information
+needed to start it did not exist.
+
+Printer is a Bambu Lab P1S. Every part fits the 256mm bed; the longest is the
+electronics box at 190mm.
+
+**Measured, not eyeballed.** Each part was tried in all six ways it can sit,
+and for each the downward-facing area was measured off the exported mesh. Faces
+more than 45 degrees off vertical were counted as overhang, anything already
+lying on the bed was excluded, and the remainder was split into patches sharing
+an edge. That last step is what made the answer useful: grouping by height
+alone made the electronics box look like it had a 190mm span to bridge, when
+what it actually has is a row of separate windows, each a few mm across.
+
+The result is better than expected. **Eight of the eleven designs need no
+support at all**, which is the 45 degree flanks from the shelling job paying
+off. Three need it, and each in one identifiable place:
+
+| Part | Where | Area |
+| :--- | :--- | ---: |
+| camera clamp | roof closing the camera post socket, 20 x 21mm | 363 mm2 |
+| tilt yoke | roof of the 25.5mm servo horn pocket | 427 mm2 |
+| tray | nearly the whole underside | 8.6 cm2 |
+
+**The tray is the one to watch.** It is a saddle, and measuring it showed it has
+no flat face anywhere: laid down it touches the bed on two end edges and
+nothing in between, 0 mm2 of contact. Standing it on end cuts the support from
+8.6 to 0.3 cm2, and that is still the wrong answer, because it puts the layers
+on edge in a part that gets loaded sideways and stands it 120mm tall on 36 mm2
+of bed. It gets printed flat with supports and a brim.
+
+All fourteen pieces come to **354.5 cm3 solid, 440g of PLA**. Sliced with walls
+and infill it should land somewhere near 200 to 265g, but that part is an
+estimate and only the slicer knows.
+
+Written up in [../cad/README.md](../cad/README.md), along with the settings and
+the argument for printing **one bracket first**: it is the smallest structural
+part at 14.7 cm3 and the only one that tests an insert hole, a conduit socket
+and a lock screw at the same time. Those are three of the numbers the same
+document already flags as unverified, so one 15 cm3 print settles them before
+the other thirteen pieces are committed.
+
+**Not done:** still nothing printed. This is a plan for printing, not evidence
+of it, and the support calls are calculated from geometry rather than observed
+on a bed.
+
+### 12 August 2026: the LED ring and the ultrasonic sensor are dropped
+
+Neither is going on the build.
+
+The **HC-SR04 ultrasonic sensor** was going to detect an item landing on the
+tray and trigger the camera by itself. It was never wired on the Pi prototype;
+it belonged to the ESP32 design, where a microcontroller had the spare timing
+to watch it. On the Pi the dashboard's Snap and Sort button does the same job,
+and a sensor that only saves a button press is not worth the wiring, the 5V to
+3.3V divider on the Echo pin, or a hole in a part that is already designed.
+
+The **WS2812B LED ring** was going to show status by colour. It is dropped for
+the same kind of reason: nothing in the design ever held it, the dashboard
+already reports every stage of a sort live over SSE, and it was the one
+remaining electronic part with no home in the CAD.
+
+**The code stays.** `/api/led`, the colour swatches on the dashboard and
+`LEDController` in `hardware.py` are all still there and still work, and the
+controller is a no-op until an actual ring is present. If one goes on later it
+is a solder job and nothing else. That is why this is recorded here as a build
+decision rather than as a deletion.
+
+Both are still in the PowerPoint, and they should stay there. Considering a
+component and then dropping it with a reason is design process, and the deck is
+where that gets marked. The sensor comparison table that picked the HC-SR04
+over an IR sensor and a laser rangefinder is still honest work; it just ends
+differently now.
+
+Docs updated: [pi_setup.md](pi_setup.md), [pi_todo.md](pi_todo.md) and the root
+README.
 
 ### 11 August 2026: the two parts the crash rolled back are rebuilt
 
