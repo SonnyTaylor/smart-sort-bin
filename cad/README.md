@@ -21,11 +21,6 @@ is exported from there.
 | Smart Bin - electronics box | 1 | 71 x 190 x 42.5 | Holds the Pi, breadboard, PD board and wiring |
 | Smart Bin - assembly | | | All of the above in position, plus the bin |
 
-The **box hanger and electronics box are not in the assembly document yet**, so
-they are exported on their own rather than by the export script below. They
-cannot go in until the hub plate is settled, for the reason in
-[`../docs/build_log.md`](../docs/build_log.md).
-
 Not printed: **four** lengths of 20mm PVC electrical conduit, three for the
 legs and one standing up for the camera, plus two MG996R servos.
 
@@ -75,7 +70,7 @@ tap it by hand for now, or wait for the part to be updated.
 ## The electronics box
 
 It goes on one of the **long side walls, on the outside**, centred 63mm from the
-middle of that wall toward the camera-post end. That leaves 15.2mm to the bin's
+middle of that wall toward the camera-post end. That leaves 15.5mm to the bin's
 corner and 14.8mm to the nearest leg clamp, which is the tightest pair of
 clearances on the part. It sticks out 77mm from the wall and hangs 42.5mm below
 the rim. Nothing about it is tied to that spot; it can go anywhere there is

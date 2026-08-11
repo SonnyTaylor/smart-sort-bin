@@ -336,7 +336,7 @@ These were measured against the assembled model rather than estimated.
 
 | Check | Requirement | Actual |
 | :--- | :--- | :--- |
-| Whole assembly, everything against everything | no interference | none, across all 14 parts |
+| Whole assembly, everything against everything | no interference | seven overlaps, none involving the box or its hanger. See below |
 | Tray through its tilt range | clear from -60 to +60 degrees | clear; first contact at -65 |
 | Tray's lowest reach at 60 degrees | calculated 13.54mm | 13.51mm measured on the model |
 | Tilt servo clear of the tray's sweep | tray is 90mm wide, tilts about y | servo starts at y=48.5 |
@@ -348,6 +348,31 @@ These were measured against the assembled model rather than estimated.
 The first two are Fusion's own interference analysis, run on the assembled
 model and then re-run at 13 tilt angles from -65 to +65 degrees, rather than
 checked by eye.
+
+### The seven overlaps, and why they are there
+
+Re-run on 11 August with the box hanger and electronics box added, the check
+reports seven overlaps. **None of them involve the two new parts**, which are
+clear of everything including the bin wall they hook over.
+
+| Between | Overlap |
+| :--- | ---: |
+| Pan servo body and the hub plate | 1235.1 mm3 |
+| Pan servo body and the tilt yoke | 38.1 mm3 |
+| Each of the three conduits and its clamp | 314.2 mm3 |
+| Each of the bin's two long walls and its clamp | 157.0 mm3 |
+
+The assembly is sitting on the **rolled-back 11mm hub plate**, 32150.3 mm3
+against the 28289.0 committed in git, which is what the first row is. The rest
+are positioning overlaps of roughly 1 to 1.75mm between parts that are meant to
+touch: a conduit pushed 1mm past its socket's end stop, a clamp rib pressed into
+a wall.
+
+So the "none" this table used to claim was true of the assembly before the crash
+described in [build_log.md](build_log.md), and is not true of the assembly as it
+stands. **This check has to be re-run once the hub plate is settled**, and the
+conduit seating is worth a look at the same time, because the leg lengths are
+measured from those sockets.
 
 ---
 

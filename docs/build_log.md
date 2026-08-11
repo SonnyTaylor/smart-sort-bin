@@ -91,14 +91,23 @@ rounded corners. The cleat and its notch were probed face by face to confirm the
 45 degree bearing surfaces meet and that the back wall is still closed behind
 the notch.
 
+Both parts are **in the assembly**, on the long side wall, and Fusion's own
+interference analysis has been run on all sixteen. Neither new part touches
+anything: not the bin wall it hooks over, not the clamp 14.8mm away, not each
+other. Probed point by point, the hanger's roof sits over the rim, its slot
+straddles the 4.5mm wall, and the box hangs with a 10mm gap to the bin.
+
+That same run turned up **seven overlaps that were already there**, listed in
+[mechanical_design.md](mechanical_design.md). The biggest is the pan servo
+inside the rolled-back hub plate, which is the entry below rather than anything
+new. The others are conduits seated about 1mm too deep in their clamps and
+clamp ribs pressed into the bin walls.
+
 **Not done, and it matters:**
 
 - Nothing is printed, so none of it is confirmed in the hand.
-- **Neither part is in the Fusion assembly**, so Fusion's own interference
-  analysis has not been run on them. The assembly is still on the rolled-back
-  hub plate, per the entry below. The clearances quoted in
-  [../cad/README.md](../cad/README.md) are arithmetic against the assembly's
-  coordinates, not a swept check.
+- The seven overlaps above are not fixed. Fixing the first one means settling
+  the hub plate, which is Sonny's call.
 - The breadboard was measured off the prototype photograph, not with calipers.
   If it turns out to be a full-size 165mm board rather than a half-size 83mm
   one, the box has to be redrawn.
