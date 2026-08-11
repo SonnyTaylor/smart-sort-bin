@@ -4,12 +4,16 @@
     "",
     "Add a stage by adding an entry to a family's 'stages' list. A stage's",
     "source is one of:",
+    "  {\"stl\": \"cad/stl/plate.stl\"}",
+    "      -> renders a Fusion export. THIS IS WHAT THE 'current' STAGES USE,",
+    "         because Fusion is the design source of truth. Re-export from",
+    "         Fusion with export_from_fusion.py before rendering.",
     "  {\"commit\": \"abc1234\", \"file\": \"cad/tray.scad\", \"part\": \"tray\"}",
-    "      -> pulls that file out of git history at that commit",
+    "      -> pulls that file out of git history at that commit. This is how",
+    "         the superseded versions are drawn, since they predate Fusion.",
     "  {\"file\": \"cad/tray.scad\", \"part\": \"tray\"}",
-    "      -> uses the working copy, i.e. whatever is on disk right now",
-    "  {\"stl\": \"cad/stl/tray_mount.stl\"}",
-    "      -> renders an STL export, for parts that only exist in Fusion",
+    "      -> uses the OpenSCAD working copy. Only for a part that never made",
+    "         it into Fusion, like the spacer the tray mount replaced.",
     "",
     "'camera' is shared by every stage in a family, so the parts stay",
     "comparable in size to each other. It is OpenSCAD's gimbal camera:",
@@ -49,7 +53,7 @@
         {
           "name": "plate_4_final",
           "label": "current",
-          "source": { "file": "cad/splitter_hub.scad", "part": "plate" },
+          "source": { "stl": "cad/stl/plate.stl" },
           "caption": "Bore opened 124.5 to 125.6mm after\nmeasuring the real pan-tilt base.\nThe tabs had been 0.25mm too tight."
         }
       ]
@@ -68,7 +72,7 @@
         {
           "name": "bracket_2_final",
           "label": "current",
-          "source": { "file": "cad/splitter_hub.scad", "part": "bracket" },
+          "source": { "stl": "cad/stl/bracket.stl" },
           "caption": "Lock screw moved to a pad on top:\n6.2mm of thread and room for a brass\ninsert with 2.9mm of plastic around it."
         }
       ]
@@ -99,7 +103,7 @@
         {
           "name": "clamp_4_final",
           "label": "current",
-          "source": { "file": "cad/splitter_hub.scad", "part": "clamp" },
+          "source": { "stl": "cad/stl/clamp.stl" },
           "caption": "Pipe lock moved to a pad on top,\nand the jaw resized for a 6mm wall\nafter the thumbscrew calculation was fixed."
         }
       ]
@@ -124,7 +128,7 @@
         {
           "name": "tray_3_final",
           "label": "current",
-          "source": { "file": "cad/tray.scad", "part": "tray" },
+          "source": { "stl": "cad/stl/tray.stl" },
           "caption": "The mounting boss stood 1mm proud,\na plateau where the item lands, and it\nburied the bolt heads. Now capped flush."
         }
       ]

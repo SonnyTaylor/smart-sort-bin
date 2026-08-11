@@ -33,9 +33,17 @@ the tray mount. They can go.
 
 ## Exporting after a change
 
-Fusion, with the part document open: **Utilities > Make > 3D Print** for STL, or
-**File > Export** for STEP. Save into `stl/` and `step/` with the same name, and
-commit, so the repo always matches what is in Fusion.
+Open the assembly document and run
+[`renders/export_from_fusion.py`](renders/export_from_fusion.py) inside Fusion.
+It writes all five parts to `stl/` and `step/` in one go, and refuses to run if
+the assembly is sitting on an out-of-date version of a part.
+
+By hand, if you prefer: **Utilities > Make > 3D Print** for STL, **File >
+Export** for STEP, saved into `stl/` and `step/` under the same name.
+
+Either way, commit the exports. They are the only copy of a Fusion part that
+lives in git, and the design-evolution renders draw the current version of each
+part from them.
 
 Renders of the finished parts come out of the Fusion assembly document and land
 in `../portfolio/images/cad_*.png`.

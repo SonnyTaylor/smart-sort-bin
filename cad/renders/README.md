@@ -1,9 +1,18 @@
 # Design evolution renders
 
 This folder makes the "here is how the design changed" pictures for the
-portfolio. It renders **old versions of parts straight out of git history**, so
-the images are the actual superseded designs rather than something redrawn
-afterwards. That is the point: it is evidence, not illustration.
+portfolio.
+
+Two sources, and the split matters:
+
+- The **current** version of each part is rendered from a **Fusion export**,
+  because Fusion is the design source of truth.
+- The **superseded** versions are rendered from the OpenSCAD files **as they
+  were at the commit they lived in**. Those versions predate the move to
+  Fusion, so git history is the only place they still exist.
+
+Either way the images are the real designs rather than something redrawn
+afterwards. That is the point: evidence, not illustration.
 
 Output lands in [`../../portfolio/images/cad_evolution/`](../../portfolio/images/cad_evolution).
 
@@ -16,7 +25,18 @@ Output lands in [`../../portfolio/images/cad_evolution/`](../../portfolio/images
 
 ## Running it
 
-Two steps. The first renders, the second lays out.
+Three steps. Export from Fusion, render, lay out.
+
+**1. Export the current parts from Fusion.** Open the *Smart Bin - assembly*
+document, then run [`export_from_fusion.py`](export_from_fusion.py) inside
+Fusion, either through the Fusion MCP connector or Fusion's own Scripts and
+Add-Ins dialog. It writes `cad/stl/` and `cad/step/`, and refuses to run if the
+assembly is sitting on an out-of-date version of a part.
+
+Skip this step only if no part has changed in Fusion since the last time you ran
+it.
+
+**2 and 3. Render and lay out.**
 
 ```powershell
 cd cad\renders
@@ -61,11 +81,11 @@ entry to that part's `stages` list. Nothing else changes.
 
 A stage's `source` is one of three things:
 
-| Source | Renders |
-| :--- | :--- |
-| `{"commit": "abc1234", "file": "cad/tray.scad", "part": "tray"}` | That file as it was at that commit |
-| `{"file": "cad/tray.scad", "part": "tray"}` | The working copy, i.e. whatever is on disk right now |
-| `{"stl": "cad/stl/tray_mount.stl"}` | An STL export, for parts that only exist in Fusion |
+| Source | Renders | Use for |
+| :--- | :--- | :--- |
+| `{"stl": "cad/stl/plate.stl"}` | A Fusion export | **The current version of anything.** Fusion is the source of truth |
+| `{"commit": "abc1234", "file": "cad/tray.scad", "part": "tray"}` | That file as it was at that commit | Superseded versions, which predate Fusion |
+| `{"file": "cad/tray.scad", "part": "tray"}` | The OpenSCAD working copy | A part that never made it into Fusion, like the spacer |
 
 Find the commit for a past version with:
 
@@ -73,18 +93,26 @@ Find the commit for a past version with:
 git log --oneline --follow -- cad/tray.scad
 ```
 
-### Keeping the current version current
+### Turning the current version into history
 
-The `current` stage of each part points at the working copy, not at a commit.
-So after changing a part, re-run and its picture updates on its own. Only the
-historic stages are pinned to commits.
+When a part changes enough to be worth a picture, the old "current" panel
+becomes a historic one. Since the current panel is a Fusion export and Fusion
+versions do not live in git, capture it **before** you change the part:
 
-### When a part moves to Fusion
+1. Run the export script and commit the STL, so that geometry is pinned in git
+   history under a commit you can name.
+2. Change the part in Fusion.
+3. Re-export, then add a stage pointing at `{"commit": "<that commit>", ...}`.
+
+If you forget, the old shape is still in Fusion's own version history, which you
+can open from the data panel and export from.
+
+### Why the OpenSCAD files still matter
 
 The hub and tray were originally drawn in OpenSCAD and have since been rebuilt
-in Fusion. The `.scad` files are kept precisely so this history stays
-renderable. For a part that now only lives in Fusion, export an STL into
-`cad/stl/` and point the stage at it with `"stl"`.
+in Fusion. The `.scad` files are no longer the design source, but their git
+history is the only copy of the early versions. That is why they stay in the
+repo.
 
 ---
 
@@ -130,7 +158,8 @@ rather than on OpenSCAD's grey.
 | Path | |
 | :--- | :--- |
 | `stages.json` | The manifest. The only file you normally edit |
-| `render.ps1` | Pulls each version out of git and renders a PNG |
+| `export_from_fusion.py` | Run inside Fusion. Writes the current parts to `../stl/` and `../step/` |
+| `render.ps1` | Renders each version, from a Fusion export or from git history |
 | `compose.py` | Crops the renders and builds the labelled strips |
 | `raw/` | Untouched renders. Regenerated, not committed |
 | `src/` | The scratch `.scad` files pulled from history. Regenerated, not committed |

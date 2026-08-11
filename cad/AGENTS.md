@@ -38,12 +38,19 @@ commit.**
 ## How to add one
 
 Everything lives in [`renders/`](renders/README.md). Add an entry to
-`renders/stages.json` and run the two commands in that README. The scripts pull
-the old version out of git history, so the picture is the real superseded design
-rather than a redrawing of it.
+`renders/stages.json` and follow the three steps in that README.
 
-The "current" panel of each part points at the working copy, so it updates by
-itself. You only pin a commit when a version becomes history.
+The **current** panel of each part is a Fusion export, so after changing a part
+you must re-export before rendering or the picture will still show the old
+shape. `renders/export_from_fusion.py` does that, and refuses to run if the
+assembly is sitting on a stale version of a part.
+
+The **superseded** panels come out of git history, so they are the real old
+designs rather than redrawings.
+
+One order-of-operations trap: the current panel is not pinned to anything in
+git, so **commit the exported STL before you change a part**. That gives the
+outgoing version a commit you can point a historic stage at afterwards.
 
 ## Writing the caption
 
@@ -69,9 +76,12 @@ Stage the files you actually changed, by name. Never `git add -A`.
 
 A design change usually touches:
 
-- the part, in Fusion, plus its export in `stl/` and `step/`
+- the part, in Fusion, plus its re-export in `stl/` and `step/`
 - `renders/stages.json`, if it earned a version
 - the regenerated images in `../portfolio/images/cad_evolution/`
+
+The exports in `stl/` and `step/` are the only record of a Fusion part that
+lives in git, so commit them with the change rather than later.
 
 Write the commit message about the problem, not the edit. `cad: the tray boss
 stood proud of the saddle, so it could not be bolted on` is a better record than
