@@ -172,14 +172,14 @@ Measured off the assembly with the bin in place:
 
 | | |
 | :--- | :--- |
-| Tray underside above the bin rim | 147 mm |
-| Tray underside above the bin floor | 267 mm |
+| Tray underside above the bin rim | 82 mm |
+| Tray underside above the bin floor | 202 mm |
 | Item leaves the tray at a radius of | about 60 mm |
-| Fall time from that height | 0.23 s |
+| Fall time from that height | 0.20 s |
 | Bin wall along the three drop directions | 169, 155, 155 mm |
 
-At a slow tip, roughly 0.3 m/s, an item lands about 130 mm from the centre. At
-0.8 m/s it would reach 250 mm, which is past the wall.
+At a slow tip, roughly 0.3 m/s, an item lands about 120 mm from the centre. At
+0.8 m/s it would reach 220 mm, which is past the wall.
 
 The important consequence: **nothing lands near the middle.** The three sectors
 converge at the hub, and that is exactly where no item falls, so the one place
