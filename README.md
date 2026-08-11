@@ -8,7 +8,7 @@ An AI-powered waste sorting system that eliminates recycling contamination at th
 
 The head sits on a printed tripod that clamps across the bin rim on three PVC legs. Moving the whole thing to a different bin means cutting three new legs and nothing else.
 
-**Build status:** electronics and software run. None of the seven printed parts have been made yet. See the [build log](docs/build_log.md).
+**Build status:** electronics and software run. None of the nine printed parts have been made yet. See the [build log](docs/build_log.md).
 
 Developed for VCE Systems Engineering Unit 3 & 4. Inspired by the [Ameru AI Bin](https://www.ameru.com.au/).
 

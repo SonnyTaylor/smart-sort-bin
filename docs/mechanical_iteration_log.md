@@ -23,6 +23,10 @@ end.
 | 6 | Tray spacer could not bolt to the tilt arm | Tray cannot be attached | Replaced with a socketed mount |
 | 7 | Spacer 15mm tall for clearance it did not need | Head taller and less stiff than necessary | Reduced to a 6mm plate after measuring |
 | 8 | Mount plate offset 6.5mm from the tray boss | Looks like a mistake, boss unsupported | Plate resized to contain both footprints |
+| 9 | Pan ring screws at R=44 broke into the bracket screw holes at R=42 | Screw wanders into the neighbouring hole, neither joint pulls up | Moved to R=50, clear of both existing hole circles |
+| 10 | Servo's top face is a stepped stack 2.3mm proud of its case | Ring and yoke both sat on it; head would not seat flat | Bearing raised to 15.5mm, 1mm clear of the highest step |
+| 11 | 1mm rib down the centre of the servo flange | Flange rocks on the rib instead of clamping | 3mm relief groove in the ring's pocket ceiling |
+| 12 | Tilt servo's flange fouled the yoke's rib | Servo cannot drop into its tower | Servo moved 1.5mm outboard, rib notched 2.1mm |
 
 ---
 

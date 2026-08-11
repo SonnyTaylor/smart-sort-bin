@@ -27,10 +27,14 @@ The electronics and software half of the prototype runs.
 
 ### Designed but not made
 
-**None of the seven printed parts exist yet.** Hub plate, three leg brackets,
-two bin clamps, one camera clamp, camera head, sorting tray and tray mount are
-modelled in Fusion, verified against calculated geometry, and not printed. That
-is seven designs and ten pieces off the printer.
+**None of the nine printed parts exist yet.** Hub plate, three leg brackets,
+two bin clamps, one camera clamp, camera head, pan ring, tilt yoke, tilt cradle
+and sorting tray are modelled in Fusion, verified against calculated geometry,
+and not printed. That is nine designs and twelve pieces off the printer.
+
+The bought MakerWorld pan-tilt **has** been built, and is now superseded by the
+pan ring, tilt yoke and tilt cradle. Its servos move across; the printed part of
+it does not get used.
 
 Also not yet bought or made: the 60L bin, the three lengths of 20mm PVC
 conduit, the M3 brass inserts, and the bags and bulldog clips.
@@ -51,6 +55,44 @@ stiff enough, or that items land where the maths says. Those need the printer.
 ---
 
 ## Entries
+
+### 11 August 2026: the head was too tall, so it got rebuilt
+
+The tray sat **147mm above the bin rim** and the whole thing towered over the
+bin. Measured against the assembly, 85mm of that 147 was the bought MakerWorld
+tracker stacking two servos on top of each other:
+
+| From | To | mm |
+| :--- | :--- | ---: |
+| Bin rim | hub plate underside | 9.0 |
+| | hub plate | 11.0 |
+| Plate top | top of the tracker's stand | 27.0 |
+| | gap over the pan servo | 14.5 |
+| U-bracket bottom | tilt axis | 44.3 |
+| Tilt axis | tray underside | 40.9 |
+
+The last row is the worst of it. The tracker stands its tilt servo on end
+inside a U-bracket, so the servo body finishes **37mm above the tilt axis** and
+the tray has to clear the servo before it clears anything else.
+
+We had only the STL when the tracker was bought, so it was treated as fixed.
+Having the STEP meant it could be replaced.
+
+**Done.** Three new printed parts, plus a change to the hub plate. How it works
+is in [mechanical_design.md](mechanical_design.md); why each choice was made,
+and the three faults found while fitting it, are in
+[mechanical_iteration_log.md](mechanical_iteration_log.md).
+
+The result: **tray underside 147mm above the rim becomes 82mm**, and the head
+uses 100.8cm3 of plastic against the 138.4cm3 it replaces.
+
+**Also changed:** the camera post is now cut to 235mm, not 300. The tray
+dropped 65mm underneath it, and without shortening the post the camera would
+look down at 56 degrees from 269mm instead of 46 degrees from 219mm.
+
+**Not done:** nothing is printed, so none of this is confirmed in the hand. The
+one number worth checking with calipers before printing is the tilt servo's
+flange hole pattern, listed in [../cad/README.md](../cad/README.md).
 
 ### 11 August 2026: the camera had nowhere to go
 

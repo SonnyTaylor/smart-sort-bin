@@ -96,22 +96,67 @@ surface, so a busy or shiny background costs accuracy.
 
 ---
 
-## 3. The tray mount
+## 3. The head
 
-The tray does not bolt to the tilt arm directly. The arm presents a 19 x 34mm
-face with two M3 holes 15mm apart; the tray wants four holes on a 32 x 15
-pattern. Nothing lines up, and two screws in a line would let the tray rock.
+The head was a bought MakerWorld pan-tilt tracker. It is now three printed
+parts of our own, because the bought one put the tray **147mm above the bin
+rim** and 85mm of that was its own stacking. The measurements, and the reason
+it could not just be shimmed lower, are in
+[mechanical_iteration_log.md](mechanical_iteration_log.md).
 
-The mount is a **cap**. Its socket drops over the end of the arm, so the arm
-itself resists twisting rather than the screws having to. The top plate carries
-the tray's four holes.
+### Why a hobby pan-tilt is tall
 
-**It also recentres the tray.** The tracker's pan axis sits 10mm off its own base
-centre, because the designer centred the servo body rather than its output
-shaft. The plate being wider than the arm is what pulls the tray back over the
-axis it actually rotates about.
+A standard pan-tilt stands its tilt servo on end inside a U-bracket. An MG996R
+is 40.7mm long with its output shaft 10.2mm off centre, so mounted that way the
+**body finishes 37mm above the tilt axis**. The tray then has to clear the
+servo before it clears anything else, and that alone sets the height. Everything
+below it, the base and the pan servo, is stacked underneath again.
 
-Print it upside down, plate flat on the bed, and every overhang faces the bed.
+### What replaced it
+
+**The pan servo drops through the hub plate.** Its flange sits in a 2mm pocket
+on the plate's top face and the *pan ring* clamps it there; the body hangs
+underneath, inside the bin, where there was nothing anyway. That deletes the
+tracker's 125mm dome outright, and with it the 27mm the dome stood above the
+plate and the 14.5mm gap above the servo.
+
+**The tilt servo goes beside the tray, not under it.** This is the part that
+buys the height. Hanging it below the tilt axis was tried first and does not
+work: the tray sweeps a circle about that axis, so at 45 degrees of backward
+tilt it comes down into the servo. But the tray is only 90mm wide and it tilts
+about a **y-parallel axis**, so it sweeps in x only. Move the servo out past
+y = 45mm and the tray can never reach it, at any angle.
+
+So the *tilt yoke* turns on the ring and reaches out past both edges of the
+tray: the tilt servo on one arm, a 10mm idler boss on the other. The *tilt
+cradle* spans between them and carries the tray.
+
+### What sets the height now
+
+Not the servos. **The tray's own swing.** At 60 degrees its far corner reaches
+44.5mm below the tilt axis, so the axis cannot come closer than that to the hub
+plate. The axis sits at z=58 and the tray's underside at z=73, which is 82mm
+above the bin rim against 147mm before.
+
+| | Before | After |
+| :--- | ---: | ---: |
+| Tray underside above the rim | 147 mm | 82 mm |
+| Plastic in the head | 138.4 cm3 | 100.8 cm3 |
+| Printed parts in the head | 4 bought + mount | 3 |
+
+### The bearing
+
+The yoke's weight sits on the pan ring's top face, not on the servo horn. A
+servo spline is for torque, not for carrying a cantilevered tray. The horn only
+turns the yoke; a 60mm annular face takes the load and the overturning moment
+from the tilt servo hanging out at y=66.
+
+### Nothing screws into the pan servo
+
+Its flange is trapped rather than bolted. The servo model gives the flange hole
+pattern as 48 x 8.5mm and the figure quoted online is 49.5 x 10mm, and those
+cannot both be right. A clamp does not care. The case sits in a 41.6 x 21mm
+slot, and that is what takes the panning torque.
 
 ---
 
@@ -203,20 +248,28 @@ These were measured against the assembled model rather than estimated.
 
 | Check | Requirement | Actual |
 | :--- | :--- | :--- |
-| Tray swinging past the pan bracket | underside at least 27.2mm above the tilt axis, at any tilt angle | 43mm |
-| Pan-tilt base seating in the plate's tabs | tabs must clear a 125.0mm base | 125.6mm bore, 0.3mm a side |
+| Whole assembly, everything against everything | no interference | none, across all 14 parts |
+| Tray through its tilt range | clear from -60 to +60 degrees | clear; first contact at -65 |
+| Tray's lowest reach at 60 degrees | calculated 13.54mm | 13.51mm measured on the model |
+| Tilt servo clear of the tray's sweep | tray is 90mm wide, tilts about y | servo starts at y=48.5 |
+| Yoke's bearing above the servo's top face | servo's top steps up to 14.5mm | bearing at 15.5mm |
 | Thumbscrew reaching a 4.5mm bin wall | 13.6mm of travel | M3 x 16 gives 2.4mm spare, M3 x 20 gives 6.4mm |
 | Pipe lock thread engagement | enough for an M3 insert, about 4mm | 6.2mm |
 | Screw into the bracket feet | must not bottom out in 9mm | M3 x 8 |
+
+The first two are Fusion's own interference analysis, run on the assembled
+model and then re-run at 13 tilt angles from -65 to +65 degrees, rather than
+checked by eye.
 
 ---
 
 ## Bought parts
 
-- **Pan-tilt tracker**, printed brackets supplied as `Tracker.step`. 125mm base,
-  133mm tall. Its own camera mount plate is removed; the tray mount replaces it.
-- **2 x MG996R servos**, 40.7 x 19.7 x 42.9mm, mounted on 49 x 10mm flange
-  patterns in the stand and the tilt arm.
+- **2 x MG996R servos**, 40.7 x 19.7 x 42.9mm. The pan one is clamped by the
+  pan ring, the tilt one bolts to the yoke.
+- A **pan-tilt tracker** was bought and built, and is no longer used. Its
+  `Tracker.step` is what made the replacement possible: with only the STL it had
+  to be treated as fixed.
 - **20mm PVC electrical conduit**, cheap, light and far stiffer than needed for
   roughly 1kg. Cut to length per bin; this is the only thing that changes
   between bins.

@@ -8,18 +8,34 @@ is exported from there.
 
 | Fusion document | Qty | Size | What it does |
 | :--- | :---: | :--- | :--- |
-| Smart Bin - hub plate | 1 | 132 dia x 11 | Carries the pan-tilt, spans the bin on three legs |
+| Smart Bin - hub plate | 1 | 132 dia x 4 | Holds the pan servo, spans the bin on three legs |
 | Smart Bin - leg bracket | 3 | 32 x 26.4 x 36.4 | Bolts under the plate, takes a pipe |
 | Smart Bin - bin clamp | 2 | 58.1 x 26.4 x 31.4 | Grips the bin rim at the far end of each pipe |
 | Smart Bin - camera clamp | 1 | 58.1 x 26.4 x 66.4 | The same clamp with a 20mm socket on top for the camera post. Replaces one of the three |
 | Smart Bin - camera head | 1 | 50 x 32 x 38 | Caps the camera post. Side arm carries a 1/4-20 bolt for the webcam |
+| Smart Bin - pan ring | 1 | 96.3 x 111.2 x 11.5 | Traps the pan servo against the plate and carries the yoke's bearing |
+| Smart Bin - tilt yoke | 1 | 60 x 116.5 x 62.5 | Turns on the ring, carries the tilt servo out past the tray |
+| Smart Bin - tilt cradle | 1 | 52 x 92 x 31 | Tips the tray about the tilt axis |
 | Smart Bin - sorting tray | 1 | 120 x 90 x 18 | The saddle the rubbish lands on |
-| Smart Bin - tray mount | 1 | 52 x 45 x 18 | Joins the tray to the tilt arm |
 | Smart Bin - assembly | | | All of the above in position, plus the bin |
 
 Not printed: **four** lengths of 20mm PVC electrical conduit, three for the
-legs and one standing up for the camera, plus the pan-tilt tracker and two
-MG996R servos.
+legs and one standing up for the camera, plus two MG996R servos.
+
+The head is our own design. It used to be a bought MakerWorld pan-tilt
+tracker, which is why some older pictures show a 125mm dome under the tray.
+[`docs/mechanical_design.md`](../docs/mechanical_design.md) explains how the
+replacement works and why.
+
+### The head, in one paragraph
+
+The pan servo drops through the hub plate and hangs underneath, with its
+flange trapped between the plate's top face and the pan ring. The ring's top
+face is a plain bearing. The tilt yoke turns on it, bolted to the pan servo's
+horn, and reaches out past the edge of the tray on both sides: the tilt servo
+on one arm, a 10mm idler boss on the other. The tilt cradle spans between
+them and the tray bolts to it. Tilt axis 58mm above the plate, tray underside
+73mm.
 
 ### The camera post
 
@@ -27,10 +43,14 @@ The post goes on the **180 degree leg**, the long one, and is in the assembly.
 Its axis sits 152.5mm from the tray centre, and the tray only sweeps a 75mm
 radius when it pans, so nothing moving comes near it.
 
-With a **300mm** length of conduit the head plate finishes at z=303, which puts
-a typical webcam lens looking down about **48 degrees** from **230mm** away.
+With a **235mm** length of conduit the head plate finishes at z=238, which puts
+a typical webcam lens looking down about **46 degrees** from **219mm** away.
 Cut the pipe shorter for a steeper, tighter view: the lens ends up roughly
 `152.5 x tan(angle)` above the tray surface.
+
+This was 300mm when the tray sat 65mm higher. Cutting a 300 now gives 56
+degrees from 269mm away, which still works but is a tighter, more foreshortened
+view of the tray.
 
 The webcam mounts with a **1/4-20 bolt** through the head's side arm, head
 recessed underneath, thread pointing up. The arm sticks out toward the tray so
@@ -53,7 +73,7 @@ tap it by hand for now, or wait for the part to be updated.
 
 Open the assembly document and run
 [`renders/export_from_fusion.py`](renders/export_from_fusion.py) inside Fusion.
-It writes all seven parts to `stl/` and `step/` in one go, and refuses to run if
+It writes all nine parts to `stl/` and `step/` in one go, and refuses to run if
 the assembly is sitting on an out-of-date version of a part.
 
 By hand, if you prefer: **Utilities > Make > 3D Print** for STL, **File >
@@ -81,7 +101,7 @@ rectangle symmetrically. For the 60L ecobin (347 x 277 outside, 4.5mm corflute):
 | 60 deg | 103.73 mm |
 | 180 deg | 118.00 mm |
 | 300 deg | 103.73 mm |
-| camera post, standing up off the 180 deg clamp | 300 mm |
+| camera post, standing up off the 180 deg clamp | 235 mm |
 
 Change the bin and the three leg lengths change. The old `splitter_hub.scad`
 still works out the figures from bin dimensions if you need them for a
@@ -90,39 +110,72 @@ you want the camera to look down.
 
 ## Hardware
 
-19 x M3 brass heat-set inserts: 6 in the bracket feet, 6 in the pipe lock pads,
-3 in the clamp jaws, 4 in the tray mount.
+22 x M3 brass heat-set inserts: 6 in the bracket feet, 6 in the pipe lock pads,
+3 in the clamp jaws, 3 in the pan ring, 4 in the tilt cradle.
 
 | Qty | Screw | Into |
 | ---: | :--- | :--- |
 | 6 | M3 x 8 countersunk | plate, down into the bracket feet. **Not longer:** past 9mm it bottoms out |
 | 6 | M3 x 8 | pipe locks, down through the pads onto the conduit |
-| 3 | M3 x 8 self-tapping | plate tabs, pinching the pan-tilt base. No insert, the tab is one 3.2mm wall |
-| 2 | M3 x 8 | tray mount, down into the tilt arm |
-| 4 | M3 x 12 countersunk | tray, down into the mount |
+| 3 | M3 x 10 | up through the plate's spokes at R=50 into the pan ring. These are what clamp the pan servo |
+| 4 | M3 x 12 countersunk | tray, down into the tilt cradle |
+| 1 | M3 x 10 + washer | through the cradle's idler wall into the yoke's boss. Self-taps into a 2.5mm pilot |
 | 3 | M3 x 16 or 20 | clamp thumbscrews. 16 leaves 2.4mm of travel, 20 leaves 6.4mm |
 | 1 | 1/4-20 UNC x 12 or so | camera head, up through the side arm into the webcam. Hex head sits in the 11.5mm recess underneath. Any tripod screw works |
+
+The servos are fixed with **the small screws that came in their own bag**, not
+with M3:
+
+| Qty | Screw | Into |
+| ---: | :--- | :--- |
+| 4 | servo mounting screws | tilt servo flange, into 2.5mm pilots in the yoke's tower wall |
+| 4 | servo horn screws | pan horn, up into the yoke's skirt |
+| 4 | servo horn screws | tilt horn, through the cradle's driven wall |
+
+**The pan servo takes no screws at all.** Its flange sits in a 2mm pocket and
+the pan ring clamps it down; the case sits in a 41.6 x 21mm slot which is what
+actually takes the panning torque. That is deliberate, and the reason is in
+[`../docs/mechanical_iteration_log.md`](../docs/mechanical_iteration_log.md).
 
 ## Assembly order
 
 1. Melt the inserts in. Everything is easier before anything is bolted together.
 2. Bracket feet to the plate, countersunk screws from above so the heads finish
-   flush and the pan-tilt base still sits flat on them.
+   flush.
 3. Pipes into the brackets, lock screws down through the pads.
 4. Clamps onto the far ends of the pipes, lock screws down. The **camera clamp**
    goes on the 180 degree leg, the long one.
 5. Drop the assembly over the bin and nip up the three thumbscrews.
-6. Pan-tilt base into the plate's three tabs, pinned with the three tab screws.
-7. Tray mount over the end of the tilt arm, two screws down into it. **Do this
-   before the tray goes on**, or you cannot reach them.
-8. Tray onto the mount, four countersunk screws.
-9. Camera post into the camera clamp's socket, head onto the top of it, webcam
-   bolted to the head's side arm. Aim it before you tighten anything.
+6. **Pan servo down through the plate's centre slot from above**, cable first,
+   body hanging underneath, flange flat on the plate. The body points along the
+   180 degree spoke, the same way as the long leg.
+7. Pan ring over it, three M3 x 10 up through the plate's spokes. The ring
+   traps the flange; nothing screws into the servo.
+8. Tilt servo into the yoke's tower, its four own screws through the flange.
+9. Pan horn onto the pan servo's shaft, then the yoke down onto it. Four horn
+   screws up through the skirt, then the servo's centre screw through the 9mm
+   hole in the middle. **The yoke's weight sits on the ring, not on the horn.**
+10. Tilt horn onto the tilt servo's shaft. Cradle over it: horn into the pocket
+    in the driven wall, four horn screws, then the idler screw and washer
+    through the far wall into the yoke's boss.
+11. Tray onto the cradle, four countersunk screws.
+12. Camera post into the camera clamp's socket, head onto the top of it, webcam
+    bolted to the head's side arm. Aim it before you tighten anything.
 
-## Two things to check before you print
+Centre both servos in software before step 9, or the head will be built at an
+angle and the whole travel will be off to one side.
 
-**The mount's socket** is a 19.6 x 34.6mm pocket over a 19 x 34mm arm, so 0.3mm
-a side. Measure your arm first; printers vary and this is a slip fit.
+## Three things to measure before you print
+
+**The tilt servo's flange holes.** The yoke's four pilot holes are on a
+48 x 8.5mm pattern, taken off the servo model. The figure quoted in most places
+online is 49.5 x 10mm. Those cannot both be right, and 0.75mm a side is enough
+to stop the screws going in. Put calipers across the real flange. Nothing else
+in the design depends on this number, on purpose, but the yoke does.
+
+**The servo horns.** The yoke and the cradle each have a 25.5mm round pocket for
+a horn, with four 2.5mm pilots on a 16mm circle. MG996R horns vary between
+sellers. Measure yours and say so if it is not a 25mm round one.
 
 **The inserts.** M3 inserts run 4.0 to 4.6mm outside depending on supplier. Every
 insert hole here is 4.2mm. Measure yours, and if they differ the holes need

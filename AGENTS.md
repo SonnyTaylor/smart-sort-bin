@@ -19,7 +19,7 @@ follow from that and they shape everything:
 
 **Read [`docs/build_log.md`](docs/build_log.md) before saying anything about
 what exists.** As of August 2026 the electronics and software run, and none of
-the seven printed parts have been made. Say "designed and checked", not "built
+the nine printed parts have been made. Say "designed and checked", not "built
 and tested", until the build log says otherwise.
 
 ## Layout
