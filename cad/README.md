@@ -10,13 +10,29 @@ is exported from there.
 | :--- | :---: | :--- | :--- |
 | Smart Bin - hub plate | 1 | 132 dia x 11 | Carries the pan-tilt, spans the bin on three legs |
 | Smart Bin - leg bracket | 3 | 32 x 26.4 x 36.4 | Bolts under the plate, takes a pipe |
-| Smart Bin - bin clamp | 3 | 58.1 x 26.4 x 31.4 | Grips the bin rim at the far end of each pipe |
+| Smart Bin - bin clamp | 2 | 58.1 x 26.4 x 31.4 | Grips the bin rim at the far end of each pipe |
+| Smart Bin - camera clamp | 1 | 58.1 x 26.4 x 66.4 | The same clamp with a 20mm socket on top for the camera post. Replaces one of the three |
 | Smart Bin - sorting tray | 1 | 120 x 90 x 18 | The saddle the rubbish lands on |
 | Smart Bin - tray mount | 1 | 52 x 45 x 18 | Joins the tray to the tilt arm |
 | Smart Bin - assembly | | | All of the above in position, plus the bin |
 
-Not printed: three lengths of 20mm PVC electrical conduit, the pan-tilt
-tracker, and two MG996R servos.
+Not printed: **four** lengths of 20mm PVC electrical conduit, three for the
+legs and one standing up for the camera, plus the pan-tilt tracker and two
+MG996R servos.
+
+### The camera post is unfinished
+
+The camera clamp's socket is modelled and verified, but two things are missing
+and it should not be printed as final:
+
+- **No lock screw** for the camera post. The socket is a 35mm slip fit with
+  nothing holding the pipe against turning.
+- **No camera head.** Nothing yet mounts a webcam on the top of that pipe.
+
+Put the post on the 180 degree leg, the long one. That puts the lens 168mm from
+the tray centre, and the tray only sweeps a 75mm radius when it pans, so the
+post stays 73mm clear of anything moving. About 350mm of pipe gives a 50 degree
+look-down angle at a 261mm view distance; cut it shorter for a tighter view.
 
 ## Folders
 

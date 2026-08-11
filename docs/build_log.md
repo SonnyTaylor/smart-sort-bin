@@ -51,6 +51,28 @@ stiff enough, or that items land where the maths says. Those need the printer.
 
 ## Entries
 
+### 11 August 2026: the camera had nowhere to go
+
+Found while checking what was left to do. The pan-tilt's own camera plate was
+removed so the tray mount could take its place, and nothing was ever designed to
+hold the webcam or the LED ring. Printing the five parts and assembling them
+would have ended with the camera in mid air.
+
+Sonny's fix: put a vertical length of the same 20mm conduit on top of one of the
+bin clamps, with a camera mount on the end of it. Better than mounting off the
+hub plate, which is exactly where the tray sweeps when it tilts.
+
+**Done:** a *camera clamp*, a copy of the bin clamp with a 20mm socket on top.
+Verified at 30919.1 mm3, which is the original clamp plus a socket of exactly
+the calculated volume.
+
+**Not done, so do not print it as final:** no lock screw for the post, and no
+camera head. Both are still to design.
+
+Print two standard clamps and one camera clamp. Note the camera clamp cannot
+print flat on the same face as the standard one, since the socket now grows out
+of it.
+
 ### 11 August 2026: decided against printed bin dividers
 
 Three ordinary bin bags on bulldog clips, one per sector, instead of a divider
