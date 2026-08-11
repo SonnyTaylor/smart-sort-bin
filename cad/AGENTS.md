@@ -78,7 +78,7 @@ A design change usually touches:
 
 - the part, in Fusion, plus its re-export in `stl/` and `step/`
 - `renders/stages.json`, if it earned a version
-- the regenerated images in `../portfolio/images/cad_evolution/`
+- the regenerated images in `../portfolio/images/cad/evolution/`
 
 The exports in `stl/` and `step/` are the only record of a Fusion part that
 lives in git, so commit them with the change rather than later.

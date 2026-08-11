@@ -14,7 +14,7 @@ Two sources, and the split matters:
 Either way the images are the real designs rather than something redrawn
 afterwards. That is the point: evidence, not illustration.
 
-Output lands in [`../../portfolio/images/cad_evolution/`](../../portfolio/images/cad_evolution).
+Output lands in [`../../portfolio/images/cad/evolution/`](../../portfolio/images/cad/evolution).
 
 | File | What it is |
 | :--- | :--- |

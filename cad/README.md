@@ -84,11 +84,11 @@ lives in git, and the design-evolution renders draw the current version of each
 part from them.
 
 Renders of the finished parts come out of the Fusion assembly document and land
-in `../portfolio/images/cad_*.png`.
+in `../portfolio/images/cad/`.
 
 Renders showing how a part **changed over time** are made by
 [`renders/`](renders/README.md) instead, and land in
-`../portfolio/images/cad_evolution/`. Those are generated from git history, so
+`../portfolio/images/cad/evolution/`. Those are generated from git history, so
 after changing a part, re-run them and the "current" panel updates itself.
 
 ## Cutting the pipes

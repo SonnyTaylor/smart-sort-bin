@@ -24,7 +24,7 @@
   "openscad": "C:/Program Files/OpenSCAD/openscad.exe",
   "imgsize": [1400, 1050],
   "colorscheme": "Tomorrow",
-  "out_images": "portfolio/images/cad_evolution",
+  "out_images": "portfolio/images/cad/evolution",
 
   "families": [
     {
