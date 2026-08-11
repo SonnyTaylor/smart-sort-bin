@@ -44,7 +44,7 @@ tested**. Anything written up about it should say so.
 
 ### What the checking did and did not prove
 
-Thirteen faults were found and fixed before printing, listed in
+Fourteen faults were found and fixed before printing, listed in
 [mechanical_iteration_log.md](mechanical_iteration_log.md). That work is real
 and worth claiming, but be precise about it: every part was verified against
 independently calculated geometry, which proves the model matches its intent.
@@ -55,6 +55,59 @@ stiff enough, or that items land where the maths says. Those need the printer.
 ---
 
 ## Entries
+
+### 11 August 2026: Fusion crashed and took the hub plate rebuild with it
+
+**This one needs fixing before anything else is exported.**
+
+Fusion crashed mid-session. On restart, two parts had gone backwards to a state
+older than what is committed in this repo:
+
+| Part | In Fusion now | Committed in git | |
+| :--- | ---: | ---: | :--- |
+| Hub plate | 32,150 mm3, 11mm thick, retaining tabs present | 28,289 mm3, 4mm thick, no tabs | the pre-rebuild plate |
+| Tilt yoke | 39,462 mm3 | 39,311 mm3 | some later edit lost |
+
+Both documents report themselves as their own latest version, so the rebuild had
+never been saved to the cloud. It had been living as an unsaved edit in Fusion's
+memory, surviving between sessions, and the crash took it.
+
+**The geometry itself is not lost.** `cad/stl/plate.stl` and `cad/step/plate.step`
+in git are the correct 4mm plate, and the same for the yoke. What is lost is the
+Fusion feature history for those two parts, which is the thing the course wants
+to see.
+
+**Not done, and it is Sonny's call which way to go:** rebuild the plate's
+features in Fusion, or import the committed STEP as a solid and carry on from
+there. Until one of those happens, **do not run the full export script**, because
+it would overwrite the good committed plate and yoke with the rolled-back shapes.
+
+Only the three parts changed that day were exported, by a cut-down version of the
+export script naming just those parts.
+
+### 11 August 2026: the sockets were blocks with holes in them, so they got shelled
+
+Sonny asked whether the clamps could use less filament. They could: a pipe socket
+was a round bore through a solid block, 36% plastic and 64% air, with 1.49mm of
+wall at the equator and 6mm sitting uselessly in the corners.
+
+The outer face now follows the bore, offset 2.5mm, with 45 degree flanks so it
+still prints unsupported. All six socketed parts drop from **114.3 to 95.0 cm3**,
+about 24g of PLA. Reasoning is in [mechanical_design.md](mechanical_design.md),
+the numbers and the fault it turned up are iteration 3 and fault 14 in
+[mechanical_iteration_log.md](mechanical_iteration_log.md).
+
+The fault is the part worth reading. Cutting all four corners off every part
+opened the camera post socket to the air and took away the post's end stop.
+Corners are only waste where nothing is attached below them.
+
+**Checked, not assumed:** the pipe lock screw still has 6.2000mm of thread, the
+minimum wall is still 1.50mm, and the post bore is closed again across its full
+width.
+
+**Not done:** nothing is printed, so none of this is confirmed in the hand. The
+real filament saving will be smaller than 16.8%, because these are solid volumes
+and some of what went was infill rather than solid plastic.
 
 ### 11 August 2026: the camera would have mounted upside down
 

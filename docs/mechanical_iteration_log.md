@@ -28,6 +28,7 @@ end.
 | 11 | 1mm rib down the centre of the servo flange | Flange rocks on the rib instead of clamping | 3mm relief groove in the ring's pocket ceiling |
 | 12 | Tilt servo's flange fouled the yoke's rib | Servo cannot drop into its tower | Servo moved 1.5mm outboard, rib notched 2.1mm |
 | 13 | Camera head's bolt recess cut into the top face | Webcam hangs under the arm upside down | Recess moved to the underside, thread now points up |
+| 14 | Lightening the sockets opened the camera post bore to the air | Post has no lid and no end stop, so the camera aim is unset | Bottom corners kept where anything is attached below |
 
 ---
 
@@ -57,6 +58,74 @@ to roll the item back to the middle, ends curl down 5mm so it leaves cleanly.
 The 5mm end drop was chosen against a calculated limit, not picked. It gives a
 steepest slope of 9.5 degrees, comfortably under the roughly 19 degrees at which
 plastic slides on PLA, so the item stays put until the tray is tipped.
+
+---
+
+## Iteration 3: the pipe sockets went from blocks to shells
+
+### Implementation
+Every part that holds a pipe (three leg brackets, two bin clamps, one camera
+clamp) did it with a round bore through a solid block. The block was 663 mm2 in
+section around a 343 mm2 bore, so 36% plastic and 64% air, and the plastic was
+in the wrong place: **1.49mm of wall at the equator and 6mm in the corners.**
+
+The outer face was replaced by the bore's own profile offset 2.5mm, with 45
+degree flanks so it still prints without support. Cut as a subtraction from the
+old outline, so the part can only shrink and no clearance in the assembly can
+change.
+
+### Evaluation
+Sound, and cheaper than it looks. The four corners were not on any load path:
+the section is nowhere thinner than the 1.49mm it already had, and the socket is
+now a constant-section tube instead of a block with a hole in it.
+
+| | Before | After | |
+| :--- | ---: | ---: | ---: |
+| Bin clamp, x2 | 17,478 mm3 | 13,709 mm3 | -21.6% |
+| Camera clamp | 30,919 mm3 | 23,649 mm3 | -23.5% |
+| Leg bracket, x3 | 16,137 mm3 | 14,657 mm3 | -9.2% |
+| **All six** | **114.3 cm3** | **95.0 cm3** | **-16.8%** |
+
+Two things were checked rather than assumed. The pipe lock screw still gets the
+**6.2000mm** of thread engagement that fault 2 was raised to fix, measured by
+binary search onto the two faces, because the full 10mm pad seat was deliberately
+kept when everything around it was cut away. And the minimum wall is **1.50mm**,
+the same figure as before, so nothing got thinner.
+
+The saving in real filament will be smaller than 16.8%. These figures are solid
+volume, and the corners that went were partly infill, not solid plastic. What
+went is mostly the cheapest material in the part.
+
+**The camera clamp is only 23.5% and the bracket only 9.2% because of fault 14
+below**, which is the more interesting half of this iteration.
+
+---
+
+## Fault 14: cutting the corners opened the camera post socket
+
+**Found** on inspection of the changed part, before it went any further.
+
+**Cause.** The rule "the corners are doing nothing" was applied to all four
+corners of all six parts without asking what was underneath each one. On the
+camera clamp there is something underneath: the post socket. The block's bottom
+face is that socket's lid, and the seat the post's end butts against.
+
+**Consequence.** Narrowing the block's underside to a 9mm strip left the 20.46mm
+post bore **open to the outside air** on both sides. Probed across the bore, the
+column at y=9 and y=10 was air the whole way through. The post would also have
+lost its end stop, so nothing would set how far it went in, which sets where the
+camera points.
+
+**Fix.** The bottom corners are kept on the camera clamp and on the leg bracket,
+where the block lands on the foot and the tube walls, 25mm apart, have to reach
+it. They are cut only on the bin clamp, where nothing is underneath. That costs
+1,930 mm3 on the camera clamp and 2,289 mm3 on each bracket, and it is the whole
+reason those two parts save so much less than the bin clamp.
+
+**What it changes about the method.** Volume is a bad guide to what is load
+bearing. The corner material on the bin clamp and the corner material on the
+camera clamp measure the same and do completely different jobs. The check that
+caught it was a containment probe across the bore, not a look at the number.
 
 ---
 

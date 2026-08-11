@@ -83,9 +83,15 @@
         },
         {
           "name": "bracket_2_final",
+          "label": "v2",
+          "source": { "commit": "3df361c", "stl": "cad/stl/bracket.stl" },
+          "caption": "Lock screw moved to a pad on top:\n6.2mm of thread and room for a brass\ninsert with 2.9mm of plastic around it."
+        },
+        {
+          "name": "bracket_3_shell",
           "label": "current",
           "source": { "stl": "cad/stl/bracket.stl" },
-          "caption": "Lock screw moved to a pad on top:\n6.2mm of thread and room for a brass\ninsert with 2.9mm of plastic around it."
+          "caption": "Top corners gone, bottom corners kept:\nthe tube walls are 25mm apart and have\nto land on the foot. 16,137 to 14,657."
         }
       ]
     },
@@ -114,9 +120,34 @@
         },
         {
           "name": "clamp_4_final",
+          "label": "v4",
+          "source": { "commit": "3df361c", "stl": "cad/stl/clamp.stl" },
+          "caption": "Pipe lock moved to a pad on top,\nand the jaw resized for a 6mm wall\nafter the thumbscrew calculation was fixed."
+        },
+        {
+          "name": "clamp_5_shell",
           "label": "current",
           "source": { "stl": "cad/stl/clamp.stl" },
-          "caption": "Pipe lock moved to a pad on top,\nand the jaw resized for a 6mm wall\nafter the thumbscrew calculation was fixed."
+          "caption": "A bore through a solid wedge: 1.49mm of\nwall at the equator, 6mm in the corners.\nOutside follows the bore. 17,478 to 13,709."
+        }
+      ]
+    },
+    {
+      "key": "camera_clamp",
+      "title": "Camera clamp",
+      "camera": "0,0,0,55,0,25,400",
+      "stages": [
+        {
+          "name": "camera_clamp_1_block",
+          "label": "v1",
+          "source": { "commit": "3df361c", "stl": "cad/stl/camera_clamp.stl" },
+          "caption": "The post socket is a 27 x 26.4 solid\nrectangle around a 20.46 bore. Its four\ncorners are 5,789 mm3 carrying nothing."
+        },
+        {
+          "name": "camera_clamp_2_round",
+          "label": "current",
+          "source": { "stl": "cad/stl/camera_clamp.stl" },
+          "caption": "Socket turned round at 26.4: 2.97mm of\nwall all the way round, not just at its\nthinnest point. 30,919 to 23,649 mm3."
         }
       ]
     },

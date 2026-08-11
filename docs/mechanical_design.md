@@ -69,6 +69,31 @@ Every pipe socket bore is a **truncated teardrop**, not a circle: a flat-topped
 45 degree peak over a round bore. That is what lets a sideways hole print with
 no support. A round pipe still slides in.
 
+### Why the sockets are shells, not blocks
+
+A pipe socket is a round hole in a square block, so its wall is thin where the
+bore is widest and thick in the four corners. Measured on the old clamp: 1.49mm
+at the equator and 6mm in the corners, for a block that was 36% plastic and 64%
+air. The corners were carrying nothing. They were there because a rectangle is
+what you get when you extrude a rectangle.
+
+The outer face now **follows the bore**, offset 2.5mm, with 45 degree flanks so
+it still prints without support. The result is a constant-thickness shell that
+is nowhere thinner than the wall it replaced, and the six socketed parts drop
+from 114.3 to 95.0 cm3.
+
+Two corners are kept rather than cut, and the reason is the same in both cases:
+
+| Part | Bottom corners | Why |
+| :--- | :--- | :--- |
+| Bin clamp | cut | Nothing is under the block. Its load goes sideways into the jaw |
+| Camera clamp | kept | The block's underside **is** the lid of the post socket and the seat the post's end butts against |
+| Leg bracket | kept | The tube walls are 25mm apart and have to land on the foot. Cutting them pinched the load path to a 9mm strip |
+
+So the rule is: **cut a socket's corners only where nothing is attached below
+it.** Above the bore, where every one of these parts is open air, the corners
+always go.
+
 ---
 
 ## 2. The tray

@@ -10,7 +10,7 @@ is exported from there.
 | :--- | :---: | :--- | :--- |
 | Smart Bin - hub plate | 1 | 132 dia x 4 | Holds the pan servo, spans the bin on three legs |
 | Smart Bin - leg bracket | 3 | 32 x 26.4 x 36.4 | Bolts under the plate, takes a pipe |
-| Smart Bin - bin clamp | 2 | 58.1 x 26.4 x 31.4 | Grips the bin rim at the far end of each pipe |
+| Smart Bin - bin clamp | 2 | 58.1 x 24.4 x 31.4 | Grips the bin rim at the far end of each pipe |
 | Smart Bin - camera clamp | 1 | 58.1 x 26.4 x 66.4 | The same clamp with a 20mm socket on top for the camera post. Replaces one of the three |
 | Smart Bin - camera head | 1 | 50 x 32 x 38 | Caps the camera post. Side arm carries a 1/4-20 bolt for the webcam |
 | Smart Bin - pan ring | 1 | 96.3 x 111.2 x 11.5 | Traps the pan servo against the plate and carries the yoke's bearing |
