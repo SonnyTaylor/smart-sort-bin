@@ -62,16 +62,24 @@ Sonny's fix: put a vertical length of the same 20mm conduit on top of one of the
 bin clamps, with a camera mount on the end of it. Better than mounting off the
 hub plate, which is exactly where the tray sweeps when it tilts.
 
-**Done:** a *camera clamp*, a copy of the bin clamp with a 20mm socket on top.
-Verified at 30919.1 mm3, which is the original clamp plus a socket of exactly
-the calculated volume.
+**Done:**
 
-**Not done, so do not print it as final:** no lock screw for the post, and no
-camera head. Both are still to design.
+- A *camera clamp*, a copy of the bin clamp with a 20mm socket on top. Verified
+  at 30919.1 mm3, the original clamp plus a socket of exactly the calculated
+  volume.
+- A *camera head* that caps the post. Verified at 18806.1 mm3, 0.000% off the
+  calculated figure. The webcam turned out to have a 1/4-20 tripod thread, which
+  is far better than clipping to something, so the head carries a 1/4-20 bolt
+  through a side arm with the head recessed underneath. The arm points at the
+  tray so the pipe is not in shot.
+- Both are in the assembly with a 300mm length of conduit between them. That
+  puts the lens about 48 degrees above the tray, 230mm away.
 
-Print two standard clamps and one camera clamp. Note the camera clamp cannot
-print flat on the same face as the standard one, since the socket now grows out
-of it.
+**Not done:** no lock screw for the post, so nothing stops the pipe turning and
+swinging the camera off aim.
+
+Print two standard clamps and one camera clamp. The camera clamp cannot print
+flat on the same face as the standard one, since the socket grows out of it.
 
 ### 11 August 2026: decided against printed bin dividers
 
