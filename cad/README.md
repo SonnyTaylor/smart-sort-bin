@@ -264,6 +264,37 @@ below. It goes **180 about X**, 18.0mm tall, no support.
 - **tilt_yoke**: 427 mm2 at 3mm up, the roof of the 25.5mm servo horn pocket.
 - **tray**: about 8.6 cm2, nearly the whole underside.
 
+### What kind of support
+
+**Normal, not tree, and "on build plate only" for all three.** Each overhang
+was checked by dropping a ray from the middle of it: all three have clear air
+straight down to the plate, so the support stands on the bed and never has to
+start on the part.
+
+That one setting is also the safety catch. On "everywhere" the slicer is free
+to fill the blind insert holes and the pipe sockets, because those have model
+material at the bottom for support to sit on. On "build plate only" it cannot,
+so the holes stay clear without anyone having to police them.
+
+Tree support is the wrong shape for all three of these. Two are single flat
+roofs, which normal support handles with a plain block, and the third is inside
+a 20mm tube, where a tree tangles and will not come out.
+
+| Part | The support is | Getting it off |
+| :--- | :--- | :--- |
+| tilt_yoke | a 25.5mm disc, 3.2mm off the plate. Three layers of nothing | Lifts off. It is the horn pocket, so a rough face there does not matter |
+| camera_clamp | a 20mm column 27mm tall, standing inside the socket bore | The bore is open at the bed, so push the column straight out with a screwdriver from underneath |
+| tray | a bed of support under most of the underside, carrying the part | Peels off. Only the four bolt pads matter, and support leaves those flat |
+
+Set **top Z distance to one layer, 0.2mm**, so support breaks away instead of
+welding on. On the camera clamp keep the interface layers low for the same
+reason: that face is only an end stop for the conduit and it wants to come
+apart cleanly, not look nice.
+
+The tray is the one carrying real weight on its supports, since the part
+balances on two end edges with no flat contact anywhere. Give it a **brim** and
+do not run the support density down to the sparse end.
+
 Turn support **off** for everything else. Left on auto, the slicer will put
 support inside the pipe sockets and the insert holes, and digging it back out
 of a 20mm bore is worse than the problem it solves.
