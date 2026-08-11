@@ -1,9 +1,9 @@
 # VCE Systems Engineering: Mechanical Iteration Log
 
-*This document records the iterative design of the sorting mechanism. It is the
-mechanical counterpart to [04_iteration_log.md](04_iteration_log.md), which
-covers the AI subsystem. The finished design is described in
-[07_mechanical_design.md](07_mechanical_design.md).*
+*This document records the iterative design of the sorting mechanism. The
+finished design is described in [mechanical_design.md](mechanical_design.md).
+The iteration history of the AI subsystem lives in the portfolio deck
+(`portfolio/ai_bin.js`), not here.*
 
 Every fault below was found before anything was printed, by checking the model
 against calculated geometry rather than by eye. The method is described at the

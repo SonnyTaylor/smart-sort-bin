@@ -1,7 +1,8 @@
 # Mechanical Design
 
 *How the sorting mechanism works and why it is shaped the way it is. The
-iteration history behind these decisions is in [08_mechanical_iteration_log.md](08_mechanical_iteration_log.md).*
+iteration history behind these decisions is in
+[mechanical_iteration_log.md](mechanical_iteration_log.md).*
 
 ---
 

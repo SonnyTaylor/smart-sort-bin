@@ -26,10 +26,6 @@ tracker, and two MG996R servos.
 | `step/` | Solid models for anyone who wants to open the parts elsewhere |
 | `renders/` | Makes the design-evolution pictures for the portfolio, by rendering old versions of parts out of git history. See [`renders/README.md`](renders/README.md) |
 | `*.scad` | The OpenSCAD source the hub and tray were originally developed in. No longer the design source, but **do not delete**: the version history in these files is what `renders/` draws the superseded designs from |
-| `fusion/`, `csg_to_step.py` | Superseded. The old pipeline that got OpenSCAD parts into Fusion, before the parts were rebuilt natively |
-
-`stl/tray_spacer.stl` and `stl/spacer.stl` are the old spacer block, replaced by
-the tray mount. They can go.
 
 ## Exporting after a change
 

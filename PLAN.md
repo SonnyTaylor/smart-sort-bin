@@ -18,7 +18,7 @@ The system uses a **dual-board architecture** to separate concerns:
 
 The two boards communicate over **UART serial** using a simple command protocol. This separation ensures that real-time servo timing is never disrupted by WiFi/HTTP activity on the ESP32-CAM, and the ESP32-CAM can be rebooted or updated without leaving servos in an unsafe state.
 
-> Protocol specification: [`docs/06_serial_protocol.md`](docs/06_serial_protocol.md)
+> The two-board serial protocol was dropped when the build moved to a single Raspberry Pi.
 
 ### Hardware Components (Low-Cost Focus)
 
@@ -31,7 +31,7 @@ The two boards communicate over **UART serial** using a simple command protocol.
 - **Power:** USB-C PD trigger board (~$3.14 AUD) negotiating 5V from any USB-C PD charger. 1000uF capacitors on the servo power rail to absorb stall current spikes.
 - **Structure:** Repurposed standard 60L bin with a laser-cut MDF/acrylic top plate. 3D printed pan/tilt bracket (MakerWorld model 973248, adapted for MG996R).
 
-> Full bill of materials and budget breakdown: [`docs/03_budget.md`](docs/03_budget.md)
+> Current bill of materials and budget: the Parts List & Budget slide in `portfolio/ai_bin.js`.
 
 ### Software Stack
 
@@ -77,7 +77,7 @@ The ESP32-CAM captures an image and sends it to a cloud-hosted Vision Language M
 - **No training required:** Cloud VLMs are pre-trained and classify any everyday object out of the box.
 - **Trade-off:** Requires WiFi connectivity. The system is designed for fixed indoor locations (schools, offices) where WiFi is reliably available.
 
-> Design iteration history: [`docs/04_iteration_log.md`](docs/04_iteration_log.md)
+> Design iteration history: the Design Iteration slides in `portfolio/ai_bin.js`.
 
 ## 5. Web Dashboard
 
@@ -148,4 +148,4 @@ The ESP32-CAM hosts a lightweight web server accessible from any device on the s
 - Test web dashboard responsiveness and real-time updates.
 - Identify edge cases (e.g., items getting stuck, VLM misclassifications) and refine the mechanical design or adjust VLM prompts.
 
-> Evaluated alternatives and future directions: [`docs/05_future_scope.md`](docs/05_future_scope.md)
+> Evaluated alternatives and future directions: the Evaluation & Recommendations slide in `portfolio/ai_bin.js`.

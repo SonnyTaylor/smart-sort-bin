@@ -12,7 +12,7 @@ Developed for VCE Systems Engineering Unit 3 & 4. Inspired by the [Ameru AI Bin]
 
 ## Architecture
 
-The prototype runs entirely on a **Raspberry Pi 3B** (pivoted from the original ESP32-CAM dual-board design — see [`docs/04_iteration_log.md`](docs/04_iteration_log.md)):
+The prototype runs entirely on a **Raspberry Pi 3B**, pivoted from the original two-board ESP32-CAM design. That iteration is written up in the portfolio deck:
 
 ```
   [ Item placed on tray ]
@@ -91,10 +91,16 @@ smart-sort-bin/
 
 ## Documentation
 
-- [Project Plan](PLAN.md) — original architecture, mechanism design, AI strategy
+The VCE portfolio itself is generated from [`portfolio/ai_bin.js`](portfolio/ai_bin.js)
+(`bun run ai_bin.js`), and that deck is the up-to-date record of the risk
+assessment, budget, testing, iteration history and evaluation.
+
+The rest:
+
+- [Mechanical Design](docs/mechanical_design.md) — how the sorting mechanism works, with verified clearances
+- [Mechanical Iteration Log](docs/mechanical_iteration_log.md) — eight faults found and corrected before printing
+- [CAD](cad/README.md) — parts, hardware list and assembly order
+- [Design evolution renders](cad/renders/README.md) — how the old versions of each part get drawn from git history
 - [Pi Setup](docs/pi_prototype_setup.md) — wiring, OS config, troubleshooting
 - [Handoff](docs/handoff.md) — current state, how to deploy, next tasks
-- [Mechanical Design](docs/07_mechanical_design.md): how the sorting mechanism works, with verified clearances
-- [Mechanical Iteration Log](docs/08_mechanical_iteration_log.md): eight faults found and corrected before printing
-- [CAD](cad/README.md): parts, hardware list and assembly order
-- [Risk Assessment](docs/01_risk_assessment.md) · [Testing Plan](docs/02_testing_plan.md) · [Budget](docs/03_budget.md) · [Iteration Log](docs/04_iteration_log.md) · [Future Scope](docs/05_future_scope.md)
+- [Project Plan](PLAN.md) — original architecture, mechanism design, AI strategy
