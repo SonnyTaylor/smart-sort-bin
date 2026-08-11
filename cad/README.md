@@ -4,9 +4,6 @@ The mechanical parts. **Autodesk Fusion is the source of truth.** The models
 live in the Autodesk project *Systems engineerring*; everything in this folder
 is exported from there.
 
-Changing a part? Read [AGENTS.md](AGENTS.md) first. It covers when a change is
-worth a picture and when it is not.
-
 ## The parts
 
 | Fusion document | Qty | Size | What it does |
