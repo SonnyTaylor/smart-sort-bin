@@ -27,6 +27,7 @@ end.
 | 10 | Servo's top face is a stepped stack 2.3mm proud of its case | Ring and yoke both sat on it; head would not seat flat | Bearing raised to 15.5mm, 1mm clear of the highest step |
 | 11 | 1mm rib down the centre of the servo flange | Flange rocks on the rib instead of clamping | 3mm relief groove in the ring's pocket ceiling |
 | 12 | Tilt servo's flange fouled the yoke's rib | Servo cannot drop into its tower | Servo moved 1.5mm outboard, rib notched 2.1mm |
+| 13 | Camera head's bolt recess cut into the top face | Webcam hangs under the arm upside down | Recess moved to the underside, thread now points up |
 
 ---
 
@@ -174,6 +175,33 @@ four bolts were inside both, so it would have worked, but it read as an error.
 **Fix.** The plate is now 52 x 45, sized to contain both footprints. Its 52mm
 width is the tray boss exactly, so those edges line up on purpose. The offset
 itself cannot be designed away, because the arm genuinely sits off the pan axis.
+
+---
+
+## Fault 13: the camera head's bolt recess was on the wrong face
+
+**Found by** probing the solid down the bolt axis rather than looking at it. The
+head is modelled with the pipe socket growing upward off its plate, then flipped
+in the assembly so the socket drops over the post. The bolt recess was cut from
+the same face the sketch sits on, which the flip turns into the arm's **top**.
+
+**Cause.** Both cuts start 1mm above that sketch plane: the 6.6mm clearance hole
+runs 10mm and goes clean through the 8mm arm, and the 11.5mm recess runs 5mm and
+so stopped 4mm in. Correct depth, wrong end.
+
+**Consequence.** The hex head would sit in a recess on top and the thread would
+point **down**. A webcam has its tripod socket underneath, so it would have hung
+below the arm inverted, and every frame would arrive rotated 180 degrees.
+
+**Fix.** The recess now starts 4mm along instead of 1mm back, so the same 4mm
+pocket opens on the underside and the thread comes up out of the top face at
+z=238. Nothing else about the part changes.
+
+**Why the usual checks missed it.** The part was verified on volume, and volume
+cannot see this: moving a pocket from one end of a hole to the other removes
+exactly the same 4mm of plastic. It measured 18806.1 mm3 before and after, the
+same figure that was quoted as 0.000% off the calculation. Volume proves how
+much material is gone, never where from.
 
 ---
 

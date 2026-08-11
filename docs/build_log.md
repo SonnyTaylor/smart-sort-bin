@@ -44,7 +44,7 @@ tested**. Anything written up about it should say so.
 
 ### What the checking did and did not prove
 
-Eight faults were found and fixed before printing, listed in
+Thirteen faults were found and fixed before printing, listed in
 [mechanical_iteration_log.md](mechanical_iteration_log.md). That work is real
 and worth claiming, but be precise about it: every part was verified against
 independently calculated geometry, which proves the model matches its intent.
@@ -55,6 +55,25 @@ stiff enough, or that items land where the maths says. Those need the printer.
 ---
 
 ## Entries
+
+### 11 August 2026: the camera would have mounted upside down
+
+Found by probing the camera head's solid down the bolt axis instead of looking
+at a render. The 1/4-20 bolt recess had been cut into the **top** of the side
+arm, so the thread pointed down and the webcam would have hung underneath it
+inverted. Both this log and [../cad/README.md](../cad/README.md) already said
+the head was recessed underneath with the thread pointing up, so the model and
+the write-up had quietly disagreed since the part was made.
+
+**Done.** The recess moved to the underside. The part is otherwise untouched and
+still 18806.1 mm3, which is the whole lesson: the volume check that signed this
+part off cannot tell which end of a hole a pocket is at. Written up as fault 13
+in [mechanical_iteration_log.md](mechanical_iteration_log.md).
+
+**Also corrected:** the camera's sighting numbers. They had been worked out from
+the **post's** axis at 142.5mm from the tray centre, but the camera sits on the
+arm, which reaches back to 122.5mm. The camera looks down at **52 degrees from
+199mm**, not the 46 degrees from 219mm quoted before.
 
 ### 11 August 2026: the head was too tall, so it got rebuilt
 
@@ -87,8 +106,9 @@ The result: **tray underside 147mm above the rim becomes 82mm**, and the head
 uses 100.8cm3 of plastic against the 138.4cm3 it replaces.
 
 **Also changed:** the camera post is now cut to 235mm, not 300. The tray
-dropped 65mm underneath it, and without shortening the post the camera would
-look down at 56 degrees from 269mm instead of 46 degrees from 219mm.
+dropped 65mm underneath it, and the post came down by the same 65mm to hold the
+camera's view of the tray exactly where it was: 52 degrees from 199mm away.
+Leaving the 300 would have made it 61 degrees from 254mm.
 
 **Not done:** nothing is printed, so none of this is confirmed in the hand. The
 one number worth checking with calipers before printing is the tilt servo's
@@ -116,7 +136,7 @@ hub plate, which is exactly where the tray sweeps when it tilts.
   through a side arm with the head recessed underneath. The arm points at the
   tray so the pipe is not in shot.
 - Both are in the assembly with a 300mm length of conduit between them. That
-  puts the lens about 48 degrees above the tray, 230mm away.
+  puts the camera 52 degrees above the tray, 199mm away.
 
 **Not done:** no lock screw for the post, so nothing stops the pipe turning and
 swinging the camera off aim.

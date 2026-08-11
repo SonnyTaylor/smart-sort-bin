@@ -95,7 +95,7 @@ Everything else has one home, and this is the list of homes:
 
 - [Build log](docs/build_log.md): what has actually been built, dated. **Start here**
 - [Mechanical Design](docs/mechanical_design.md): how the sorting mechanism works, with verified clearances
-- [Mechanical Iteration Log](docs/mechanical_iteration_log.md): eight faults found and corrected before printing
+- [Mechanical Iteration Log](docs/mechanical_iteration_log.md): thirteen faults found and corrected before printing
 - [CAD](cad/README.md): parts, hardware list and assembly order
 - [Design evolution renders](cad/renders/README.md): how the old versions of each part get drawn from git history
 - [Pi Setup](docs/pi_setup.md): wiring, OS config, deploy commands, troubleshooting

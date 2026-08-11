@@ -40,17 +40,22 @@ them and the tray bolts to it. Tilt axis 58mm above the plate, tray underside
 ### The camera post
 
 The post goes on the **180 degree leg**, the long one, and is in the assembly.
-Its axis sits 152.5mm from the tray centre, and the tray only sweeps a 75mm
+Its axis sits 142.5mm from the tray centre, and the tray only sweeps a 75mm
 radius when it pans, so nothing moving comes near it.
 
-With a **235mm** length of conduit the head plate finishes at z=238, which puts
-a typical webcam lens looking down about **46 degrees** from **219mm** away.
-Cut the pipe shorter for a steeper, tighter view: the lens ends up roughly
-`152.5 x tan(angle)` above the tray surface.
+The camera itself sits on the head's side arm, which reaches back toward the
+tray, so the **bolt axis is 122.5mm** from the tray centre. That is the number
+every sighting figure below is worked from, not the post's own 142.5.
 
-This was 300mm when the tray sat 65mm higher. Cutting a 300 now gives 56
-degrees from 269mm away, which still works but is a tighter, more foreshortened
-view of the tray.
+With a **235mm** length of conduit the arm's top face finishes at z=238, and the
+tray's surface at its centre is at z=81, so the camera sits 157mm above the tray
+and 122.5mm to one side. That is looking down about **52 degrees** from **199mm**
+away. A longer pipe gives a steeper, more overhead view: the camera ends up
+roughly `122.5 x tan(angle)` above the tray surface.
+
+This was 300mm when the tray sat 65mm higher. Cutting a 300 now gives 61 degrees
+from 254mm away, which still works and is actually a squarer view of the tray,
+but it puts the camera further off and stands the whole thing taller.
 
 The webcam mounts with a **1/4-20 bolt** through the head's side arm, head
 recessed underneath, thread pointing up. The arm sticks out toward the tray so
