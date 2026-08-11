@@ -59,10 +59,38 @@ foreach ($fam in $cfg.families) {
         # Work out where the geometry comes from and write a .scad we can render.
         $scad = Join-Path $src "$name.scad"
         if ($s.stl) {
-            $stlPath = (Join-Path $repo $s.stl) -replace '\\', '/'
-            if (-not (Test-Path $stlPath)) { $failed += "$name : no such STL, $($s.stl)"; continue }
-            $origin = "stl $($s.stl)"
-            "import(`"$stlPath`");" | Set-Content $scad -Encoding utf8 -WhatIf:$false
+            if ($s.commit) {
+                # Fusion parts have no source in git, only their exports, so an
+                # old Fusion version has to come out of the STL's own history.
+                # Start-Process redirects at the OS level, which is the only way
+                # to get a binary STL out of git without PowerShell decoding it.
+                $stlPath = (Join-Path $src "$name.stl") -replace '\\', '/'
+                # -WorkingDirectory, not "git -C $repo": Start-Process does not
+                # quote its arguments, so a repo path with a space in it splits.
+                Start-Process -FilePath 'git' -Wait -NoNewWindow -WhatIf:$false `
+                    -WorkingDirectory $repo `
+                    -ArgumentList @('show', "$($s.commit):$($s.stl)") `
+                    -RedirectStandardOutput $stlPath
+                if (-not (Test-Path $stlPath) -or (Get-Item $stlPath).Length -lt 100) {
+                    $failed += "$name : cannot read $($s.stl) at $($s.commit)"; continue
+                }
+                $origin = "$($s.commit) $($s.stl)"
+            }
+            else {
+                $stlPath = (Join-Path $repo $s.stl) -replace '\\', '/'
+                if (-not (Test-Path $stlPath)) { $failed += "$name : no such STL, $($s.stl)"; continue }
+                $origin = "stl $($s.stl)"
+            }
+            # Parts modelled in assembly coordinates sit a long way off their own
+            # origin, so the family's shared camera looks at empty space. An
+            # optional per-stage "translate" recentres the geometry without
+            # touching the camera, which is what keeps the panels comparable.
+            $pre = ""
+            if ($s.translate) {
+                $t = $s.translate -join ','
+                $pre = "translate([$t]) "
+            }
+            "$pre`import(`"$stlPath`");" | Set-Content $scad -Encoding utf8 -WhatIf:$false
         }
         else {
             if ($s.commit) {

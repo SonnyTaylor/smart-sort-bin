@@ -8,9 +8,15 @@
     "      -> renders a Fusion export. THIS IS WHAT THE 'current' STAGES USE,",
     "         because Fusion is the design source of truth. Re-export from",
     "         Fusion with export_from_fusion.py before rendering.",
+    "  {\"commit\": \"abc1234\", \"stl\": \"cad/stl/plate.stl\"}",
+    "      -> pulls that STL out of git history. USE THIS for a superseded",
+    "         Fusion part. Fusion keeps no source in git, so the committed",
+    "         export is the only record of what a part used to look like.",
+    "         Commit the export before you change a part, or there is nothing",
+    "         to point at afterwards.",
     "  {\"commit\": \"abc1234\", \"file\": \"cad/tray.scad\", \"part\": \"tray\"}",
-    "      -> pulls that file out of git history at that commit. This is how",
-    "         the superseded versions are drawn, since they predate Fusion.",
+    "      -> pulls that file out of git history at that commit. Only for the",
+    "         early versions, which predate Fusion and were OpenSCAD.",
     "  {\"file\": \"cad/tray.scad\", \"part\": \"tray\"}",
     "      -> uses the OpenSCAD working copy. Only for a part that never made",
     "         it into Fusion, like the spacer the tray mount replaced.",
@@ -52,9 +58,15 @@
         },
         {
           "name": "plate_4_final",
+          "label": "v4",
+          "source": { "commit": "4a93eb1", "stl": "cad/stl/plate.stl" },
+          "caption": "Bore opened 124.5 to 125.6mm after\nmeasuring the real pan-tilt base.\nThe tabs had been 0.25mm too tight."
+        },
+        {
+          "name": "plate_5_servo",
           "label": "current",
           "source": { "stl": "cad/stl/plate.stl" },
-          "caption": "Bore opened 124.5 to 125.6mm after\nmeasuring the real pan-tilt base.\nThe tabs had been 0.25mm too tight."
+          "caption": "The pan-tilt sat on top of it on a\n125mm stand. Servo now drops through\nthe plate; those tabs are gone."
         }
       ]
     },
@@ -136,7 +148,7 @@
     {
       "key": "mount",
       "title": "Tray mount",
-      "camera": "0,0,0,55,0,25,230",
+      "camera": "0,0,0,55,0,25,320",
       "stages": [
         {
           "name": "mount_1_spacer",
@@ -146,9 +158,15 @@
         },
         {
           "name": "mount_2_cap",
-          "label": "current",
+          "label": "v2",
           "source": { "stl": "cad/stl/tray_mount.stl" },
           "caption": "A cap whose socket drops over the arm,\nso the arm resists twisting, not the screws.\n6mm plate, and it recentres the tray."
+        },
+        {
+          "name": "mount_3_cradle",
+          "label": "current",
+          "source": { "stl": "cad/stl/tilt_cradle.stl", "translate": [0, 0.5, -59.5] },
+          "caption": "It capped a tilt arm that no longer\nexists. The cradle reaches out past the\ntray to bearings either side of it."
         }
       ]
     }
