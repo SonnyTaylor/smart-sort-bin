@@ -252,6 +252,9 @@ rotated the right way, since the wrong way round gives the same footprint.
 | box_hanger | 1 | 180 about X | 26.0mm | None |
 | electronics_box | 1 | As loaded, open side up | 42.5mm | None |
 
+`tray_mount` is not in the build, but it is worth printing as a test rig, see
+below. It goes **180 about X**, 18.0mm tall, no support.
+
 **Eight of the eleven need no support at all**, which is the payoff from the
 45 degree flanks the sockets were given when they were shelled. Three do:
 
@@ -304,15 +307,40 @@ parts needs the enclosure.
 
 ### What to print first
 
-**One bracket.** It is the smallest structural part at 14.7 cm3, and it is the
-only one that tests all three of the unknowns above at once: an insert hole, a
-socket that has to fit real 20mm conduit, and an M3 lock screw. Melt an insert
-in, push an offcut of conduit into the socket, and drive the lock screw before
-committing the other thirteen pieces.
+**It depends on what you have in your hands**, because a test print is only
+worth printing if there is something to check it against.
 
-If those three fit, the rest follows in assembly order: plate, the other two
-brackets, two clamps, camera clamp, then the head parts, then the tray, then
-the box and hanger last since neither holds anything up.
+**Once the conduit and the inserts arrive, print one bracket.** It is the
+smallest structural part at 14.7 cm3 and the only one that tests three of the
+unknowns above at once: an insert hole, a socket that has to fit real 20mm
+conduit, and an M3 lock screw. Melt an insert in, push an offcut of conduit
+into the socket, and drive the lock screw before committing the other thirteen
+pieces. If those fit, the rest follows in assembly order.
+
+**Before then, the bracket proves nothing**, and neither do the clamps, the
+camera clamp, the plate, the box or the hanger. Every one of them is checked
+against the bin, the conduit or the inserts. What can be checked today is
+whatever meets the **servos, the horns and the webcam**, since those are
+already here:
+
+| Print | cm3 | What it settles |
+| :--- | ---: | :--- |
+| camera head | 18.8 | The webcam's 1/4-20 screws into the side arm. No support, quick |
+| tilt yoke | 39.3 | The tilt servo's flange pattern, which is the one number in this document most likely to be wrong, plus the 25.5mm horn pocket |
+| tray + tray mount | 48.6 | A working tip test on the bought pan-tilt, before any of the new head exists |
+
+**The tray and the tray mount are the interesting pair.** `tray_mount` is a
+superseded part and is not in the final build, but it is the adapter between
+the tray's four bolts and the bought MakerWorld pan-tilt, so printing the two
+together puts a real tray on a real moving head now. Measured off the meshes:
+the tray's four 3.4mm holes and the mount's four 4.2mm insert holes are both on
+a 32 x 15mm pattern, and the mount takes two more screws 15mm apart underneath
+into the bought bracket.
+
+That rig tips actual rubbish, which is the only thing on this list that tests
+whether the design works rather than whether it fits. It needs four brass
+inserts in the mount, so if those have not arrived, dry-fit it and hold it
+together for the test rather than waiting.
 
 ### How much filament
 
