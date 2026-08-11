@@ -1,0 +1,152 @@
+{
+  "_comment": [
+    "Every version of every part that gets rendered for the portfolio.",
+    "",
+    "Add a stage by adding an entry to a family's 'stages' list. A stage's",
+    "source is one of:",
+    "  {\"commit\": \"abc1234\", \"file\": \"cad/tray.scad\", \"part\": \"tray\"}",
+    "      -> pulls that file out of git history at that commit",
+    "  {\"file\": \"cad/tray.scad\", \"part\": \"tray\"}",
+    "      -> uses the working copy, i.e. whatever is on disk right now",
+    "  {\"stl\": \"cad/stl/tray_mount.stl\"}",
+    "      -> renders an STL export, for parts that only exist in Fusion",
+    "",
+    "'camera' is shared by every stage in a family, so the parts stay",
+    "comparable in size to each other. It is OpenSCAD's gimbal camera:",
+    "translate x,y,z then rotate x,y,z then distance. Raise the distance to",
+    "zoom out. Run with -WhatIf to list what would be rendered."
+  ],
+
+  "openscad": "C:/Program Files/OpenSCAD/openscad.exe",
+  "imgsize": [1400, 1050],
+  "colorscheme": "Tomorrow",
+  "out_images": "portfolio/images/cad_evolution",
+
+  "families": [
+    {
+      "key": "plate",
+      "title": "Hub plate",
+      "camera": "0,0,0,55,0,25,620",
+      "stages": [
+        {
+          "name": "plate_1_v1",
+          "label": "v1",
+          "source": { "commit": "c1dc4bb", "file": "cad/splitter_hub.scad", "part": "hub" },
+          "caption": "One piece, pipe sockets hanging\nunderneath. Needs supports through\nevery bore, and scarring wrecks the fit."
+        },
+        {
+          "name": "plate_2_split",
+          "label": "v2",
+          "source": { "commit": "b328afd", "file": "cad/splitter_hub.scad", "part": "plate" },
+          "caption": "Split into a flat plate plus three\nbolt-on brackets, so every part prints\nin its natural orientation."
+        },
+        {
+          "name": "plate_3_spoked",
+          "label": "v3",
+          "source": { "commit": "7f4b867", "file": "cad/splitter_hub.scad", "part": "plate" },
+          "caption": "Spoked wheel instead of a solid disc.\nWhole tripod drops from 160-207g\nof filament to 84-109g."
+        },
+        {
+          "name": "plate_4_final",
+          "label": "current",
+          "source": { "file": "cad/splitter_hub.scad", "part": "plate" },
+          "caption": "Bore opened 124.5 to 125.6mm after\nmeasuring the real pan-tilt base.\nThe tabs had been 0.25mm too tight."
+        }
+      ]
+    },
+    {
+      "key": "bracket",
+      "title": "Leg bracket",
+      "camera": "0,0,0,55,0,25,190",
+      "stages": [
+        {
+          "name": "bracket_1_v1",
+          "label": "v1",
+          "source": { "commit": "b328afd", "file": "cad/splitter_hub.scad", "part": "bracket" },
+          "caption": "The pipe lock screw enters from the side,\nwhere the taper has pulled the wall in.\nThat leaves 1.56mm of thread."
+        },
+        {
+          "name": "bracket_2_final",
+          "label": "current",
+          "source": { "file": "cad/splitter_hub.scad", "part": "bracket" },
+          "caption": "Lock screw moved to a pad on top:\n6.2mm of thread and room for a brass\ninsert with 2.9mm of plastic around it."
+        }
+      ]
+    },
+    {
+      "key": "clamp",
+      "title": "Bin clamp",
+      "camera": "0,0,0,55,0,25,260",
+      "stages": [
+        {
+          "name": "clamp_1_v1",
+          "label": "v1",
+          "source": { "commit": "c1dc4bb", "file": "cad/splitter_hub.scad", "part": "clamp" },
+          "caption": "Solid barrel and a flat jaw. Only grips\na wall it meets square on, and two of\nthe three legs never do."
+        },
+        {
+          "name": "clamp_2_rib",
+          "label": "v2",
+          "source": { "commit": "7f4b867", "file": "cad/splitter_hub.scad", "part": "clamp" },
+          "caption": "Jaw becomes a vertical rounded rib that\ntouches along a line. A line plus a point\npinches at any angle. Foot deleted."
+        },
+        {
+          "name": "clamp_3_narrow",
+          "label": "v3",
+          "source": { "commit": "d3abc4e", "file": "cad/splitter_hub.scad", "part": "clamp" },
+          "caption": "Outer post narrowed to 9mm. A wall\narriving at an angle sweeps sideways\nand a wide post fouls it first."
+        },
+        {
+          "name": "clamp_4_final",
+          "label": "current",
+          "source": { "file": "cad/splitter_hub.scad", "part": "clamp" },
+          "caption": "Pipe lock moved to a pad on top,\nand the jaw resized for a 6mm wall\nafter the thumbscrew calculation was fixed."
+        }
+      ]
+    },
+    {
+      "key": "tray",
+      "title": "Sorting tray",
+      "camera": "0,0,0,55,0,25,520",
+      "stages": [
+        {
+          "name": "tray_1_rim",
+          "label": "v1",
+          "source": { "commit": "3790316", "file": "cad/tray.scad", "part": "tray" },
+          "caption": "Curved tray with a rim around it.\nThe rim traps the item at exactly the\nmoment the tray is trying to tip it out."
+        },
+        {
+          "name": "tray_2_saddle",
+          "label": "v2",
+          "source": { "commit": "21cfca6", "file": "cad/tray.scad", "part": "tray" },
+          "caption": "Rimless saddle. Sides curl up 10mm to\nroll the item back to the middle, ends\ncurl down 5mm so it leaves cleanly."
+        },
+        {
+          "name": "tray_3_final",
+          "label": "current",
+          "source": { "file": "cad/tray.scad", "part": "tray" },
+          "caption": "The mounting boss stood 1mm proud,\na plateau where the item lands, and it\nburied the bolt heads. Now capped flush."
+        }
+      ]
+    },
+    {
+      "key": "mount",
+      "title": "Tray mount",
+      "camera": "0,0,0,55,0,25,230",
+      "stages": [
+        {
+          "name": "mount_1_spacer",
+          "label": "v1",
+          "source": { "file": "cad/tray.scad", "part": "spacer" },
+          "caption": "A plain 43 x 26 x 15mm block with four\nholes. The tilt arm offers two holes 15mm\napart, so nothing lines up at all."
+        },
+        {
+          "name": "mount_2_cap",
+          "label": "current",
+          "source": { "stl": "cad/stl/tray_mount.stl" },
+          "caption": "A cap whose socket drops over the arm,\nso the arm resists twisting, not the screws.\n6mm plate, and it recentres the tray."
+        }
+      ]
+    }
+  ]
+}

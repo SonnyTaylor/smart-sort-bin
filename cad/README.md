@@ -4,6 +4,9 @@ The mechanical parts. **Autodesk Fusion is the source of truth.** The models
 live in the Autodesk project *Systems engineerring*; everything in this folder
 is exported from there.
 
+Changing a part? Read [AGENTS.md](AGENTS.md) first. It covers when a change is
+worth a picture and when it is not.
+
 ## The parts
 
 | Fusion document | Qty | Size | What it does |
@@ -24,7 +27,8 @@ tracker, and two MG996R servos.
 | :--- | :--- |
 | `stl/` | **Print from here.** Exported from Fusion at high refinement |
 | `step/` | Solid models for anyone who wants to open the parts elsewhere |
-| `*.scad` | Superseded. The OpenSCAD source the hub and tray were originally developed in, kept as the design record |
+| `renders/` | Makes the design-evolution pictures for the portfolio, by rendering old versions of parts out of git history. See [`renders/README.md`](renders/README.md) |
+| `*.scad` | The OpenSCAD source the hub and tray were originally developed in. No longer the design source, but **do not delete**: the version history in these files is what `renders/` draws the superseded designs from |
 | `fusion/`, `csg_to_step.py` | Superseded. The old pipeline that got OpenSCAD parts into Fusion, before the parts were rebuilt natively |
 
 `stl/tray_spacer.stl` and `stl/spacer.stl` are the old spacer block, replaced by
@@ -36,8 +40,13 @@ Fusion, with the part document open: **Utilities > Make > 3D Print** for STL, or
 **File > Export** for STEP. Save into `stl/` and `step/` with the same name, and
 commit, so the repo always matches what is in Fusion.
 
-Renders for the portfolio come out of the assembly document and land in
-`../portfolio/images/cad_*.png`.
+Renders of the finished parts come out of the Fusion assembly document and land
+in `../portfolio/images/cad_*.png`.
+
+Renders showing how a part **changed over time** are made by
+[`renders/`](renders/README.md) instead, and land in
+`../portfolio/images/cad_evolution/`. Those are generated from git history, so
+after changing a part, re-run them and the "current" panel updates itself.
 
 ## Cutting the pipes
 
