@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="VCE Units 3 and 4: Data Analytics - School-assessed Task" company="VCE Applied Computing" webLink="http://" view-date="2025-07-01" view-index="0" gantt-divider-location="615" resource-divider-location="300" version="3.3.3316" locale="en_AU">
+    <description><![CDATA[Problem-solving methodology for VCE Applied Computing Units 3 and 4 School-assessed Task]]></description>
+    <view zooming-state="default:8" id="gantt-chart">
+        <field id="tpd3" name="Name" width="353" order="0"/>
+        <field id="tpd4" name="Begin date" width="130" order="1"/>
+        <field id="tpd5" name="End date" width="131" order="2"/>
+        <field id="tpd15" name="Notes" width="20" order="3"/>
+        <option id="filter.completedTasks" value="false"/>
+        <option id="filter.dueTodayTasks" value="false"/>
+        <option id="filter.overdueTasks" value="false"/>
+        <option id="filter.inProgressTodayTasks" value="false"/>
+        <timeline><![CDATA[81]]></timeline>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Name" width="209" order="0"/>
+        <field id="1" name="Default role" width="87" order="1"/>
+    </view>
+    <!-- -->
+    <calendars>
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="1" mon="0" tue="0" wed="0" thu="0" fri="0" sat="1"/>
+            <only-show-weekends value="false"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="0" uid="e4b97fd0d6534050873613f2cdb2db3e" name="Analysis Phase" meeting="false" start="2025-03-24" duration="33" complete="100" expand="true">
+            <task id="70" uid="bf11db680ca64ff196758852715c8da2" name="Create a Gantt chart" meeting="false" start="2025-03-24" duration="2" complete="100" expand="true"/>
+            <task id="69" uid="74fa0d10c24b4a42bc8bbb7ace3b0537" name="Document a Problem" meeting="false" start="2025-03-26" duration="3" complete="100" expand="true">
+                <depend id="84" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="84" uid="a518f6eb49b64022b1efe58d09bc306c" name="Technical Environment" meeting="false" start="2025-03-31" duration="2" complete="100" expand="true">
+                <depend id="72" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="72" uid="4cbca403d3ac4bfa87f29c9338a69fd8" name="Data Collection" meeting="false" start="2025-04-02" duration="3" complete="100" expand="true">
+                <depend id="74" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="74" uid="05d5da2d4a424ffb8bf7fecc62d99422" name="Analyse data collection" meeting="false" start="2025-04-07" duration="4" complete="100" expand="true"/>
+            <task id="75" uid="82e5651e1e924e8c8fde07ec95e1ea1c" name="Use Case Diagram" meeting="false" start="2025-04-14" duration="2" complete="100" expand="true"/>
+            <task id="77" uid="00f68135e5854b2dba57ace45ef2f829" name="Context Diagram" meeting="false" start="2025-04-16" duration="2" complete="100" expand="true"/>
+            <task id="76" uid="d220c9b2e845453f8a70fff335ff431d" name="Data Flow Diagram" meeting="false" start="2025-04-18" duration="3" complete="100" expand="true"/>
+            <task id="80" uid="bce31b3d12474991a4e03e7d55c2448e" name="Functional and Non-functional Requirements" meeting="false" start="2025-04-23" duration="3" complete="100" expand="true"/>
+            <task id="78" uid="a696b0e6b65b4eefab1348d47808d4f3" name="Explain use of selected data collection" meeting="false" start="2025-04-28" duration="2" complete="100" expand="true"/>
+            <task id="81" uid="7d099388ef1942c8a096781929fb92ea" name="Scope" meeting="false" start="2025-04-30" duration="1" complete="100" expand="true"/>
+            <task id="82" uid="97e862c361584cb9bc2af43e9949fb16" name="Constraints" meeting="false" start="2025-05-01" duration="1" complete="100" expand="true"/>
+            <task id="83" uid="d56057db9f42423284a866524783a219" name="Intended Audience" meeting="false" start="2025-05-02" duration="1" complete="100" expand="true"/>
+            <task id="85" uid="9c6121d53a254445a9555e59eb1350a8" name="Follow up questions" meeting="false" start="2025-05-05" duration="2" complete="100" expand="true"/>
+            <task id="71" uid="77f1077adbd54be58cea2a1de25cfa82" name="Explain why project needs to be monitored." meeting="false" start="2025-05-07" duration="1" complete="100" expand="true"/>
+            <task id="116" uid="dbc9b3bc9f2a41d6a5df233823ec65b0" name="Analysis Phase Complete" meeting="true" start="2025-05-08" duration="0" complete="0" expand="true"/>
+        </task>
+        <task id="51" uid="01203998a0a44e54ab8344af41332452" name="Design Phase" color="#000000" meeting="false" start="2025-05-08" duration="14" complete="64" expand="true">
+            <task id="86" uid="72b2192e68ab4e338d053ea17a09a05b" name="Mood Board" meeting="false" start="2025-05-08" duration="2" complete="100" expand="true"/>
+            <task id="87" uid="cd3deb691db54a3695ea74b443a895c2" name="Mind Map" meeting="false" start="2025-05-12" duration="2" complete="100" expand="true"/>
+            <task id="88" uid="75998359f04d4437b567e7ea582e6419" name="GUI Sketches" meeting="false" start="2025-05-14" duration="3" complete="100" expand="true"/>
+            <task id="89" uid="0543a622d7784203baa5c0329aeeec14" name="Evaluation Criteria" meeting="false" start="2025-05-19" duration="2" complete="100" expand="true"/>
+            <task id="90" uid="e2ae6472ec9c48329f150b238029bfa8" name="GUI Mockup" meeting="false" start="2025-05-21" duration="5" complete="0" expand="true"/>
+            <task id="117" uid="957c638a392747848c32ebd5fc3167a0" name="Design Phase Complete" meeting="true" start="2025-05-28" duration="0" complete="0" expand="true"/>
+        </task>
+        <task id="56" uid="de9ac1b6776143f2b659b13845739d08" name="Development Phase" color="#000000" meeting="false" start="2025-05-28" duration="33" complete="0" expand="true">
+            <task id="91" uid="914587a7e9894aad83fa48fa430e9248" name="Design principles &amp; UX" meeting="false" start="2025-05-28" duration="3" complete="0" expand="true"/>
+            <task id="92" uid="98b9e975966240d0a8c87e164b53f5ac" name="Design thinking (designs)" meeting="false" start="2025-06-02" duration="4" complete="0" expand="true"/>
+            <task id="93" uid="61ca54d3e16b4c83b20910c55e895e24" name="Code features" meeting="false" start="2025-06-04" duration="3" complete="0" expand="true">
+                <depend id="94" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="94" uid="f89c9ec007974eb385500ff41794ca36" name="Data types &amp; structures" meeting="false" start="2025-06-09" duration="4" complete="0" expand="true"/>
+            <task id="95" uid="dcf475b3a46c4adc90838394e622da05" name="Naming conventions" meeting="false" start="2025-06-11" duration="2" complete="0" expand="true"/>
+            <task id="96" uid="e62d5dd56e62431d8c60716843e91126" name="Internal documentation" meeting="false" start="2025-06-13" duration="4" complete="0" expand="true"/>
+            <task id="97" uid="c5230f091bbf4a838ad52afb7ea337cf" name="Validation techniques" meeting="false" start="2025-06-17" duration="3" complete="0" expand="true"/>
+            <task id="99" uid="bcf8b644db4241c5b09efb6d7be8f488" name="Debugging &amp; testing" meeting="false" start="2025-06-20" duration="5" complete="0" expand="true"/>
+            <task id="105" uid="b351399202cb4f6686cacadc98430c51" name="Design thinking (solution)" meeting="false" start="2025-06-25" duration="4" complete="0" expand="true"/>
+            <task id="112" uid="z1" name="Beta test plan &amp; scenarios" meeting="false" start="2025-06-30" duration="4" complete="0" expand="true"/>
+            <task id="113" uid="z2" name="Conduct beta testing" meeting="false" start="2025-07-03" duration="3" complete="0" expand="true"/>
+            <task id="114" uid="z3" name="Beta test results" meeting="false" start="2025-07-07" duration="3" complete="0" expand="true"/>
+            <task id="115" uid="z4" name="Recommend modifications" meeting="false" start="2025-07-09" duration="3" complete="0" expand="true"/>
+            <task id="118" uid="8add02e9e0754315b01a0e7358797943" name="Development Phase Complete" meeting="true" start="2025-07-14" duration="0" complete="0" expand="true"/>
+        </task>
+        <task id="62" uid="57635e0bd1b74ab1aef4515afc2e177e" name="Evaluation Phase" color="#000000" meeting="false" start="2025-07-14" duration="10" complete="0" expand="false">
+            <task id="106" uid="c749a1e246854823ac0a2766826d94a3" name="Evaluate efficiency &amp; effectiveness" meeting="false" start="2025-07-14" duration="4" complete="0" expand="true"/>
+            <task id="109" uid="6199778627c14b3690d624070612a339" name="Doc critical thinking (evaluation)" meeting="false" start="2025-07-16" duration="4" complete="0" expand="true"/>
+            <task id="110" uid="30aaebd3b92441b2b5eefc5b1416bd5c" name="Modify project plan documentation" meeting="false" start="2025-07-21" duration="3" complete="0" expand="true"/>
+            <task id="111" uid="37e3040486c24a949fef6b35a45c8559" name="Assess project plan effectiveness" meeting="false" start="2025-07-23" duration="3" complete="0" expand="true"/>
+            <task id="119" uid="4ec9bd538270409a8612321c0b211d14" name="Evaluation Phase and Project Complete" meeting="true" start="2025-07-28" duration="0" complete="0" expand="true"/>
+        </task>
+    </tasks>
+    <resources/>
+    <allocations/>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+</project>

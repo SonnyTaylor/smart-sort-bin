@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="VCE Units 3 and 4: Systems Engineering - School-assessed Task (AI Smart Bin)" company="VCE Systems Engineering" webLink="http://" view-date="2026-05-01" view-index="0" gantt-divider-location="615" resource-divider-location="300" version="3.3.3316" locale="en_AU">
+    <description><![CDATA[Systems engineering design process for the AI Smart Bin - VCE Systems Engineering Units 3 and 4 School-assessed Task]]></description>
+    <view zooming-state="default:8" id="gantt-chart">
+        <field id="tpd3" name="Name" width="353" order="0"/>
+        <field id="tpd4" name="Begin date" width="130" order="1"/>
+        <field id="tpd5" name="End date" width="131" order="2"/>
+        <field id="tpd15" name="Notes" width="20" order="3"/>
+        <option id="filter.completedTasks" value="false"/>
+        <option id="filter.dueTodayTasks" value="false"/>
+        <option id="filter.overdueTasks" value="false"/>
+        <option id="filter.inProgressTodayTasks" value="false"/>
+        <timeline><![CDATA[81]]></timeline>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Name" width="209" order="0"/>
+        <field id="1" name="Default role" width="87" order="1"/>
+    </view>
+    <!-- -->
+    <calendars>
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="1" mon="0" tue="0" wed="0" thu="0" fri="0" sat="1"/>
+            <only-show-weekends value="false"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="1000" uid="b099fcda33043cf71022921fd778959d" name="Criterion 1: Design Brief &amp; Evaluation Criteria" color="#000000" meeting="false" start="2026-05-04" duration="17" complete="100" expand="true">
+            <task id="1" uid="93844a64684402e2ea925308c1853f81" name="Create the project Gantt chart" meeting="false" start="2026-05-04" duration="1" complete="100" expand="true">
+                <depend id="2" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="2" uid="a8e3f1a8c31373760feb44422778f7c9" name="Define the ethical problem (with data)" meeting="false" start="2026-05-05" duration="2" complete="100" expand="true">
+                <depend id="3" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="3" uid="497db8b49d84e5f293b34bdaa3131d5d" name="UN Sustainable Development Goals alignment" meeting="false" start="2026-05-07" duration="1" complete="100" expand="true">
+                <depend id="4" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="4" uid="7ffa0ca8e4fdd7efd113923d1087ddd0" name="Context analysis (location, users, conditions)" meeting="false" start="2026-05-08" duration="1" complete="100" expand="true">
+                <depend id="5" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="5" uid="4685318546b85440ebb4ff78c1ff9d5e" name="Constraints (non-negotiable limits)" meeting="false" start="2026-05-11" duration="1" complete="100" expand="true">
+                <depend id="6" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="6" uid="03a4574519d815202109ad72b26d5715" name="Factors influencing creation &amp; use" meeting="false" start="2026-05-12" duration="3" complete="100" expand="true">
+                <depend id="7" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="7" uid="0bc6565f46735e745699f51dc3d70cb9" name="Write the design brief" meeting="false" start="2026-05-15" duration="2" complete="100" expand="true">
+                <depend id="8" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="8" uid="d379ff2d92ecab427434b88d84f73a48" name="Parameters (measurable targets)" meeting="false" start="2026-05-19" duration="2" complete="100" expand="true">
+                <depend id="9" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="9" uid="71ad69892b9ed5603f51ab5e7cd8b48b" name="Evaluation criteria" meeting="false" start="2026-05-21" duration="2" complete="100" expand="true">
+                <depend id="10" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="10" uid="a3475fe821354cbaefa0fd55cd5b7896" name="Systems thinking synthesis" meeting="false" start="2026-05-25" duration="2" complete="100" expand="true">
+                <depend id="11" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="11" uid="ce2ff386e42fa5c00a1f76caab6dbb3b" name="Criterion 1 Complete" meeting="true" start="2026-05-27" duration="0" complete="0" expand="true">
+                <depend id="12" type="2" difference="0" hardness="Strong"/>
+            </task>
+        </task>
+        <task id="2000" uid="56c191dd2c8ec817624cc7b72077d9e1" name="Criterion 2: Design &amp; Development" color="#000000" meeting="false" start="2026-05-27" duration="28" complete="100" expand="true">
+            <task id="12" uid="9d8111166347e2b35ef7cbb87a880cd9" name="Existing systems research" meeting="false" start="2026-05-27" duration="2" complete="100" expand="true">
+                <depend id="13" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="13" uid="365102fff5d6afdea12844b07875a071" name="Existing subsystems research" meeting="false" start="2026-05-29" duration="2" complete="100" expand="true">
+                <depend id="14" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="14" uid="506e4c45ece591cf7ba4327198913c0a" name="Generate three whole-system design options" meeting="false" start="2026-06-02" duration="3" complete="100" expand="true">
+                <depend id="15" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="15" uid="fd536ed5bc02ba8cedd11219a6023e5b" name="Select &amp; justify preferred option" meeting="false" start="2026-06-05" duration="2" complete="100" expand="true">
+                <depend id="16" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="16" uid="50c773f351ad3442cf5e5c02d5da252a" name="Component research: AI processing" meeting="false" start="2026-06-09" duration="2" complete="100" expand="true">
+                <depend id="17" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="17" uid="5081ec0b2feb0e6992bdaf089cbfb3fe" name="Component research: servos &amp; sensors" meeting="false" start="2026-06-11" duration="2" complete="100" expand="true">
+                <depend id="18" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="18" uid="65e2a5101f474540d2e8afc811a53bc0" name="Component research: power supply" meeting="false" start="2026-06-15" duration="2" complete="100" expand="true">
+                <depend id="19" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="19" uid="eb6c795fce48e8cb0646b131bf3a3aed" name="Servo torque calculations (MG996R)" meeting="false" start="2026-06-17" duration="2" complete="100" expand="true">
+                <depend id="20" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="20" uid="8595ed511da196e3dbf88bd0c7c28f8c" name="Input-Process-Output (IPO) diagrams" meeting="false" start="2026-06-19" duration="2" complete="100" expand="true">
+                <depend id="21" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="21" uid="844cec39ef62e49de1d0d8e089fe1263" name="Control system flowchart (closed loop)" meeting="false" start="2026-06-23" duration="2" complete="100" expand="true">
+                <depend id="22" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="22" uid="b861bf0e6afd82fd5fd847bb5a66a349" name="Control software - main loop (Python)" meeting="false" start="2026-06-25" duration="4" complete="100" expand="true">
+                <depend id="23" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="23" uid="03aa4f5b39b3ab9be48fc8de33d3e3a7" name="Circuit schematic &amp; wiring diagram" meeting="false" start="2026-07-01" duration="3" complete="100" expand="true">
+                <depend id="24" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="24" uid="da3eb80a3d022679cddae4c600602872" name="Criterion 2 Complete" meeting="true" start="2026-07-06" duration="0" complete="0" expand="true">
+                <depend id="25" type="2" difference="0" hardness="Strong"/>
+            </task>
+        </task>
+        <task id="3000" uid="d2f018293bc36b315cb22cddc3a39898" name="Criterion 3: Work Plan &amp; Risk Management" color="#000000" meeting="false" start="2026-07-06" duration="10" complete="100" expand="true">
+            <task id="25" uid="012ab857d95df264e90f98e7f4ad87d6" name="Parts list &amp; budget" meeting="false" start="2026-07-06" duration="2" complete="100" expand="true">
+                <depend id="26" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="26" uid="d83ac4ac2beb80171310336fe35f6fd7" name="Project schedule &amp; milestones" meeting="false" start="2026-07-08" duration="1" complete="100" expand="true">
+                <depend id="27" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="27" uid="5a6e9a712d584e1523c7109ff045238d" name="Safety &amp; risk assessment" meeting="false" start="2026-07-09" duration="2" complete="100" expand="true">
+                <depend id="28" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="28" uid="f9d9ee60fe72c49cd1e0c95e23b35c6f" name="Build pan-tilt prototype" meeting="false" start="2026-07-13" duration="3" complete="100" expand="true">
+                <depend id="29" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="29" uid="0f0daee554c59e370f9d6b6da4a437d1" name="Prototype wiring &amp; assembly" meeting="false" start="2026-07-16" duration="2" complete="100" expand="true">
+                <depend id="30" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="30" uid="eed931ada7c2bef1639d4dfdc7c5a79b" name="Criterion 3 Complete" meeting="true" start="2026-07-20" duration="0" complete="0" expand="true">
+                <depend id="31" type="2" difference="0" hardness="Strong"/>
+            </task>
+        </task>
+        <task id="4000" uid="2216971e92153c5b3d254cbe0459b039" name="Criterion 4: Testing &amp; Evaluation" color="#000000" meeting="false" start="2026-07-20" duration="16" complete="0" expand="true">
+            <task id="31" uid="d66fe7abc4aa5ff5d67828469ef4c229" name="Full system integration (mount in 60 L bin)" meeting="false" start="2026-07-20" duration="4" complete="0" expand="true">
+                <depend id="32" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="32" uid="26f0f688fc693702afcf228f92a88751" name="Test against evaluation criteria" meeting="false" start="2026-07-24" duration="4" complete="0" expand="true">
+                <depend id="33" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="33" uid="3834793966b8bad3b593222228142967" name="Record &amp; analyse test results" meeting="false" start="2026-07-30" duration="3" complete="0" expand="true">
+                <depend id="34" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="34" uid="8e9df3d4a200f2b2d52f85ecf2421e13" name="Evaluation &amp; recommendations" meeting="false" start="2026-08-04" duration="3" complete="0" expand="true">
+                <depend id="35" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="35" uid="1665fd04bcf7790348067f0c14244ed5" name="Compile &amp; finalise portfolio" meeting="false" start="2026-08-07" duration="2" complete="0" expand="true">
+                <depend id="36" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="36" uid="8704aff682affd77f7661be97511e34b" name="SAT Complete" meeting="true" start="2026-08-11" duration="0" complete="0" expand="true"></task>
+        </task>
+    </tasks>
+    <resources/>
+    <allocations/>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+</project>
