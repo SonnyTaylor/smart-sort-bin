@@ -1,0 +1,11 @@
+{
+  "name": "smart-sort-bin",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "portfolio": "cd portfolio && bun run ai_bin.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
+  }
+}

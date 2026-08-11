@@ -80,12 +80,7 @@ uv.lock
 .env
 .env.*
 
-# Pi Prototype noise
+# Local noise
 .claude/
 node_modules/
-bun.lock
 test_cam.jpg
-current_servo_code.txt
-index.ts
-package.json
-tsconfig.json

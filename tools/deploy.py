@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """
-deploy.py — Push code to the Pi 3B and restart Flask
+Push code to the Pi 3B and restart Flask.
 
-Usage:
-  python deploy.py              # Full deploy (upload + restart)
-  python deploy.py --upload     # Upload only
-  python deploy.py --restart    # Restart only
-  python deploy.py --status     # Check if Flask is running
-  python deploy.py --logs       # Show Flask logs
+Run from anywhere; paths are worked out relative to this file.
+
+  python tools/deploy.py              # Full deploy (upload + restart)
+  python tools/deploy.py --upload     # Upload only
+  python tools/deploy.py --restart    # Restart only
+  python tools/deploy.py --status     # Check if Flask is running
+  python tools/deploy.py --logs       # Show Flask logs
+  python tools/deploy.py --setup      # Install systemd services
+
+Connection details come from the environment: PI_HOST, PI_USER, PI_PASS.
+If PI_PASS is unset you are prompted for it. Nothing is stored in the repo.
 """
 
 import sys
@@ -162,7 +167,8 @@ def cmd_upload(client):
     """Upload files to the Pi."""
     log("Uploading files to Pi...")
 
-    project_root = os.path.dirname(os.path.abspath(__file__))
+    # This script lives in tools/, so the project root is one level up.
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     files = collect_files(project_root)
     sftp = client.open_sftp()
     uploaded = 0

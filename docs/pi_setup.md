@@ -134,16 +134,8 @@ chan.send(os.environ["PI_PASS"] + '\n')
 ```
 
 ### File Structure Locally
-```
-smart-sort-bin/
-├── deploy.py               # Deployment script (directory sync + restart)
-├── docs/
-│   ├── handoff.md          # Main handoff doc
-│   ├── pi_prototype_setup.md
-│   ├── pi_prototype_todo.md
-│   └── pi_cv2_hang.md      # cv2 deadlock issue
-└── src/                    # Same as Pi
-```
+The repo layout is in the [root README](../README.md#project-structure). It is
+not repeated here, because the copy that used to be here went stale.
 
 ### Key Endpoints
 | Endpoint | Method | Description |
@@ -260,12 +252,13 @@ Edit `CATEGORY_PRESETS` in `src/pi/hardware.py` to adjust:
 - Only works over HTTPS or localhost (browser security)
 
 ## Deployment
-Use `deploy.py` to push code to the Pi:
+Use `tools/deploy.py` to push code to the Pi:
 ```bash
-python deploy.py              # Upload + restart
-python deploy.py --status     # Check if running
-python deploy.py --logs       # View Flask logs
+python tools/deploy.py              # Upload + restart
+python tools/deploy.py --status     # Check if running
+python tools/deploy.py --logs       # View Flask logs
 ```
 
 ## Git Branch
 All Pi prototype work lives on the **`pi-prototype`** branch (branched from `master`).
+

@@ -27,9 +27,9 @@
 - [x] Stats view: totals, breakdown, confidence/latency, 24h chart
 - [x] Gamepad + keyboard control routed through throttled sender
 - [x] v4l2 mmap camera streaming (continuous, stable exposure)
-- [x] Directory-sync deploy script (`deploy.py`)
+- [x] Directory-sync deploy script (`tools/deploy.py`)
 - [ ] **Test servo slew smoothing on real hardware (Pi currently unplugged)**
-- [ ] Auto-start Flask on boot (`python deploy.py --setup`)
+- [ ] Auto-start Flask on boot (`python tools/deploy.py --setup`)
 - [ ] Calibrate servo positions for actual bin thirds (use Calibration tab)
 - [ ] Add confidence threshold filter (ignore < 0.7)
 - [ ] Error handling for camera disconnection
@@ -44,7 +44,7 @@
 - [ ] Fine-tune prompt for specific bin geometry
 
 ## Deployment
-- [x] `deploy.py` directory sync (src/pi + src/web, skips venv/db/pycache)
+- [x] `tools/deploy.py` directory sync (src/pi + src/web, skips venv/db/pycache)
 - [x] systemd service files (`src/systemd/`, installed via `--setup`)
 - [x] Documentation updated for the redesigned dashboard
 - [ ] Backup SD card image before demo day
@@ -53,3 +53,4 @@
 - [ ] cv2 import deadlocks on Pi 3B if the apt version is installed — cv2 is no
       longer a dependency, but see `docs/pi_cv2_hang.md` if it comes back
 - [ ] Servo range may need mechanical calibration after webcam is mounted
+

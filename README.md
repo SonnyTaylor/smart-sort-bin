@@ -62,36 +62,26 @@ Open http://127.0.0.1:8080. Everything works except the camera feed and physical
 
 ## Running on the Pi
 
-```bash
-python deploy.py            # upload src/ + restart Flask on the Pi
-python deploy.py --status   # check it's up
-python deploy.py --logs     # tail Flask logs
-python deploy.py --setup    # install systemd services (auto-start on boot)
-```
+Run `python tools/deploy.py` to push the code and restart Flask.
 
-The Pi runs `app.py --pi`, which loads the real hardware layer (`src/pi/hardware.py`). Requires the `pigpiod` daemon for jitter-free servo PWM.
+The Pi runs `app.py --pi`, which loads the real hardware layer (`src/pi/hardware.py`) and needs the `pigpiod` daemon for jitter-free servo PWM.
 
-See [`docs/pi_prototype_setup.md`](docs/pi_prototype_setup.md) for wiring, Pi configuration, and troubleshooting.
+The other flags, the wiring, the OS setup and the troubleshooting are all in [`docs/pi_setup.md`](docs/pi_setup.md), which is the one place the deploy commands are written out in full.
 
 ## Project Structure
 
 ```
 smart-sort-bin/
-├── deploy.py             # Push code to the Pi + restart
 ├── portfolio/            # The VCE PowerPoint. ai_bin.js generates it
-├── docs/                 # Build log, mechanical design, Pi setup notes
-├── src/
+├── src/                  # The code that runs the bin
 │   ├── pi/hardware.py    # Servos (pigpio + slew smoothing), camera, LED
 │   ├── systemd/          # Service files for auto-start
-│   └── web/
-│       ├── app.py        # Flask API + dashboard
-│       ├── animations.py # Server-side keyframe playback engine
-│       ├── database.py   # SQLite: history, calibration, sequences, providers
-│       ├── llm.py        # VLM provider abstraction + waste prompt
-│       ├── templates/pi/ # Dashboard templates
-│       └── static/       # app.css + JS modules
+│   ├── esp32/            # Dead firmware from the old two-board design
+│   └── web/              # Flask app, dashboard, database, VLM providers
 ├── cad/                  # Fusion exports, plus the design-evolution renders
-└── PLAN.md               # Original project plan
+├── docs/                 # Build log, mechanical design, Pi setup notes
+├── tools/                # deploy.py, check_docs.py
+└── PLAN.md               # Original project plan, frozen
 ```
 
 ## Documentation
@@ -101,15 +91,18 @@ The VCE portfolio is a PowerPoint, generated from
 is the up-to-date record of the risk assessment, budget, testing, iteration
 history and evaluation, and it has been submitted once already.
 
-The rest:
+Everything else has one home, and this is the list of homes:
 
-- [Build log](docs/build_log.md): what has actually been built, dated
-
+- [Build log](docs/build_log.md): what has actually been built, dated. **Start here**
 - [Mechanical Design](docs/mechanical_design.md): how the sorting mechanism works, with verified clearances
 - [Mechanical Iteration Log](docs/mechanical_iteration_log.md): eight faults found and corrected before printing
 - [CAD](cad/README.md): parts, hardware list and assembly order
 - [Design evolution renders](cad/renders/README.md): how the old versions of each part get drawn from git history
-- [Pi Setup](docs/pi_prototype_setup.md): wiring, OS config, troubleshooting
-- [Handoff](docs/handoff.md): current state, how to deploy, next tasks
-- [Project Plan](PLAN.md): original architecture, mechanism design, AI strategy
+- [Pi Setup](docs/pi_setup.md): wiring, OS config, deploy commands, troubleshooting
+- [Pi TODO](docs/pi_todo.md): what is left to do
+- [Project Plan](PLAN.md): the original plan, frozen as a historical record
+
+If you are an AI agent working in this repo, read [AGENTS.md](AGENTS.md) first.
+It has the rules that stop these documents drifting apart, and
+`python tools/check_docs.py` enforces them.
 

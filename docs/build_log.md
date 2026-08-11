@@ -1,7 +1,7 @@
 # Build log
 
 A dated record of what has actually been built, so the portfolio can be written
-from fact rather than memory. [pi_prototype_todo.md](pi_prototype_todo.md) is
+from fact rather than memory. [pi_todo.md](pi_todo.md) is
 the list of what is left; this is the list of what happened.
 
 **Add a new entry at the top when something gets built, printed, wired or
@@ -90,3 +90,4 @@ than the tidy result.
   how many landed in the right sector. What tilt speed. How long a sort took.
 - **Note anything that surprised you.** That is where the design reasoning in
   the write-up comes from.
+
