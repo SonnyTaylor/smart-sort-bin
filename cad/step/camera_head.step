@@ -10,7 +10,7 @@ FILE_DESCRIPTION(
 
 FILE_NAME(
 /* name */ 'camera_head.step',
-/* time_stamp */ '2026-08-11T12:07:02+10:00',
+/* time_stamp */ '2026-08-11T12:15:00+10:00',
 /* author */ (''),
 /* organization */ (''),
 /* preprocessor_version */ 'ST-DEVELOPER v20.1',
@@ -421,16 +421,16 @@ SOLID_ANGLE_UNIT()
 #369=SHAPE_REPRESENTATION('',(#221),#361);
 #370=PRODUCT_DEFINITION_CONTEXT('part definition',#375,'design');
 #371=PRODUCT_DEFINITION('Smart Bin - camera head',
-'Smart Bin - camera head v1',#372,#370);
+'Smart Bin - camera head v2',#372,#370);
 #372=PRODUCT_DEFINITION_FORMATION('',$,#377);
-#373=PRODUCT_RELATED_PRODUCT_CATEGORY('Smart Bin - camera head v1',
-'Smart Bin - camera head v1',(#377));
+#373=PRODUCT_RELATED_PRODUCT_CATEGORY('Smart Bin - camera head v2',
+'Smart Bin - camera head v2',(#377));
 #374=APPLICATION_PROTOCOL_DEFINITION('international standard',
 'automotive_design',2009,#375);
 #375=APPLICATION_CONTEXT(
 'Core Data for Automotive Mechanical Design Process');
 #376=PRODUCT_CONTEXT('part definition',#375,'mechanical');
-#377=PRODUCT('Smart Bin - camera head','Smart Bin - camera head v1',$,(#376));
+#377=PRODUCT('Smart Bin - camera head','Smart Bin - camera head v2',$,(#376));
 #378=PRESENTATION_STYLE_ASSIGNMENT((#379));
 #379=SURFACE_STYLE_USAGE(.BOTH.,#380);
 #380=SURFACE_SIDE_STYLE('',(#381));

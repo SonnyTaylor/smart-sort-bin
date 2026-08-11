@@ -27,9 +27,10 @@ The electronics and software half of the prototype runs.
 
 ### Designed but not made
 
-**None of the five printed parts exist yet.** Hub plate, three leg brackets,
-three bin clamps, sorting tray and tray mount are modelled in Fusion, verified
-against calculated geometry, and not printed.
+**None of the seven printed parts exist yet.** Hub plate, three leg brackets,
+two bin clamps, one camera clamp, camera head, sorting tray and tray mount are
+modelled in Fusion, verified against calculated geometry, and not printed. That
+is seven designs and ten pieces off the printer.
 
 Also not yet bought or made: the 60L bin, the three lengths of 20mm PVC
 conduit, the M3 brass inserts, and the bags and bulldog clips.

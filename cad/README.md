@@ -53,7 +53,7 @@ tap it by hand for now, or wait for the part to be updated.
 
 Open the assembly document and run
 [`renders/export_from_fusion.py`](renders/export_from_fusion.py) inside Fusion.
-It writes all five parts to `stl/` and `step/` in one go, and refuses to run if
+It writes all seven parts to `stl/` and `step/` in one go, and refuses to run if
 the assembly is sitting on an out-of-date version of a part.
 
 By hand, if you prefer: **Utilities > Make > 3D Print** for STL, **File >

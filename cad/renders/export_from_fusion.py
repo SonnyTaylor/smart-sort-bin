@@ -1,4 +1,4 @@
-"""Export the five printed parts out of Fusion into cad/stl/ and cad/step/.
+"""Export the seven printed parts out of Fusion into cad/stl/ and cad/step/.
 
 Fusion is the design source of truth, so the "current" panel of every evolution
 render is drawn from these exports rather than from the old OpenSCAD files.
@@ -29,6 +29,8 @@ PARTS = {
     "hub plate": "plate",
     "leg bracket": "bracket",
     "bin clamp": "clamp",
+    "camera clamp": "camera_clamp",
+    "camera head": "camera_head",
     "sorting tray": "tray",
     "tray mount": "tray_mount",
 }

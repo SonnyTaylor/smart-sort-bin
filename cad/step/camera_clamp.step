@@ -10,7 +10,7 @@ FILE_DESCRIPTION(
 
 FILE_NAME(
 /* name */ 'camera_clamp.step',
-/* time_stamp */ '2026-08-11T11:53:38+10:00',
+/* time_stamp */ '2026-08-11T12:14:59+10:00',
 /* author */ (''),
 /* organization */ (''),
 /* preprocessor_version */ 'ST-DEVELOPER v20.1',
@@ -1085,16 +1085,16 @@ SOLID_ANGLE_UNIT()
 #1032=SHAPE_REPRESENTATION('',(#638),#1024);
 #1033=PRODUCT_DEFINITION_CONTEXT('part definition',#1038,'design');
 #1034=PRODUCT_DEFINITION('Smart Bin - camera clamp',
-'Smart Bin - camera clamp v6',#1035,#1033);
+'Smart Bin - camera clamp v7',#1035,#1033);
 #1035=PRODUCT_DEFINITION_FORMATION('',$,#1040);
-#1036=PRODUCT_RELATED_PRODUCT_CATEGORY('Smart Bin - camera clamp v6',
-'Smart Bin - camera clamp v6',(#1040));
+#1036=PRODUCT_RELATED_PRODUCT_CATEGORY('Smart Bin - camera clamp v7',
+'Smart Bin - camera clamp v7',(#1040));
 #1037=APPLICATION_PROTOCOL_DEFINITION('international standard',
 'automotive_design',2009,#1038);
 #1038=APPLICATION_CONTEXT(
 'Core Data for Automotive Mechanical Design Process');
 #1039=PRODUCT_CONTEXT('part definition',#1038,'mechanical');
-#1040=PRODUCT('Smart Bin - camera clamp','Smart Bin - camera clamp v6',
+#1040=PRODUCT('Smart Bin - camera clamp','Smart Bin - camera clamp v7',
 $,(#1039));
 #1041=PRESENTATION_STYLE_ASSIGNMENT((#1042));
 #1042=SURFACE_STYLE_USAGE(.BOTH.,#1043);
