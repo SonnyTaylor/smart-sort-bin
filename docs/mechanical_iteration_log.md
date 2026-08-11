@@ -29,6 +29,7 @@ end.
 | 12 | Tilt servo's flange fouled the yoke's rib | Servo cannot drop into its tower | Servo moved 1.5mm outboard, rib notched 2.1mm |
 | 13 | Camera head's bolt recess cut into the top face | Webcam hangs under the arm upside down | Recess moved to the underside, thread now points up |
 | 14 | Lightening the sockets opened the camera post bore to the air | Post has no lid and no end stop, so the camera aim is unset | Bottom corners kept where anything is attached below |
+| 15 | Box hanger's thumbscrew entered the face the box hangs on | Screw head trapped behind the box, which then cannot sit flat | Rib and screw swapped ends, screw now enters from inside the bin |
 
 ---
 
@@ -126,6 +127,67 @@ reason those two parts save so much less than the bin clamp.
 bearing. The corner material on the bin clamp and the corner material on the
 camera clamp measure the same and do completely different jobs. The check that
 caught it was a containment probe across the bore, not a look at the number.
+
+---
+
+## Iteration 4: somewhere for the electronics to live
+
+### Implementation
+A box hanging on the outside of the bin rim, on a separate hanger that stays
+with the bin when the box is lifted off. Three positions were considered and the
+reasoning for the one chosen is in
+[mechanical_design.md](mechanical_design.md).
+
+The box was drawn as **one** part first, with the rim hook built into its back
+wall. That was rejected on printing rather than on strength. An open-topped box
+prints open side up with every wall vertical; a hook over the rim opens
+downward, so its inner leg would have started in mid air and needed support
+material through the slot the whole fit depends on. Splitting it lets the box
+print open side up and the hanger print standing, where the slot's flat roof is
+a 15mm bridge between two legs rather than an overhang.
+
+### Evaluation
+The split cost 18.1 cm3 for a second part and paid for it three times: the slot
+prints clean, the box lifts off without disturbing the jaw's setting, and the
+thumbscrew stays reachable, which fault 15 below turned out to depend on.
+
+The box is the largest part in the project at 62.0 cm3, against 30.9 for the
+tray and 28.3 for the hub plate. Cutting the walls to a frame took it from 85.2
+to 62.0 cm3, which is 27%, and vents the Pi at the same time. That is the same
+argument as iteration 3: a box is a shape you get by extruding a rectangle, and
+most of what it encloses is doing no work.
+
+One number is an assumption rather than a measurement. The inside is 185mm long
+because a Pi 3B at 85mm and a **half-size** 83mm breadboard have to lie side by
+side, and the breadboard was sized off the prototype photograph, not with
+calipers. A full-size 165mm board would not fit and the box would have to grow
+to 270mm, which would no longer clear the leg clamps on that wall.
+
+---
+
+## Fault 15: the thumbscrew was on the face the box hangs on
+
+**Found** while working out the order the parts go together, before the hanger
+was exported.
+
+**Cause.** The hanger began as a copy of the bin clamp, which puts its rounded
+rib inside the bin and takes its thumbscrew from the outside. On the clamp
+nothing is ever attached to that outer face. On the hanger, that outer face is
+precisely what the box hangs against.
+
+**Consequence.** The screw head would have been sandwiched between the hanger
+and the box's back wall. The box would have sat 3 to 5mm proud and rocked on the
+screw head, and the screw could not have been reached at all without lifting the
+box off first.
+
+**Fix.** The rib moved to the outer leg and the screw now enters through the
+inner leg, from inside the bin. The outer face is left flat, which is what the
+box needs, and the screw is set once before the bags go in.
+
+**What it changes about the method.** Copying a proven detail carries its
+assumptions with it. The clamp's screw direction was free because nothing was
+ever bolted to that face; the hanger's is not. Nothing about the clamp says so,
+because on the clamp it never mattered.
 
 ---
 

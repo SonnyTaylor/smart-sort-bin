@@ -17,7 +17,14 @@ is exported from there.
 | Smart Bin - tilt yoke | 1 | 60 x 116.5 x 62.5 | Turns on the ring, carries the tilt servo out past the tray |
 | Smart Bin - tilt cradle | 1 | 52 x 92 x 31 | Tips the tray about the tilt axis |
 | Smart Bin - sorting tray | 1 | 120 x 90 x 18 | The saddle the rubbish lands on |
+| Smart Bin - box hanger | 1 | 33 x 44 x 26 | Hooks over the bin rim and carries the box below |
+| Smart Bin - electronics box | 1 | 71 x 190 x 42.5 | Holds the Pi, breadboard, PD board and wiring |
 | Smart Bin - assembly | | | All of the above in position, plus the bin |
+
+The **box hanger and electronics box are not in the assembly document yet**, so
+they are exported on their own rather than by the export script below. They
+cannot go in until the hub plate is settled, for the reason in
+[`../docs/build_log.md`](../docs/build_log.md).
 
 Not printed: **four** lengths of 20mm PVC electrical conduit, three for the
 legs and one standing up for the camera, plus two MG996R servos.
@@ -64,6 +71,29 @@ the pipe is not in shot and so the bolt head is reachable.
 **Still missing: no lock screw for the post.** The socket is a 35mm slip fit,
 so nothing stops the pipe turning and swinging the camera off aim. Drill and
 tap it by hand for now, or wait for the part to be updated.
+
+## The electronics box
+
+It goes on one of the **long side walls, on the outside**, centred 63mm from the
+middle of that wall toward the camera-post end. That leaves 15.2mm to the bin's
+corner and 14.8mm to the nearest leg clamp, which is the tightest pair of
+clearances on the part. It sticks out 77mm from the wall and hangs 42.5mm below
+the rim. Nothing about it is tied to that spot; it can go anywhere there is
+190mm of clear rim.
+
+The hanger goes on first and stays there. Its thumbscrew enters **from inside
+the bin**, so it is set once, before the bags go in, and the box then lifts on
+and off without touching it. The box's top edge finishes level with the rim, so
+cables from the hub and the camera post cross the rim and drop straight in
+through the 10mm gap between the box's back wall and the bin.
+
+Inside is **185 x 62 x 40mm**. A Raspberry Pi 3B and a half-size breadboard lie
+side by side along the floor with 17mm to spare. **Measure your breadboard
+first:** this is sized for the half-size 83 x 55mm board in the prototype
+photos, and a full-size 165mm one will not fit beside the Pi.
+
+Four pegs in the floor match the Pi's own 58 x 49mm hole pattern and stand it
+3mm clear. The board drops on and no screws are needed.
 
 ## Folders
 
@@ -115,8 +145,9 @@ you want the camera to look down.
 
 ## Hardware
 
-22 x M3 brass heat-set inserts: 6 in the bracket feet, 6 in the pipe lock pads,
-3 in the clamp jaws, 3 in the pan ring, 4 in the tilt cradle.
+23 x M3 brass heat-set inserts: 6 in the bracket feet, 6 in the pipe lock pads,
+3 in the clamp jaws, 3 in the pan ring, 4 in the tilt cradle, 1 in the box
+hanger.
 
 | Qty | Screw | Into |
 | ---: | :--- | :--- |
@@ -127,6 +158,7 @@ you want the camera to look down.
 | 1 | M3 x 10 + washer | through the cradle's idler wall into the yoke's boss. Self-taps into a 2.5mm pilot |
 | 3 | M3 x 16 or 20 | clamp thumbscrews. 16 leaves 2.4mm of travel, 20 leaves 6.4mm |
 | 1 | 1/4-20 UNC x 12 or so | camera head, up through the side arm into the webcam. Hex head sits in the 11.5mm recess underneath. Any tripod screw works |
+| 1 | M3 x 16 | box hanger jaw, entering from **inside** the bin. Crosses a 7.5mm gap to a 4.5mm wall with 3.5mm to spare. A 20 also fits |
 
 The servos are fixed with **the small screws that came in their own bag**, not
 with M3:
@@ -166,6 +198,9 @@ actually takes the panning torque. That is deliberate, and the reason is in
 11. Tray onto the cradle, four countersunk screws.
 12. Camera post into the camera clamp's socket, head onto the top of it, webcam
     bolted to the head's side arm. Aim it before you tighten anything.
+13. Box hanger over the rim on a long side wall, thumbscrew tightened from
+    inside the bin. Then drop the electronics box onto its cleat. The box only
+    goes on one way round, and it lifts straight off again.
 
 Centre both servos in software before step 9, or the head will be built at an
 angle and the whole travel will be off to one side.

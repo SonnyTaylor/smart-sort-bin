@@ -267,6 +267,69 @@ Without this the mechanism would need 240 degrees of pan and a servo upgrade.
 
 ---
 
+## 6. Where the electronics live
+
+The Pi, the breadboard, the PD trigger board and the wiring hang in a box on the
+**outside** of the bin rim, on a separate hanger that stays on the bin when the
+box is lifted off.
+
+### Why not underneath
+
+Underneath the hub is the obvious place and it does not work. The three leg
+brackets hang to 27.4mm below the rim, so a box has to start below them, and
+that is exactly where the three bags converge. Getting the Pi out would mean
+reaching through the rubbish, and the box would have to bolt to the hub plate.
+Outside the rim costs nothing but 77mm of stick-out and keeps the electronics
+clean, dry and at hand height.
+
+### The weight goes into the rim, not into friction
+
+The tripod's three clamps hold themselves on by pinching the wall between a rib
+and a thumbscrew. That works there because the plate spans the bin and the load
+is shared three ways. One hanger carrying about 300g on a 33mm arm is a
+different problem, so the hanger **hooks over the rim** instead: a slot with a
+flat roof sits on the top edge of the wall and the thumbscrew only stops it
+lifting or sitting crooked.
+
+The jaw itself is the bin clamp's, unchanged in principle: a vertical rounded
+rib on one side, a single screw point on the other, so it grips a rectangular
+bin, a round bin or a cardboard box. The fit-any-bin property survives.
+
+### Why it is two parts
+
+An open-topped box prints open side up, every wall vertical and nothing
+overhanging. A hook over the rim has to open **downward**, so built into the box
+its inner leg would begin in mid air and need support material through the one
+slot whose fit matters. Split in two, each part prints in its best orientation:
+the box open side up, the hanger standing up with the slot's flat roof bridging
+15mm.
+
+The split pays for itself twice more. The box lifts off without disturbing the
+jaw's setting, and the thumbscrew can be reached with the box hanging, because
+it enters from inside the bin.
+
+### The numbers
+
+| | |
+| :--- | ---: |
+| Inside the box | 185 x 62 x 40 mm |
+| Sticks out from the bin wall | 77 mm |
+| Hangs below the rim | 42.5 mm |
+| Gap between the box's back and the bin wall | 10 mm |
+| Box, with windows | 62.0 cm3 |
+| Box, if the walls were solid | 85.2 cm3 |
+| Hanger | 18.1 cm3 |
+
+The 10mm gap matters: bins taper, and the box hangs off the hanger rather than
+resting on the wall, so a sloping wall does not push it off plumb.
+
+The windows are the same argument as the pipe sockets in section 1. A plain
+walled box is 85.2 cm3 and most of that plastic is doing nothing, so the walls
+are cut to a frame, which takes 27% off and vents the Pi at the same time. The
+floor slots do the same job and let anything spilt drain out.
+
+---
+
 ## Verified clearances
 
 These were measured against the assembled model rather than estimated.

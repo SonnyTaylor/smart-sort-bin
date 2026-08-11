@@ -27,10 +27,11 @@ The electronics and software half of the prototype runs.
 
 ### Designed but not made
 
-**None of the nine printed parts exist yet.** Hub plate, three leg brackets,
-two bin clamps, one camera clamp, camera head, pan ring, tilt yoke, tilt cradle
-and sorting tray are modelled in Fusion, verified against calculated geometry,
-and not printed. That is nine designs and twelve pieces off the printer.
+**None of the eleven printed parts exist yet.** Hub plate, three leg brackets,
+two bin clamps, one camera clamp, camera head, pan ring, tilt yoke, tilt cradle,
+sorting tray, box hanger and electronics box are modelled in Fusion, verified
+against calculated geometry, and not printed. That is eleven designs and
+fourteen pieces off the printer.
 
 The bought MakerWorld pan-tilt **has** been built, and is now superseded by the
 pan ring, tilt yoke and tilt cradle. Its servos move across; the printed part of
@@ -55,6 +56,52 @@ stiff enough, or that items land where the maths says. Those need the printer.
 ---
 
 ## Entries
+
+### 11 August 2026: the electronics had nowhere to live either
+
+The same gap as the camera, found the same way. The Pi, the breadboard, the PD
+trigger board, the capacitor and the wiring were loose on a desk, and nothing in
+the design held any of them.
+
+Sonny asked for a detachable box and suggested underneath. Underneath does not
+work, and the reasons are worth keeping: the leg brackets hang to 27.4mm below
+the rim so a box has to start below them, which is where the three bags
+converge, and the Pi would come out through the rubbish. It would also have to
+bolt to the hub plate, which is the part this session cannot touch.
+
+**Done.** Two parts, both outside the bin, neither of which changes any existing
+part:
+
+- A *box hanger*, 18113.7 mm3, that hooks over the rim. The weight goes into the
+  rim through a flat-roofed slot rather than into a friction pinch, because one
+  hanger holding about 300g on a 33mm arm is not the same problem as three
+  clamps sharing a tripod. The jaw is the bin clamp's rib and thumbscrew, so it
+  still grips a rectangular bin, a round bin or a box.
+- An *electronics box*, 61960.3 mm3, 185 x 62 x 40mm inside, hanging on the
+  hanger's 45 degree cleat. It lifts straight off with one hand.
+
+Why it is two parts, and why the walls are cut to a frame, are in
+[mechanical_design.md](mechanical_design.md). The fault found while fitting it
+is 15 in [mechanical_iteration_log.md](mechanical_iteration_log.md).
+
+**Checked, not assumed.** Both meshes are closed manifolds with no open edges.
+Both agree with volumes calculated by hand from the design dimensions: the
+hanger to 0.003% and the box to 0.03%, the difference being faceting on the
+rounded corners. The cleat and its notch were probed face by face to confirm the
+45 degree bearing surfaces meet and that the back wall is still closed behind
+the notch.
+
+**Not done, and it matters:**
+
+- Nothing is printed, so none of it is confirmed in the hand.
+- **Neither part is in the Fusion assembly**, so Fusion's own interference
+  analysis has not been run on them. The assembly is still on the rolled-back
+  hub plate, per the entry below. The clearances quoted in
+  [../cad/README.md](../cad/README.md) are arithmetic against the assembly's
+  coordinates, not a swept check.
+- The breadboard was measured off the prototype photograph, not with calipers.
+  If it turns out to be a full-size 165mm board rather than a half-size 83mm
+  one, the box has to be redrawn.
 
 ### 11 August 2026: Fusion crashed and took the hub plate rebuild with it
 

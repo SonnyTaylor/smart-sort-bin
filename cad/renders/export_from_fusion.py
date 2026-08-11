@@ -1,4 +1,4 @@
-"""Export the nine printed parts out of Fusion into cad/stl/ and cad/step/.
+"""Export the printed parts out of Fusion into cad/stl/ and cad/step/.
 
 Fusion is the design source of truth, so the "current" panel of every evolution
 render is drawn from these exports rather than from the old OpenSCAD files.
@@ -40,6 +40,11 @@ PARTS = {
 # "tray mount" is deliberately absent. The tilt cradle replaced it when the
 # head was rebuilt, but cad/stl/tray_mount.stl stays in git because the
 # design-evolution render of the mount family draws its old version from it.
+#
+# "box hanger" and "electronics box" are absent for a different reason: they are
+# not in the assembly document yet, and this script reads the parts out of the
+# assembly. Add them here once they are placed, or the script will stop with
+# "Not found in this document". Until then they are exported on their own.
 
 
 def run(_context: str):
