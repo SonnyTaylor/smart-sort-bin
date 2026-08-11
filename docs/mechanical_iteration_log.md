@@ -362,7 +362,28 @@ It cannot catch a wrong measurement of a bought part, which is exactly how fault
 
 ## Toolchain notes
 
-Two problems cost real time and are worth recording.
+Three problems cost real time and are worth recording.
+
+**Fusion can report a save it has not done.** This is the most expensive one,
+because it is what destroyed the hub plate's feature history. Editing a part and
+saving it appeared to work: `Document.save()` returned true, the document then
+reported itself unmodified, and it reported itself as its own latest version.
+The data panel still held the old version, and the edit existed only in memory.
+
+It happens when the document being edited is the copy Fusion opens **as a
+reference inside the assembly** rather than the file opened on its own. Two
+handles on one file are open at once, and the reference copy will not commit.
+
+Two habits come out of it, and both are cheap:
+
+- Open a part by its file id, edit that, and never edit the copy that came in
+  under an assembly.
+- **Check the version number in the data panel after saving.** The return value
+  of the save, and the document's own "am I modified" flag, both lie.
+
+The same failure would have been caught much earlier if anything had compared
+the model against the committed export, which is now how every part here is
+checked.
 
 **OpenSCAD to STEP.** The hub was developed in OpenSCAD, which only exports
 meshes. Converting to solid CAD via FreeCAD failed on two constructs: `hull()`,

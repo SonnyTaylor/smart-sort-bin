@@ -10,7 +10,7 @@ FILE_DESCRIPTION(
 
 FILE_NAME(
 /* name */ 'tilt_yoke.step',
-/* time_stamp */ '2026-08-11T13:41:23+10:00',
+/* time_stamp */ '2026-08-11T22:49:28+10:00',
 /* author */ (''),
 /* organization */ (''),
 /* preprocessor_version */ 'ST-DEVELOPER v20.1',
@@ -1519,16 +1519,16 @@ SOLID_ANGLE_UNIT()
 #1464=SHAPE_REPRESENTATION('',(#876),#1456);
 #1465=PRODUCT_DEFINITION_CONTEXT('part definition',#1470,'design');
 #1466=PRODUCT_DEFINITION('Smart Bin - tilt yoke',
-'Smart Bin - tilt yoke v4',#1467,#1465);
+'Smart Bin - tilt yoke v5',#1467,#1465);
 #1467=PRODUCT_DEFINITION_FORMATION('',$,#1472);
-#1468=PRODUCT_RELATED_PRODUCT_CATEGORY('Smart Bin - tilt yoke v4',
-'Smart Bin - tilt yoke v4',(#1472));
+#1468=PRODUCT_RELATED_PRODUCT_CATEGORY('Smart Bin - tilt yoke v5',
+'Smart Bin - tilt yoke v5',(#1472));
 #1469=APPLICATION_PROTOCOL_DEFINITION('international standard',
 'automotive_design',2009,#1470);
 #1470=APPLICATION_CONTEXT(
 'Core Data for Automotive Mechanical Design Process');
 #1471=PRODUCT_CONTEXT('part definition',#1470,'mechanical');
-#1472=PRODUCT('Smart Bin - tilt yoke','Smart Bin - tilt yoke v4',$,(#1471));
+#1472=PRODUCT('Smart Bin - tilt yoke','Smart Bin - tilt yoke v5',$,(#1471));
 #1473=PRESENTATION_STYLE_ASSIGNMENT((#1474));
 #1474=SURFACE_STYLE_USAGE(.BOTH.,#1475);
 #1475=SURFACE_SIDE_STYLE('',(#1476));

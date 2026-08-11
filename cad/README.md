@@ -63,9 +63,11 @@ The webcam mounts with a **1/4-20 bolt** through the head's side arm, head
 recessed underneath, thread pointing up. The arm sticks out toward the tray so
 the pipe is not in shot and so the bolt head is reachable.
 
-**Still missing: no lock screw for the post.** The socket is a 35mm slip fit,
-so nothing stops the pipe turning and swinging the camera off aim. Drill and
-tap it by hand for now, or wait for the part to be updated.
+**The post locks with an M3 screw** through a pad on the outboard side of the
+socket, 26mm above the rim. The socket wall on its own is 2.97mm, too thin to
+take a brass insert, so the pad stands 4mm proud of it and gives the insert its
+full 5mm. Aim the camera first, then tighten. The screw tip reaches 3mm into the
+bore and bites the conduit.
 
 ## The electronics box
 
@@ -140,9 +142,9 @@ you want the camera to look down.
 
 ## Hardware
 
-23 x M3 brass heat-set inserts: 6 in the bracket feet, 6 in the pipe lock pads,
+24 x M3 brass heat-set inserts: 6 in the bracket feet, 6 in the pipe lock pads,
 3 in the clamp jaws, 3 in the pan ring, 4 in the tilt cradle, 1 in the box
-hanger.
+hanger, 1 in the camera post lock pad.
 
 | Qty | Screw | Into |
 | ---: | :--- | :--- |
@@ -154,6 +156,7 @@ hanger.
 | 3 | M3 x 16 or 20 | clamp thumbscrews. 16 leaves 2.4mm of travel, 20 leaves 6.4mm |
 | 1 | 1/4-20 UNC x 12 or so | camera head, up through the side arm into the webcam. Hex head sits in the 11.5mm recess underneath. Any tripod screw works |
 | 1 | M3 x 16 | box hanger jaw, entering from **inside** the bin. Crosses a 7.5mm gap to a 4.5mm wall with 3.5mm to spare. A 20 also fits |
+| 1 | M3 x 10 | camera post lock, through the pad on the socket. Reaches 3mm past the bore onto the conduit |
 
 The servos are fixed with **the small screws that came in their own bag**, not
 with M3:

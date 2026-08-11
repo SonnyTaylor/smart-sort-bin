@@ -57,6 +57,44 @@ stiff enough, or that items land where the maths says. Those need the printer.
 
 ## Entries
 
+### 11 August 2026: the two parts the crash rolled back are rebuilt
+
+**This clears the blocker below.** All three jobs were checked against the
+committed exports rather than by eye, because those exports are the only record
+of what the parts are supposed to be.
+
+**The hub plate is rebuilt natively in Fusion.** Importing the committed
+`cad/step/plate.step` and reading its faces gave the design back exactly: a 132
+disc 4mm thick, three 26mm spokes, three kidney cutouts between them, a
+41.6 x 21mm slot for the pan servo offset 10.2mm so the servo's shaft lands on
+centre, and nine holes on the spoke axes. It was then drawn from those numbers
+as seven features, not imported as a dumb solid, because the feature tree is
+what the course marks.
+
+It measures **28295.24 mm3 against the committed 28295.2**, with the same 45
+faces and the same two face areas to 0.01 mm2.
+
+**The tilt yoke's lost edit was found and put back.** Comparing it to
+`cad/step/tilt_yoke.step` face by face located the missing 149.50 mm3 as a
+20 x 3.25 x 2.30mm notch, which is fault 12's relief for the tilt servo's
+flange. Cutting it brings the yoke to **39312.94 mm3 against the committed
+39312.94**, with 51 faces both. Re-exporting now produces an STL byte-identical
+to the one already in git, which is as strong as this evidence gets.
+
+**The camera post has a lock screw at last.** The socket wall is 2.97mm, too
+thin for a brass insert, so a pad stands 4mm proud of it on the outboard side
+and carries an M3 x 10 into the conduit, 26mm above the rim. Written up in
+[../cad/README.md](../cad/README.md).
+
+**Interference over all sixteen parts is down from seven overlaps to five**, and
+none of the five is a printed part against another printed part. See
+[mechanical_design.md](mechanical_design.md).
+
+**And the cause of the original loss turned up on the way:** Fusion reported a
+save it had not performed. That is almost certainly how the plate rebuild was
+lost, and it is written up under Toolchain notes in
+[mechanical_iteration_log.md](mechanical_iteration_log.md).
+
 ### 11 August 2026: the electronics had nowhere to live either
 
 The same gap as the camera, found the same way. The Pi, the breadboard, the PD
@@ -97,11 +135,12 @@ anything: not the bin wall it hooks over, not the clamp 14.8mm away, not each
 other. Probed point by point, the hanger's roof sits over the rim, its slot
 straddles the 4.5mm wall, and the box hangs with a 10mm gap to the bin.
 
-That same run turned up **seven overlaps that were already there**, listed in
-[mechanical_design.md](mechanical_design.md). The biggest is the pan servo
-inside the rolled-back hub plate, which is the entry below rather than anything
-new. The others are conduits seated about 1mm too deep in their clamps and
-clamp ribs pressed into the bin walls.
+That same run turned up **seven overlaps that were already there**. The biggest
+was the pan servo inside the rolled-back hub plate, which is the entry below
+rather than anything new. The others were conduits seated about 1mm too deep in
+their clamps and clamp ribs pressed into the bin walls. Two of the seven went
+when the plate and yoke were rebuilt later the same day; the five that remain
+are in [mechanical_design.md](mechanical_design.md).
 
 **Not done, and it matters:**
 
@@ -114,7 +153,9 @@ clamp ribs pressed into the bin walls.
 
 ### 11 August 2026: Fusion crashed and took the hub plate rebuild with it
 
-**This one needs fixing before anything else is exported.**
+**Fixed later the same day**, see the entry at the top. Both parts are back and
+the export script is safe to run again. The rest of this entry is the record of
+what went wrong.
 
 Fusion crashed mid-session. On restart, two parts had gone backwards to a state
 older than what is committed in this repo:
@@ -133,10 +174,11 @@ in git are the correct 4mm plate, and the same for the yoke. What is lost is the
 Fusion feature history for those two parts, which is the thing the course wants
 to see.
 
-**Not done, and it is Sonny's call which way to go:** rebuild the plate's
-features in Fusion, or import the committed STEP as a solid and carry on from
-there. Until one of those happens, **do not run the full export script**, because
-it would overwrite the good committed plate and yoke with the rolled-back shapes.
+The choice at the time was to rebuild the plate's features in Fusion or to
+import the committed STEP as a solid. **Rebuilt**, because an imported solid
+carries no feature history and the history is what the course marks. Until that
+was done the full export script had to be left alone, since it would have
+overwritten the good committed plate and yoke with the rolled-back shapes.
 
 Only the three parts changed that day were exported, by a cut-down version of the
 export script naming just those parts.
@@ -247,8 +289,9 @@ hub plate, which is exactly where the tray sweeps when it tilts.
 - Both are in the assembly with a 300mm length of conduit between them. That
   puts the camera 52 degrees above the tray, 199mm away.
 
-**Not done:** no lock screw for the post, so nothing stops the pipe turning and
-swinging the camera off aim.
+**Not done at the time:** no lock screw for the post, so nothing stopped the
+pipe turning and swinging the camera off aim. Added later the same day, see the
+entry at the top.
 
 Print two standard clamps and one camera clamp. The camera clamp cannot print
 flat on the same face as the standard one, since the socket grows out of it.
