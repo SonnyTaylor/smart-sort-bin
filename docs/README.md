@@ -8,6 +8,18 @@ this folder.
 What is left here is the two things the deck does not cover: the mechanical
 design, and the notes for actually running the build.
 
+## Where the build is up to
+
+[**Build log**](build_log.md). What has actually been built, dated, so the
+portfolio gets written from fact. As of 11 August 2026 the electronics and
+software run; none of the five printed parts have been made.
+
+## Where the build is up to
+
+[**Build log**](build_log.md). What has actually been built, dated, so the
+portfolio gets written from fact. As of 11 August 2026 the electronics and
+software run; none of the five printed parts have been made.
+
 ## Mechanical design
 
 | Document | Description |

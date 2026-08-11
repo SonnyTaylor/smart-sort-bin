@@ -34,11 +34,20 @@ reprinting anything. For the 60L ecobin the three legs come out at 103.73,
 118.00 and 103.73mm, and the fact that they differ is exactly the point: three
 legs at 120 degrees cannot reach the walls of a rectangle at equal distances.
 
+This is the design's main idea, and every other decision protects it. The clamp
+shape (below) is what lets it grip a bin of any shape, and using bags rather
+than cut dividers (section 4) is what stops the compartments tying it back to
+one bin.
+
 ### Why the legs sit at 60, 180 and 300 degrees
 
 The drops go at 0, 120 and 240, midway between the legs. If they lined up, the
-tray would fling items straight into a leg. The three bin dividers go directly
-under the three legs, so each sector is a clean opening.
+tray would fling items straight into a leg.
+
+It also means **the legs are the dividers**. Three legs 120 degrees apart cut
+the bin opening into three sectors, and each drop aims at the middle of one. No
+separate divider part is needed, which is the second job the legs are already
+doing.
 
 ### Why the clamp is shaped oddly
 
@@ -106,7 +115,73 @@ Print it upside down, plate flat on the bed, and every overhang faces the bed.
 
 ---
 
-## 4. Getting three bins out of a 180 degree servo
+## 4. The three compartments
+
+Three ordinary bin bags, bulldog-clipped to the rim and to the two legs either
+side of them. One bag per sector. **No divider part is printed or cut**, because
+the legs already divide the opening.
+
+### Why this works, in numbers
+
+Measured off the assembly with the bin in place:
+
+| | |
+| :--- | :--- |
+| Tray underside above the bin rim | 147 mm |
+| Tray underside above the bin floor | 267 mm |
+| Item leaves the tray at a radius of | about 60 mm |
+| Fall time from that height | 0.23 s |
+| Bin wall along the three drop directions | 169, 155, 155 mm |
+
+At a slow tip, roughly 0.3 m/s, an item lands about 130 mm from the centre. At
+0.8 m/s it would reach 250 mm, which is past the wall.
+
+The important consequence: **nothing lands near the middle.** The three sectors
+converge at the hub, and that is exactly where no item falls, so the one place
+bags would fight each other never gets used.
+
+### What this trades away
+
+- Bags sag, and once fairly full they bulge into each other. This is a
+  three-quarters-full solution, not a brim-full one. Rigid dividers would not
+  have that problem.
+- The landing distance spread above is wide enough that a fast tilt throws items
+  at the wall. **Tip speed has to be calibrated on the real thing.** It is a
+  software number rather than a reprint, which is the advantage of doing the
+  motion with servos.
+
+### Why not corflute dividers
+
+Corflute was the original plan and was in the budget. Bags win on the things
+that come up every time you use it: a bag lifts straight out, where corflute
+means lifting rubbish over a wall; a bag holds liquid; it is about $5 against
+$15; and it needs no cutting and no new CAD.
+
+**But the real reason is that corflute would have broken the one property the
+whole design is built around.**
+
+The clamp is deliberately shaped to grip a rectangular bin, a round bin or a
+cardboard box, and changing bins is meant to cost nothing but three new pipe
+lengths. Corflute dividers would have undone that: every new bin needs three
+panels cut to that bin's exact cross-section, and a round bin needs curved ones.
+The adaptable half of the design would have been dragged back down to one
+specific bin.
+
+Bags do not care what shape the bin is. So the fit-any-bin claim now holds all
+the way through:
+
+| To move the whole thing to a different bin | |
+| :--- | :--- |
+| Printed parts | none change |
+| PVC legs | cut three new lengths |
+| Clamps | no adjustment, they pinch at any angle |
+| Compartments | clip the bags to the new rim |
+
+That is the entire changeover. Three saw cuts.
+
+---
+
+## 5. Getting three bins out of a 180 degree servo
 
 Tilting the tray **backward** throws the item 180 degrees opposite to where the
 pan is aiming. Every pan position therefore covers two directions, and three
@@ -143,4 +218,7 @@ These were measured against the assembled model rather than estimated.
 - **2 x MG996R servos**, 40.7 x 19.7 x 42.9mm, mounted on 49 x 10mm flange
   patterns in the stand and the tilt arm.
 - **20mm PVC electrical conduit**, cheap, light and far stiffer than needed for
-  roughly 1kg.
+  roughly 1kg. Cut to length per bin; this is the only thing that changes
+  between bins.
+- **Three bin bags and a handful of bulldog clips**, which are the three
+  compartments. Nothing is printed or cut for these.
