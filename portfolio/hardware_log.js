@@ -202,14 +202,14 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "My first tray had a rim on it", "26 Feb, 6 Aug");
+  addHeader(s, "The rim I did not mean to draw", "26 Feb, 6 Aug");
 
   s.addImage({ path: "images/cad/evolution/tray.png", x: 1.7, y: 1.15, w: 6.6, h: 2.78 });
 
   card(s, {
     x: 0.3, y: 4.05, w: 4.65, h: 1.15,
-    body: "I put a rim around it so things would not roll off while the head was turning. I did not think about what happens next. The rim holds the item in at exactly the moment the tray is trying to tip it out.",
-    fontSize: 10,
+    body: "I made the tray by hollowing out a curved block, which left a wall standing all the way round the edge. I did not put it there on purpose and I left it in, because I thought it would stop things rolling off. It does the opposite. It holds the item in at exactly the moment the tray is trying to tip it out.",
+    fontSize: 9.5,
   });
 
   card(s, {
