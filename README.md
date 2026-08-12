@@ -93,7 +93,7 @@ history and evaluation, and it has been submitted once already.
 
 A second deck, [`portfolio/hardware_log.js`](portfolio/hardware_log.js), builds
 the hardware development log: how the mechanism was designed, in the order it
-happened, with the dated revision history read out of git. Run `bun run
+happened, and the fifteen faults caught before printing. Run `bun run
 hardware-log`.
 
 Everything else has one home, and this is the list of homes:

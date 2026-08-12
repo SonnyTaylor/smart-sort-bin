@@ -11,19 +11,24 @@ cd portfolio
 bun run ai_bin.js
 ```
 
-`hardware_log.js` generates `Hardware_Development_Log.pptx`, the dated record of
-the mechanical build for someone who wants to see the work rather than the
-result. Separate from the assessed deck on purpose, because that one has been
-submitted and adding a build-log section to it was tried and reverted.
+`hardware_log.js` generates `Hardware_Development_Log.pptx`, Sonny's record of
+how the mechanical side got designed and what went wrong along the way.
+Separate from the assessed deck on purpose, because that one has been submitted
+and adding a build-log section to it was tried and reverted.
 
 ```
 cd portfolio
 bun run hardware_log.js
 ```
 
-Its last two slides are read out of `git log` at generate time, so the dates
-cannot drift. Everything else in it is a summary of facts that live in
-`docs/`, so if a number changes there, change it in the script too.
+It is a summary of facts that live in `docs/`, so if a number changes there,
+change it in the script too.
+
+**Voice.** Sonny writes this one, so it reads as a Year 12 student explaining
+what he got wrong: first person, short sentences, plain words. Mistakes are
+owned as things he had not learned yet, not written up as findings. Keep the
+text short and let the pictures do the work. If a slide is getting dense, cut
+it rather than shrinking the font.
 
 | Path | |
 | :--- | :--- |
