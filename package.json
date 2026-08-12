@@ -3,7 +3,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "portfolio": "cd portfolio && bun run ai_bin.js"
+    "portfolio": "cd portfolio && bun run ai_bin.js",
+    "hardware-log": "cd portfolio && bun run hardware_log.js"
   },
   "dependencies": {
     "pptxgenjs": "^4.0.1"
