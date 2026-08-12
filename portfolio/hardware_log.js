@@ -77,6 +77,24 @@ function note(s, text, { x = 0.3, y, w = 9.4, h = 0.62, fill = C.lightgreen, lin
 
 const hdr = (t) => ({ text: t, options: { bold: true, color: C.white, fill: { color: C.primary }, fontSize: 9 } });
 
+// Read once, up here, because the count is quoted on slide 2 as well as listed
+// in the appendix. Hardcoding it there meant it went stale the moment anything
+// was committed.
+const COMMITS = (() => {
+  try {
+    const raw = execSync('git log --reverse --date=format:"%d %b %Y" --pretty=%ad\x1f%s', {
+      cwd: "..", encoding: "utf8", maxBuffer: 1024 * 1024 * 8,
+    }).trim();
+    return raw.split("\n").map((line) => {
+      const i = line.indexOf("\x1f");
+      return [line.slice(0, i), line.slice(i + 1)];
+    });
+  } catch (e) {
+    console.error("could not read git history:", e.message);
+    process.exit(1);
+  }
+})();
+
 function tableOpts(extra = {}) {
   return {
     border: { pt: 0.5, color: "C8E0CC" },
@@ -139,7 +157,7 @@ function tableOpts(extra = {}) {
   const claims = [
     ["15", "faults found and fixed\nbefore anything was printed"],
     ["11", "printed parts designed,\nmeasured and exported"],
-    ["91", "dated revisions saved\nacross six months"],
+    [String(COMMITS.length), "dated revisions saved\nacross six months"],
     ["65mm", "of height taken out of\nthe head by redesigning it"],
   ];
   const cw = 9.4 / claims.length;
@@ -692,19 +710,7 @@ const faults = [
 // SLIDES 21+: Full revision history, read from git
 // ─────────────────────────────────────────────
 {
-  let commits = [];
-  try {
-    const raw = execSync('git log --reverse --date=format:"%d %b %Y" --pretty=%ad\x1f%s', {
-      cwd: "..", encoding: "utf8", maxBuffer: 1024 * 1024 * 8,
-    }).trim();
-    commits = raw.split("\n").map((line) => {
-      const i = line.indexOf("\x1f");
-      return [line.slice(0, i), line.slice(i + 1)];
-    });
-  } catch (e) {
-    console.error("could not read git history:", e.message);
-    process.exit(1);
-  }
+  const commits = COMMITS;
 
   // 24 rows is what fits above the slide number once PowerPoint applies its own
   // minimum row height. 26 overflowed the bottom of the slide.
