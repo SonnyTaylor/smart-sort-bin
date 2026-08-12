@@ -97,7 +97,7 @@ function tableOpts(extra = {}) {
   s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: 0.22, h: 5.625, fill: { color: C.accent }, line: { color: C.accent } });
 
   s.addText("HARDWARE DEVELOPMENT LOG", { x: 0.5, y: 1.05, w: 9, h: 0.8, fontSize: 40, bold: true, color: C.accent, fontFace: "Trebuchet MS", align: "left", margin: 0 });
-  s.addText("Smart Sort Bin: how I designed the mechanism, and what I got wrong", { x: 0.5, y: 1.9, w: 8.5, h: 0.45, fontSize: 15, color: "A8D5BA", fontFace: "Calibri", align: "left", margin: 0 });
+  s.addText("Smart Sort Bin: how I designed the sorting mechanism, and the faults I found doing it", { x: 0.5, y: 1.9, w: 8.5, h: 0.45, fontSize: 14, color: "A8D5BA", fontFace: "Calibri", align: "left", margin: 0 });
   s.addText("VCE Systems Engineering, Units 3 and 4", { x: 0.5, y: 2.38, w: 8.5, h: 0.35, fontSize: 13, color: "7EC8A0", fontFace: "Calibri", align: "left", italic: true, margin: 0 });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 3.05, w: 6.5, h: 0.02, fill: { color: C.accent, transparency: 40 }, line: { color: C.accent, transparency: 40 } });
@@ -112,18 +112,18 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "What this is", "Read this first");
+  addHeader(s, "About this log", "Read this first");
 
   card(s, {
     x: 0.3, y: 1.2, w: 4.65, h: 1.5,
-    title: "WHAT IS IN IT",
+    title: "WHAT THIS COVERS",
     body: "How the mechanism got designed, in the order it happened. I kept the versions that did not work, because that is where I learned the most.\n\nThe old versions are the real ones, saved at the time. I did not redraw them afterwards.",
     fontSize: 10,
   });
 
   card(s, {
     x: 5.05, y: 1.2, w: 4.65, h: 1.5,
-    title: "WHERE I AM UP TO",
+    title: "CURRENT STATUS",
     strip: C.primary, stripText: C.white,
     body: "The electronics and the software work. I have not printed any of the parts yet.\n\nSo everything in here is designed and checked, not built and tested. I have tried not to claim anything I have not actually done.",
     fontSize: 10,
@@ -131,7 +131,7 @@ function tableOpts(extra = {}) {
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0.3, y: 2.95, w: 9.4, h: 2.15, fill: { color: C.white }, line: { color: C.border } });
   s.addShape(pres.shapes.RECTANGLE, { x: 0.3, y: 2.95, w: 9.4, h: 0.35, fill: { color: C.dark }, line: { color: C.dark } });
-  s.addText("WHAT I HAVE GOT OUT OF IT SO FAR", { x: 0.3, y: 2.95, w: 9.4, h: 0.35, fontSize: 9.5, bold: true, color: C.accent, fontFace: "Trebuchet MS", align: "center", valign: "middle", margin: 0 });
+  s.addText("SUMMARY", { x: 0.3, y: 2.95, w: 9.4, h: 0.35, fontSize: 9.5, bold: true, color: C.accent, fontFace: "Trebuchet MS", align: "center", valign: "middle", margin: 0 });
 
   const claims = [
     ["15", "mistakes I caught\nbefore printing"],
@@ -153,20 +153,20 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "Timeline", "Feb to Aug 2026");
+  addHeader(s, "Development timeline", "Feb to Aug 2026");
 
   s.addTable([
-    [hdr("Date"), hdr("What I did"), hdr("Slide")],
-    ["24 Feb", "Sketched three ideas and picked one", "4"],
-    ["26 Feb", "Drew my first sorting tray", "5"],
+    [hdr("Date"), hdr("Work done"), hdr("Slide")],
+    ["24 Feb", "Sketched three concepts and selected one", "4"],
+    ["26 Feb", "Drew the first sorting tray", "5"],
     ["4 Aug", "Designed the tripod hub and the bin clamps", "6, 7"],
-    ["10 Aug", "Redrew everything in Fusion 360", "8"],
-    ["11 Aug", "Rebuilt the head, it was way too tall", "9, 10"],
-    ["11 Aug", "Realised the camera had nowhere to go", "11"],
-    ["11 Aug", "Made the clamps lighter, and broke one doing it", "13"],
-    ["11 Aug", "Designed a box for the electronics", "14"],
-    ["11 Aug", "Fusion crashed and I lost two parts", "15"],
-    ["12 Aug", "Worked out how to actually print it all", "16"],
+    ["10 Aug", "Rebuilt all the parts in Fusion 360", "8"],
+    ["11 Aug", "Redesigned the head to bring its height down", "9, 10"],
+    ["11 Aug", "Designed the camera post and its mount", "11"],
+    ["11 Aug", "Lightened the pipe sockets on six parts", "13"],
+    ["11 Aug", "Designed the electronics enclosure", "14"],
+    ["11 Aug", "Recovered two parts lost to a CAD crash", "15"],
+    ["12 Aug", "Worked out print orientation and supports", "16"],
   ], tableOpts({ x: 0.3, y: 1.2, w: 9.4, colW: [1.3, 7.1, 1.0], rowH: 0.36, fontSize: 10 }));
 }
 
@@ -176,7 +176,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "Three ideas, and the one I picked", "24 Feb");
+  addHeader(s, "Concept selection", "24 Feb");
 
   const opts = [
     { name: "A - PAN-TILT TRAY", img: "images/sketches/design_option_a.png", cap: "Picked it. Two servos and one tray.", strip: C.accent, stripText: C.dark },
@@ -202,7 +202,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "The rim I did not mean to draw", "26 Feb, 6 Aug");
+  addHeader(s, "Redesigning the sorting tray", "26 Feb, 6 Aug");
 
   s.addImage({ path: "images/cad/evolution/tray.png", x: 1.7, y: 1.15, w: 6.6, h: 2.78 });
 
@@ -225,20 +225,20 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "The clamps took five goes", "4 to 6 Aug");
+  addHeader(s, "Redesigning the bin clamp", "4 to 6 Aug");
 
   s.addImage({ path: "images/cad/evolution/clamp.png", x: 0.3, y: 1.15, w: 9.4, h: 2.38 });
 
   card(s, {
     x: 0.3, y: 3.68, w: 4.65, h: 1.25,
-    title: "WHAT I GOT WRONG",
+    title: "THE PROBLEM",
     body: "I drew a flat jaw, because a bin wall is flat. But two of my three legs arrive at the rim on an angle, so two of the three clamps would have gripped on one corner.",
     fontSize: 9.5,
   });
 
   card(s, {
     x: 5.05, y: 3.68, w: 4.65, h: 1.25,
-    title: "WHAT FIXED IT",
+    title: "THE FIX",
     strip: C.primary, stripText: C.white,
     body: "A rounded rib instead of a flat face. It touches along a line no matter what angle it comes in at, and the thumbscrew opposite gives it a second contact point.",
     fontSize: 9.5,
@@ -253,7 +253,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "The hub plate got a lot lighter", "4 to 11 Aug");
+  addHeader(s, "Reducing material in the hub plate", "4 to 11 Aug");
 
   s.addImage({ path: "images/cad/evolution/plate.png", x: 0.65, y: 1.15, w: 8.7, h: 2.2 });
 
@@ -271,25 +271,25 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "Redrawing it all in Fusion 360", "10 Aug");
+  addHeader(s, "Rebuilding the parts in Fusion 360", "10 Aug");
 
   card(s, {
     x: 0.3, y: 1.2, w: 4.65, h: 1.6,
-    title: "WHY I REDREW IT",
+    title: "REASON FOR THE CHANGE",
     body: "I had drawn everything in OpenSCAD, which builds shapes from code. The course wants Fusion, so I rebuilt all five parts there.\n\nI thought this would be a waste of a day. It was not.",
     fontSize: 10,
   });
 
   card(s, {
     x: 5.05, y: 1.2, w: 4.65, h: 1.6,
-    title: "WHAT IT SHOWED ME",
+    title: "WHAT IT EXPOSED",
     strip: C.primary, stripText: C.white,
     body: "Fusion puts the parts together against each other and OpenSCAD does not. As soon as they were assembled I could see five things wrong that I had not been able to see before.",
     fontSize: 10,
   });
 
   s.addTable([
-    [hdr("What I got wrong"), hdr("What would have happened")],
+    [hdr("Fault"), hdr("Consequence if it had been printed")],
     ["The tray's mounting boss stood 1mm proud of the surface", "The tray could not have been bolted on at all"],
     ["The pipe lock screw only had 1.56mm of thread in it", "It strips as you tighten it and the leg pulls out"],
     ["I wrote down M3 x 12 screws going into a 9mm deep hole", "The screw hits the bottom and the joint never tightens"],
@@ -304,7 +304,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "The head was way too tall", "11 Aug");
+  addHeader(s, "Reducing the height of the head", "11 Aug");
 
   card(s, {
     x: 0.3, y: 1.2, w: 5.3, h: 1.55,
@@ -318,7 +318,7 @@ function tableOpts(extra = {}) {
 
   card(s, {
     x: 0.3, y: 3.55, w: 9.4, h: 1.6,
-    title: "WHY I DID NOT SEE IT SOONER",
+    title: "WHY IT WAS NOT CAUGHT EARLIER",
     body: "When I bought it I only had the STL file, which is just a shape with no dimensions attached, so I could not measure it properly and I treated it as fixed. I did not know at the time that a STEP file would have given me the actual sizes. Once I got hold of one I could see the problem straight away: the bracket stands its tilt servo up on its end, so the servo body finishes 37mm above the point the tray pivots on, and the tray has to clear the servo before it clears anything else.",
     fontSize: 10,
   });
@@ -330,7 +330,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "147mm above the rim becomes 82mm", "11 Aug");
+  addHeader(s, "Head redesign, before and after", "11 Aug");
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0.3, y: 1.15, w: 4.65, h: 2.95, fill: { color: C.white }, line: { color: C.border } });
   s.addShape(pres.shapes.RECTANGLE, { x: 0.3, y: 1.15, w: 4.65, h: 0.34, fill: { color: C.primary }, line: { color: C.primary } });
@@ -364,7 +364,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "The camera had nowhere to go", "11 Aug");
+  addHeader(s, "Mounting the camera", "11 Aug");
 
   note(s, "I took the bracket's camera plate off so the tray could go there, and never asked myself where the camera was supposed to sit instead.", { y: 1.15, h: 0.5, fill: "FDF2E9", line: "E67E22" });
 
@@ -381,7 +381,7 @@ function tableOpts(extra = {}) {
 
   card(s, {
     x: 4.9, y: 3.95, w: 4.8, h: 1.25,
-    title: "AND THEN I PUT THE BOLT ON THE WRONG FACE",
+    title: "A SECOND FAULT ON THE SAME PART",
     body: "The webcam has a tripod thread underneath it, so I cut a recess for the bolt. I cut it into the top of the arm, which would have left the camera hanging under it upside down. I checked the volume of the part and it matched what I expected, so I thought it was fine. A volume cannot tell you which side a hole is cut into.",
     fontSize: 8.5,
   });
@@ -393,7 +393,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "A servo is not the shape I thought it was", "11 Aug");
+  addHeader(s, "Designing around a real servo", "11 Aug");
 
   card(s, {
     x: 0.3, y: 1.2, w: 9.4, h: 1.15,
@@ -417,18 +417,18 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "Making the clamps lighter", "11 Aug");
+  addHeader(s, "Lightening the pipe sockets", "11 Aug");
 
   card(s, {
     x: 0.3, y: 1.2, w: 4.65, h: 1.5,
-    title: "THE IDEA",
+    title: "THE CHANGE",
     body: "Every part that holds a pipe was a solid block with a round hole through it, which is 36% plastic and 64% air. The plastic was in the wrong place too: 1.5mm of wall at the sides where the load is, and 6mm sitting in the corners.\n\nSo I cut the corners off all six parts.",
     fontSize: 9.5,
   });
 
   card(s, {
     x: 5.05, y: 1.2, w: 4.65, h: 1.5,
-    title: "WHAT I BROKE",
+    title: "WHAT IT BROKE",
     strip: C.primary, stripText: C.white,
     body: "I applied the same rule to every corner without checking what each one was holding up. On the camera clamp there was something underneath: the socket the camera post sits in.\n\nCutting the corners opened that hole to the outside air and took away the stop that sets how far the post goes in.",
     fontSize: 9.5,
@@ -443,7 +443,7 @@ function tableOpts(extra = {}) {
 
   card(s, {
     x: 5.65, y: 2.95, w: 4.05, h: 1.6,
-    title: "WHY TWO OF THEM SAVE LESS",
+    title: "WHY TWO PARTS SAVE LESS",
     body: "Because I put the bottom corners back on the camera clamp and the leg bracket, where something is attached underneath. They only come off the bin clamp, where nothing is.",
     fontSize: 9,
   });
@@ -457,20 +457,20 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "The electronics were sitting on my desk", "11 Aug");
+  addHeader(s, "Housing the electronics", "11 Aug");
 
   note(s, "Same mistake as the camera. The Pi, the breadboard, the power board and all the wiring were loose on the desk, and I had not designed anything to hold them.", { y: 1.15, h: 0.5, fill: "FDF2E9", line: "E67E22" });
 
   card(s, {
     x: 0.3, y: 1.85, w: 3.05, h: 2.0,
-    title: "NOT UNDERNEATH",
+    title: "WHY NOT UNDERNEATH",
     body: "Underneath was my first idea and it does not work. The leg brackets hang 27mm below the rim, so a box has to start below them, and that is where the three bags meet.\n\nThe Pi would come out through the rubbish.",
     fontSize: 9.5,
   });
 
   card(s, {
     x: 3.5, y: 1.85, w: 3.05, h: 2.0,
-    title: "SO IT HANGS OUTSIDE",
+    title: "HANGING IT OUTSIDE",
     strip: C.primary, stripText: C.white,
     body: "A hanger hooks over the rim and stays there. The box sits on it and lifts straight off with one hand.\n\nThe weight goes into the rim through a flat slot rather than a friction grip, because one box on a 33mm arm is a lot more load than a clamp sees.",
     fontSize: 9.5,
@@ -478,7 +478,7 @@ function tableOpts(extra = {}) {
 
   card(s, {
     x: 6.7, y: 1.85, w: 3.0, h: 2.0,
-    title: "AND I GOT IT WRONG AGAIN",
+    title: "A FAULT FOUND WHILE FITTING IT",
     body: "I reused the bin clamp's jaw for the hanger, which put the thumbscrew on the outside face. That is the face the box hangs on.\n\nThe screw head would have been trapped behind the box. I swapped the rib and the screw around so it comes in from inside the bin.",
     fontSize: 9.5,
   });
@@ -492,7 +492,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "Fusion crashed and I lost two parts", "11 Aug");
+  addHeader(s, "Recovering two lost parts", "11 Aug");
 
   card(s, {
     x: 0.3, y: 1.2, w: 9.4, h: 1.15,
@@ -502,14 +502,14 @@ function tableOpts(extra = {}) {
 
   card(s, {
     x: 0.3, y: 2.55, w: 4.65, h: 1.65,
-    title: "WHAT I DID",
+    title: "THE DECISION",
     body: "The shapes themselves were not gone, because I had exported them. What was gone was the Fusion history, the list of steps that builds each part.\n\nI could have imported the exported shape back in as one solid lump in about a minute. I redrew both properly instead, because a lump has no steps behind it and the steps are the part that gets marked.",
     fontSize: 9.5,
   });
 
   card(s, {
     x: 5.05, y: 2.55, w: 4.65, h: 1.65,
-    title: "HOW I CHECKED THE REDRAW",
+    title: "VERIFYING THE REBUILD",
     strip: C.primary, stripText: C.white,
     body: "I compared both against the versions I had exported earlier. The plate came out at 28,295.24 against 28,295.2, with the same number of faces.\n\nThe yoke was missing a small notch, which turned out to be the relief I had cut for the servo flange. Once I cut it again the yoke matched exactly.",
     fontSize: 9.5,
@@ -524,7 +524,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "Working out how to print it", "12 Aug");
+  addHeader(s, "Preparing the parts for printing", "12 Aug");
 
   card(s, {
     x: 0.3, y: 1.2, w: 9.4, h: 0.9,
@@ -541,14 +541,14 @@ function tableOpts(extra = {}) {
 
   card(s, {
     x: 5.75, y: 2.3, w: 3.95, h: 1.36,
-    title: "THE TRAY IS THE ANNOYING ONE",
+    title: "THE TRAY IS THE EXCEPTION",
     body: "It is a curved saddle, so it has no flat face anywhere. Laid down it only touches the bed on two edges. It gets printed flat with supports and a brim anyway, because standing it up puts the layers the wrong way in a part that gets pushed sideways.",
     fontSize: 9,
   });
 
   card(s, {
     x: 0.3, y: 3.9, w: 9.4, h: 1.3,
-    title: "WHAT I AM PRINTING FIRST",
+    title: "FIRST PART TO BE PRINTED",
     strip: C.primary, stripText: C.white,
     body: "One leg bracket. It is the smallest structural part at 14.7 cubic cm, and it is the only one that tests a brass insert hole, a conduit socket and a lock screw all at once. Those are three of the numbers I am least sure about, so one small print tells me whether they work before I commit to the other thirteen pieces. All fourteen come to about 440g of plastic if they were solid, so probably 200 to 265g once sliced properly.",
     fontSize: 10,
@@ -561,7 +561,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "Everything I got wrong, in one place", "15 total");
+  addHeader(s, "Faults found before printing", "15 total");
 
   s.addText("All of these were caught before I printed anything. Most of them are things I did not know yet rather than things I was careless about, which is the reason I have written them all down.", {
     x: 0.3, y: 1.08, w: 9.4, h: 0.36, fontSize: 10, color: C.text, fontFace: "Calibri", valign: "middle", margin: 0,
@@ -588,7 +588,7 @@ function tableOpts(extra = {}) {
   const half = 8;
   [faults.slice(0, half), faults.slice(half)].forEach((col, ci) => {
     s.addTable([
-      [hdr("#"), hdr("What I got wrong"), hdr("What it would have done")],
+      [hdr("#"), hdr("Fault"), hdr("Consequence if built")],
       ...col,
     ], tableOpts({ x: 0.3 + ci * 4.75, y: 1.55, w: 4.6, colW: [0.42, 2.28, 1.9], rowH: 0.36, fontSize: 7.5 }));
   });
@@ -600,7 +600,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "What I actually learned", "Looking back");
+  addHeader(s, "What the faults had in common", "Looking back");
 
   const lessons = [
     ["Draw it assembled, not part by part", "Nearly everything I got wrong only showed up once the parts were sitting against each other. On their own they all looked fine."],
@@ -622,7 +622,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "Where it is up to", "12 Aug 2026");
+  addHeader(s, "Current status", "12 Aug 2026");
 
   s.addImage({ path: "images/photos/prototype_pantilt.jpg", x: 0.3, y: 1.2, w: 4.5, h: 3.39 });
   caption(s, "The half that works. Everything here moves and classifies. None of it is a part I designed yet.", { x: 0.3, y: 4.62, w: 4.5 });
@@ -656,7 +656,7 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "What I am doing next", "Next steps");
+  addHeader(s, "Next steps", "What happens now");
 
   s.addImage({ path: "images/cad/rebuilt_assembly_iso.png", x: 0.3, y: 1.2, w: 4.6, h: 3.45 });
   caption(s, "The whole thing in a 60L bin, as it stands now.", { x: 0.3, y: 4.68, w: 4.6 });

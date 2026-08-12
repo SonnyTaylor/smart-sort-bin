@@ -24,11 +24,18 @@ bun run hardware_log.js
 It is a summary of facts that live in `docs/`, so if a number changes there,
 change it in the script too.
 
-**Voice.** Sonny writes this one, so it reads as a Year 12 student explaining
-what he got wrong: first person, short sentences, plain words. Mistakes are
-owned as things he had not learned yet, not written up as findings. Keep the
-text short and let the pictures do the work. If a slide is getting dense, cut
-it rather than shrinking the font.
+**Voice.** Two registers, on purpose.
+
+Slide titles and card headings are plain and formal: `Reducing the height of the
+head`, `Lightening the pipe sockets`, `THE PROBLEM`, `THE FIX`. They name what
+was done, not how it felt. No jokes and no first person in a title.
+
+Body text is Sonny writing: first person, short sentences, plain words, mistakes
+owned as things he had not learned yet rather than written up as findings.
+
+Keep it short and let the pictures do the work. If a slide is getting dense, cut
+it rather than shrinking the font. A title over about 40 characters wraps onto a
+second line and collides with the date chip, so check the render.
 
 | Path | |
 | :--- | :--- |
