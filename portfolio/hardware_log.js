@@ -357,13 +357,11 @@ function tableOpts(extra = {}) {
   });
 
   s.addTable([
-    [hdr("What the real servo does"), hdr("What it did to my part")],
-    ["The top face is a stepped stack that sticks up 2.3mm above the case", "My ring and my yoke were both resting on it, so the head would not sit flat"],
-    ["There is a 1mm rib running down the middle of the mounting flange", "The flange rocks on the rib instead of being clamped down"],
-    ["The flange is wider than I allowed for", "The servo will not drop into its tower at all"],
-  ], tableOpts({ x: 0.3, y: 2.55, w: 9.4, colW: [4.7, 4.7], rowH: 0.5, fontSize: 9.5 }));
-
-  note(s, "More care would not have caught this one. I did not know what to look for yet.", { y: 4.68, h: 0.5 });
+    [hdr("What the real servo does"), hdr("What it did to my part"), hdr("What I changed")],
+    ["The top face is a stepped stack that sticks up 2.3mm above the case", "My ring and my yoke were both resting on it, so the head would not sit flat", "Bearing raised to 15.5mm, 1mm clear of the highest step"],
+    ["There is a 1mm rib running down the middle of the mounting flange", "The flange rocks on the rib instead of being clamped down", "3mm relief groove cut into the ring's pocket ceiling"],
+    ["The flange is wider than I allowed for", "The servo will not drop into its tower at all", "Servo moved 1.5mm outboard, rib notched 2.1mm"],
+  ], tableOpts({ x: 0.3, y: 2.55, w: 9.4, colW: [3.4, 3.0, 3.0], rowH: 0.5, fontSize: 9 }));
 }
 
 // ─────────────────────────────────────────────
