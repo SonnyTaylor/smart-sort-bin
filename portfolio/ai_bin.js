@@ -42,15 +42,13 @@ function addFooter(s, text) {
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: 0.22, h: 5.625, fill: { color: C.accent }, line: { color: C.accent } });
 
-  s.addText("AI SMART BIN", { x: 0.5, y: 1.0, w: 8, h: 0.85, fontSize: 46, bold: true, color: C.accent, fontFace: "Trebuchet MS", align: "left", margin: 0 });
-  s.addText("Victorian Certificate of Education (VCE) Systems Engineering - Units 3 & 4 School Assessed Task (SAT)", { x: 0.5, y: 1.9, w: 8, h: 0.45, fontSize: 16, color: "A8D5BA", fontFace: "Calibri", align: "left", margin: 0 });
-  s.addText("Criterion 1: Design Brief and Evaluation Criteria", { x: 0.5, y: 2.38, w: 8, h: 0.35, fontSize: 13, color: "7EC8A0", fontFace: "Calibri", align: "left", italic: true, margin: 0 });
+  s.addText("AI SMART BIN", { x: 0.5, y: 1.35, w: 8, h: 0.85, fontSize: 46, bold: true, color: C.accent, fontFace: "Trebuchet MS", align: "left", margin: 0 });
 
-  s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 3.05, w: 6.5, h: 0.02, fill: { color: C.accent, transparency: 40 }, line: { color: C.accent, transparency: 40 } });
+  s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 2.55, w: 6.5, h: 0.02, fill: { color: C.accent, transparency: 40 }, line: { color: C.accent, transparency: 40 } });
 
-  s.addText("Sonny Taylor  |  Beaumaris Secondary College", { x: 0.5, y: 3.25, w: 6.5, h: 0.35, fontSize: 12, color: "A8D5BA", fontFace: "Calibri", margin: 0 });
+  s.addText("Sonny Taylor  |  Beaumaris Secondary College", { x: 0.5, y: 2.75, w: 6.5, h: 0.35, fontSize: 12, color: "A8D5BA", fontFace: "Calibri", margin: 0 });
   s.addText("An AI-powered waste sorting system that eliminates recycling\ncontamination at the point of disposal -inspired by the Ameru AI Bin.", {
-    x: 0.5, y: 3.65, w: 6.5, h: 0.9, fontSize: 12, color: "C8E6D5", fontFace: "Calibri", margin: 0
+    x: 0.5, y: 3.15, w: 6.5, h: 0.9, fontSize: 12, color: "C8E6D5", fontFace: "Calibri", margin: 0
   });
 
 }
