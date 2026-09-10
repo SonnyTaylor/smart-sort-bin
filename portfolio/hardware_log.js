@@ -1,10 +1,10 @@
-// Hardware Development Log -> Hardware_Development_Log.pptx
+// Hardware Development Log -> buildSlides(pres), or a standalone deck.
 //
-//   cd portfolio && bun run hardware_log.js
+//   cd portfolio && bun run hardware_log.js   writes Hardware_Development_Log.pptx
+//   ai_bin.js requires this module            appends the log onto AI_Smart_Bin.pptx
 //
-// A separate deck from ai_bin.js. That one is the assessed portfolio and has
-// been submitted; this one is Sonny's record of how the mechanical side got
-// designed. Same house style so the two read as the same student's work.
+// Sonny's record of how the mechanical side got designed. Same house style as
+// the main deck so the two read as the same student's work.
 //
 // Voice rules for anything added here: first person, short sentences, plain
 // words. Sonny writes it, so it should sound like a Year 12 student explaining
@@ -14,11 +14,10 @@
 // Keep the text short. Every number comes from docs/build_log.md,
 // docs/mechanical_design.md, docs/mechanical_iteration_log.md or cad/README.md.
 
-const pptxgen = require("pptxgenjs");
-
-let pres = new pptxgen();
-pres.layout = "LAYOUT_16x9";
-pres.title = "Smart Sort Bin - Hardware Development Log";
+// buildSlides(pres) appends these slides onto whatever presentation it is
+// handed. ai_bin.js calls it to merge itself into one deck; run directly, it
+// still writes the standalone log.
+function buildSlides(pres) {
 
 const C = {
   dark: "0D2818",
@@ -34,12 +33,6 @@ const C = {
 
 const mk = () => undefined;
 
-const _addSlide = pres.addSlide.bind(pres);
-pres.addSlide = function (...args) {
-  const s = _addSlide(...args);
-  s.slideNumber = { x: 9.25, y: 5.28, w: 0.55, h: 0.28, fontFace: "Calibri", fontSize: 9, color: C.gray, align: "right" };
-  return s;
-};
 
 function addHeader(s, title, subtitle) {
   s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: 10, h: 1.0, fill: { color: C.primary }, line: { color: C.primary } });
@@ -106,46 +99,7 @@ function tableOpts(extra = {}) {
   s.addText("February to August 2026", { x: 0.5, y: 3.65, w: 6.5, h: 0.35, fontSize: 12, color: "C8E6D5", fontFace: "Calibri", margin: 0 });
 }
 
-// ─────────────────────────────────────────────
-// 2. What this is
-// ─────────────────────────────────────────────
-{
-  let s = pres.addSlide();
-  s.background = { color: C.lightgray };
-  addHeader(s, "About this log", "Read this first");
 
-  card(s, {
-    x: 0.3, y: 1.2, w: 4.65, h: 1.5,
-    title: "WHAT THIS COVERS",
-    body: "How the mechanism got designed, in the order it happened. I kept the versions that did not work, because that is where I learned the most.\n\nThe old versions are the real ones, saved at the time. I did not redraw them afterwards.",
-    fontSize: 10,
-  });
-
-  card(s, {
-    x: 5.05, y: 1.2, w: 4.65, h: 1.5,
-    title: "CURRENT STATUS",
-    strip: C.primary, stripText: C.white,
-    body: "The electronics and the software work. I have not printed any of the parts yet.\n\nSo everything in here is designed and checked, not built and tested. I have tried not to claim anything I have not actually done.",
-    fontSize: 10,
-  });
-
-  s.addShape(pres.shapes.RECTANGLE, { x: 0.3, y: 2.95, w: 9.4, h: 2.15, fill: { color: C.white }, line: { color: C.border } });
-  s.addShape(pres.shapes.RECTANGLE, { x: 0.3, y: 2.95, w: 9.4, h: 0.35, fill: { color: C.dark }, line: { color: C.dark } });
-  s.addText("SUMMARY", { x: 0.3, y: 2.95, w: 9.4, h: 0.35, fontSize: 9.5, bold: true, color: C.accent, fontFace: "Trebuchet MS", align: "center", valign: "middle", margin: 0 });
-
-  const claims = [
-    ["15", "mistakes I caught\nbefore printing"],
-    ["11", "parts designed\nand ready to print"],
-    ["65mm", "of height I took out\nof the head"],
-  ];
-  const cw = 9.4 / claims.length;
-  claims.forEach(([big, small], i) => {
-    const cx = 0.3 + i * cw;
-    if (i > 0) s.addShape(pres.shapes.RECTANGLE, { x: cx, y: 3.4, w: 0.02, h: 1.55, fill: { color: C.border }, line: { color: C.border } });
-    s.addText(big, { x: cx + 0.1, y: 3.5, w: cw - 0.2, h: 0.7, fontSize: 34, bold: true, color: C.primary, fontFace: "Trebuchet MS", align: "center", valign: "middle", margin: 0 });
-    s.addText(small, { x: cx + 0.1, y: 4.24, w: cw - 0.2, h: 0.72, fontSize: 10.5, color: C.text, fontFace: "Calibri", align: "center", valign: "top", margin: 0 });
-  });
-}
 
 // ─────────────────────────────────────────────
 // 3. Timeline
@@ -157,16 +111,17 @@ function tableOpts(extra = {}) {
 
   s.addTable([
     [hdr("Date"), hdr("Work done"), hdr("Slide")],
-    ["24 Feb", "Sketched three concepts and selected one", "4"],
-    ["26 Feb", "Drew the first sorting tray", "5"],
-    ["4 Aug", "Designed the tripod hub and the bin clamps", "6, 7"],
-    ["10 Aug", "Rebuilt all the parts in Fusion 360", "8"],
-    ["11 Aug", "Redesigned the head to bring its height down", "9, 10"],
-    ["11 Aug", "Designed the camera post and its mount", "11"],
-    ["11 Aug", "Lightened the pipe sockets on six parts", "13"],
-    ["11 Aug", "Designed the electronics enclosure", "14"],
-    ["11 Aug", "Recovered two parts lost to a CAD crash", "15"],
-    ["12 Aug", "Worked out print orientation and supports", "16"],
+    ["24 Feb", "Sketched three concepts and selected one", "3"],
+    ["26 Feb", "Drew the first sorting tray", "4"],
+    ["4 Aug", "Designed the tripod hub and the bin clamps", "5, 6"],
+    ["10 Aug", "Moved the parts into Fusion 360", "7"],
+    ["11 Aug", "Redesigned the head to bring its height down", "8, 9"],
+    ["11 Aug", "Designed the camera post and its mount", "10"],
+    ["11 Aug", "Lightened the pipe sockets on six parts", "12"],
+    ["11 Aug", "Designed the electronics enclosure", "13"],
+    ["11 Aug", "Recovered two parts lost to a CAD crash", "14"],
+    ["12 Aug", "Worked out print orientation and supports", "15"],
+    ["1 Sep", "Loaded the first print plate with three parts", "16"],
   ], tableOpts({ x: 0.3, y: 1.2, w: 9.4, colW: [1.3, 7.1, 1.0], rowH: 0.36, fontSize: 10 }));
 }
 
@@ -271,12 +226,12 @@ function tableOpts(extra = {}) {
 {
   let s = pres.addSlide();
   s.background = { color: C.lightgray };
-  addHeader(s, "Rebuilding the parts in Fusion 360", "10 Aug");
+  addHeader(s, "Moving the parts into Fusion 360", "10 Aug");
 
   card(s, {
     x: 0.3, y: 1.2, w: 4.65, h: 1.6,
-    title: "REASON FOR THE CHANGE",
-    body: "I had drawn everything in OpenSCAD, which builds shapes from code. The course wants Fusion, so I rebuilt all five parts there.\n\nI thought this would be a waste of a day. It was not.",
+    title: "FROM SKETCHES TO CAD",
+    body: "The parts started as hand drawings, then went into Fusion 360 so the whole assembly could be put together and checked as one model instead of five separate drawings.\n\nI expected the CAD work to be a formality. It was not.",
     fontSize: 10,
   });
 
@@ -284,7 +239,7 @@ function tableOpts(extra = {}) {
     x: 5.05, y: 1.2, w: 4.65, h: 1.6,
     title: "WHAT IT EXPOSED",
     strip: C.primary, stripText: C.white,
-    body: "Fusion puts the parts together against each other and OpenSCAD does not. As soon as they were assembled I could see five things wrong that I had not been able to see before.",
+    body: "I had only been looking at each part on its own. As soon as I put them together in Fusion I could see five things wrong that I had not been able to see before.",
     fontSize: 10,
   });
 
@@ -308,18 +263,18 @@ function tableOpts(extra = {}) {
 
   card(s, {
     x: 0.3, y: 1.2, w: 5.3, h: 1.55,
-    body: "I bought a ready made pan and tilt bracket early on and designed everything around it. When I finally measured the whole assembly, it was holding the tray 147mm above the bin rim and the thing towered over the bin it is meant to sit in.\n\n85mm of that was the bracket I had bought.",
+    body: "I downloaded a ready made pan and tilt bracket from MakerWorld early on and designed everything around it. When I finally measured the whole assembly, it was holding the tray 147mm above the bin rim and the thing towered over the bin it is meant to sit in.\n\n85mm of that was the bracket I had downloaded.",
     fontSize: 10,
   });
 
   s.addImage({ path: "images/photos/3dprint_bracket.png", x: 5.85, y: 1.2, w: 1.85, h: 1.84 });
   s.addImage({ path: "images/cad/bought_tracker_front.png", x: 7.9, y: 1.66, w: 1.8, h: 1.35 });
-  caption(s, "The bracket I bought, and where it ended up sitting.", { x: 5.85, y: 3.08, w: 3.85 });
+  caption(s, "The bracket I downloaded, and where it ended up sitting.", { x: 5.85, y: 3.08, w: 3.85 });
 
   card(s, {
     x: 0.3, y: 3.55, w: 9.4, h: 1.6,
     title: "WHY IT WAS NOT CAUGHT EARLIER",
-    body: "When I bought it I only had the STL file, which is just a shape with no dimensions attached, so I could not measure it properly and I treated it as fixed. I did not know at the time that a STEP file would have given me the actual sizes. Once I got hold of one I could see the problem straight away: the bracket stands its tilt servo up on its end, so the servo body finishes 37mm above the point the tray pivots on, and the tray has to clear the servo before it clears anything else.",
+    body: "When I downloaded it I only had the STL file, which is just a shape with no dimensions attached, so I could not measure it properly and I treated it as fixed. I did not know at the time that a STEP file would have given me the actual sizes. Once I got hold of one I could see the problem straight away: the bracket stands its tilt servo up on its end, so the servo body finishes 37mm above the point the tray pivots on, and the tray has to clear the servo before it clears anything else.",
     fontSize: 10,
   });
 }
@@ -334,7 +289,7 @@ function tableOpts(extra = {}) {
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0.3, y: 1.15, w: 4.65, h: 2.95, fill: { color: C.white }, line: { color: C.border } });
   s.addShape(pres.shapes.RECTANGLE, { x: 0.3, y: 1.15, w: 4.65, h: 0.34, fill: { color: C.primary }, line: { color: C.primary } });
-  s.addText("BEFORE - THE BRACKET I BOUGHT", { x: 0.3, y: 1.15, w: 4.65, h: 0.34, fontSize: 9, bold: true, color: C.white, fontFace: "Trebuchet MS", align: "center", valign: "middle", margin: 0 });
+  s.addText("BEFORE - THE BRACKET I DOWNLOADED", { x: 0.3, y: 1.15, w: 4.65, h: 0.34, fontSize: 9, bold: true, color: C.white, fontFace: "Trebuchet MS", align: "center", valign: "middle", margin: 0 });
   s.addImage({ path: "images/cad/bought_tracker_front.png", x: 0.45, y: 1.55, w: 4.35, h: 2.45 });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 5.05, y: 1.15, w: 4.65, h: 2.95, fill: { color: C.white }, line: { color: C.border } });
@@ -526,32 +481,44 @@ function tableOpts(extra = {}) {
   s.background = { color: C.lightgray };
   addHeader(s, "Preparing the parts for printing", "12 Aug");
 
-  card(s, {
-    x: 0.3, y: 1.2, w: 9.4, h: 0.9,
-    body: "Everything was drawn and exported and I still had no idea which way up any of it goes on the printer. I tried each part all six ways it can sit and measured how much of it would be hanging in mid air. Eight of the eleven need no support at all, which is because of the 45 degree edges I had already put on them for a different reason.",
-    fontSize: 10.5,
-  });
-
   s.addTable([
     [hdr("Needs support"), hdr("Where"), hdr("How much")],
     ["Camera clamp", "the roof over the camera post socket", "363 mm2"],
     ["Tilt yoke", "the roof of the servo horn pocket", "427 mm2"],
     ["Tray", "nearly the whole underside", "8.6 cm2"],
-  ], tableOpts({ x: 0.3, y: 2.3, w: 5.25, colW: [1.45, 2.85, 0.95], rowH: 0.34, fontSize: 9 }));
+  ], tableOpts({ x: 0.3, y: 1.2, w: 5.25, colW: [1.45, 2.85, 0.95], rowH: 0.4, fontSize: 10 }));
 
   card(s, {
-    x: 5.75, y: 2.3, w: 3.95, h: 1.36,
+    x: 5.75, y: 1.2, w: 3.95, h: 1.6,
     title: "THE TRAY IS THE EXCEPTION",
     body: "It is a curved saddle, so it has no flat face anywhere. Laid down it only touches the bed on two edges. It gets printed flat with supports and a brim anyway, because standing it up puts the layers the wrong way in a part that gets pushed sideways.",
-    fontSize: 9,
+    fontSize: 10,
   });
 
   card(s, {
-    x: 0.3, y: 3.9, w: 9.4, h: 1.3,
+    x: 0.3, y: 3.1, w: 9.4, h: 1.55,
     title: "FIRST PART TO BE PRINTED",
     strip: C.primary, stripText: C.white,
     body: "One leg bracket. It is the smallest structural part at 14.7 cubic cm, and it is the only one that tests a brass insert hole, a conduit socket and a lock screw all at once. Those are three of the numbers I am least sure about, so one small print tells me whether they work before I commit to the other thirteen pieces. All fourteen come to about 440g of plastic if they were solid, so probably 200 to 265g once sliced properly.",
     fontSize: 10,
+  });
+}
+
+// ─────────────────────────────────────────────
+// Loading the first print plate
+// ─────────────────────────────────────────────
+{
+  let s = pres.addSlide();
+  s.background = { color: C.lightgray };
+  addHeader(s, "Loading the first print plate", "1 Sep");
+
+  s.addImage({ path: "images/screens/print_preview.png", x: 0.3, y: 1.15, w: 6.0, h: 3.55 });
+  caption(s, "Bambu Studio, ready to send the first three parts to the printer.", { x: 0.3, y: 4.74, w: 6.0 });
+
+  card(s, {
+    x: 6.5, y: 1.15, w: 3.2, h: 3.55,
+    body: "The first plate takes the tray, its mount and the hub plate. Support is turned on for the tray, which is why the support tab is open. It comes to about three hours on the machine, so I am doing the three trickiest parts first instead of the safest ones.",
+    fontSize: 11,
   });
 }
 
@@ -595,29 +562,7 @@ function tableOpts(extra = {}) {
 }
 
 // ─────────────────────────────────────────────
-// 18. What I learned
-// ─────────────────────────────────────────────
-{
-  let s = pres.addSlide();
-  s.background = { color: C.lightgray };
-  addHeader(s, "What the faults had in common", "Looking back");
-
-  const lessons = [
-    ["Draw it assembled, not part by part", "Nearly everything I got wrong only showed up once the parts were sitting against each other. On their own they all looked fine."],
-    ["Measure the thing, not the picture of it", "The servo, the bought bracket and the breadboard all caught me out because I went off a datasheet drawing or a photo instead of the real object."],
-    ["A number matching does not mean it is right", "I checked the camera head's volume, it matched, and the bolt hole was still on the wrong side. The check I was using could not see that kind of mistake."],
-    ["Ask what a bit of material is doing before removing it", "I saved plastic on six parts with one rule and broke one of them, because I never asked what each corner was holding up."],
-  ];
-
-  lessons.forEach(([title, body], i) => {
-    const x = 0.3 + (i % 2) * 4.75;
-    const y = 1.35 + Math.floor(i / 2) * 1.85;
-    card(s, { x, y, w: 4.6, h: 1.55, title: title.toUpperCase(), body, fontSize: 10, strip: i % 2 === 0 ? C.accent : C.primary, stripText: i % 2 === 0 ? C.dark : C.white });
-  });
-}
-
-// ─────────────────────────────────────────────
-// 19. Where it is up to
+// Where it is up to
 // ─────────────────────────────────────────────
 {
   let s = pres.addSlide();
@@ -638,7 +583,7 @@ function tableOpts(extra = {}) {
     x: 4.95, y: 2.65, w: 4.75, h: 1.35,
     title: "DESIGNED, NOT MADE",
     strip: C.primary, stripText: C.white,
-    body: "All eleven printed parts. Eleven designs, fourteen pieces off the printer. I have not bought the bin, the conduit, the inserts or the bags yet either.",
+    body: "All eleven printed parts. Eleven designs, fourteen pieces off the printer. I have not bought the bin or the conduit, and I do not have the inserts or the bags yet either.",
     fontSize: 9.5,
   });
 
@@ -680,6 +625,17 @@ function tableOpts(extra = {}) {
   });
 }
 
-pres.writeFile({ fileName: "Hardware_Development_Log.pptx" })
-  .then(() => console.log("Done! -> Hardware_Development_Log.pptx"))
-  .catch((e) => console.error(e));
+}
+
+module.exports = { buildSlides };
+
+if (require.main === module) {
+  const pptxgen = require("pptxgenjs");
+  const pres = new pptxgen();
+  pres.layout = "LAYOUT_16x9";
+  pres.title = "Smart Sort Bin - Hardware Development Log";
+  buildSlides(pres);
+  pres.writeFile({ fileName: "Hardware_Development_Log.pptx" })
+    .then(() => console.log("Done! -> Hardware_Development_Log.pptx"))
+    .catch((e) => console.error(e));
+}
