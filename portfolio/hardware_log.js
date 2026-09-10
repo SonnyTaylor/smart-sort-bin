@@ -483,9 +483,9 @@ function tableOpts(extra = {}) {
 
   s.addTable([
     [hdr("Needs support"), hdr("Where"), hdr("How much")],
-    ["Camera clamp", "the roof over the camera post socket", "363 mm2"],
-    ["Tilt yoke", "the roof of the servo horn pocket", "427 mm2"],
-    ["Tray", "nearly the whole underside", "8.6 cm2"],
+    ["Camera clamp", "the roof over the camera post socket", "363 mm²"],
+    ["Tilt yoke", "the roof of the servo horn pocket", "427 mm²"],
+    ["Tray", "nearly the whole underside", "8.6 cm²"],
   ], tableOpts({ x: 0.3, y: 1.2, w: 5.25, colW: [1.45, 2.85, 0.95], rowH: 0.4, fontSize: 10 }));
 
   card(s, {
