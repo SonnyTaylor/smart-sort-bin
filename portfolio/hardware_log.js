@@ -321,7 +321,7 @@ function tableOpts(extra = {}) {
   s.background = { color: C.lightgray };
   addHeader(s, "Mounting the camera", "11 Aug");
 
-  note(s, "I took the bracket's camera plate off so the tray could go there, and never asked myself where the camera was supposed to sit instead.", { y: 1.15, h: 0.5, fill: "FDF2E9", line: "E67E22" });
+  note(s, "I took the camera plate off the bracket to make room for the tray, and only noticed later that this left the camera with nowhere to mount.", { y: 1.15, h: 0.5, fill: "FDF2E9", line: "E67E22" });
 
   s.addImage({ path: "images/cad/evolution/camera_clamp.png", x: 0.3, y: 1.85, w: 4.3, h: 2.72 });
   caption(s, "The camera clamp is just my bin clamp with a socket on top.", { x: 0.3, y: 4.6, w: 4.3 });
@@ -363,7 +363,7 @@ function tableOpts(extra = {}) {
     ["The flange is wider than I allowed for", "The servo will not drop into its tower at all"],
   ], tableOpts({ x: 0.3, y: 2.55, w: 9.4, colW: [4.7, 4.7], rowH: 0.5, fontSize: 9.5 }));
 
-  note(s, "This is the one I would not have caught by being more careful. I just did not know it yet.", { y: 4.68, h: 0.5 });
+  note(s, "More care would not have caught this one. I did not know what to look for yet.", { y: 4.68, h: 0.5 });
 }
 
 // ─────────────────────────────────────────────
@@ -403,7 +403,7 @@ function tableOpts(extra = {}) {
     fontSize: 9,
   });
 
-  note(s, "The corners on two of these parts measure exactly the same and do completely different jobs. Size is not a good way to tell what is holding something up.", { y: 4.7, h: 0.5, fontSize: 10 });
+  note(s, "Two of these parts have identical corners but completely different jobs, so the dimensions alone do not tell you which one is carrying the load.", { y: 4.7, h: 0.5, fontSize: 10 });
 }
 
 // ─────────────────────────────────────────────
@@ -414,7 +414,7 @@ function tableOpts(extra = {}) {
   s.background = { color: C.lightgray };
   addHeader(s, "Housing the electronics", "11 Aug");
 
-  note(s, "Same mistake as the camera. The Pi, the breadboard, the power board and all the wiring were loose on the desk, and I had not designed anything to hold them.", { y: 1.15, h: 0.5, fill: "FDF2E9", line: "E67E22" });
+  note(s, "The electronics had the same problem. The Pi, breadboard, power board and wiring had nowhere to mount, so they sat loose on the desk.", { y: 1.15, h: 0.5, fill: "FDF2E9", line: "E67E22" });
 
   card(s, {
     x: 0.3, y: 1.85, w: 3.05, h: 2.0,
