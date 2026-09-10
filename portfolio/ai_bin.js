@@ -1,4 +1,6 @@
 const pptxgen = require("pptxgenjs");
+const { buildSlides } = require("./hardware_log.js");
+
 let pres = new pptxgen();
 pres.layout = "LAYOUT_16x9";
 pres.title = "AI Smart Bin - Systems Engineering School Assessed Task (SAT)";
@@ -17,13 +19,6 @@ const C = {
 // shadows removed - flat default-shape look, less "designed"
 const mk = () => undefined;
 
-// auto slide numbers on every slide (bottom-right)
-const _addSlide = pres.addSlide.bind(pres);
-pres.addSlide = function (...args) {
-  const s = _addSlide(...args);
-  s.slideNumber = { x: 9.25, y: 5.28, w: 0.55, h: 0.28, fontFace: "Calibri", fontSize: 9, color: C.gray, align: "right" };
-  return s;
-};
 
 function addHeader(s, title, subtitle) {
   s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: 10, h: 1.0, fill: { color: C.primary }, line: { color: C.primary } });
@@ -48,7 +43,7 @@ function addFooter(s, text) {
   s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: 0.22, h: 5.625, fill: { color: C.accent }, line: { color: C.accent } });
 
   s.addText("AI SMART BIN", { x: 0.5, y: 1.0, w: 8, h: 0.85, fontSize: 46, bold: true, color: C.accent, fontFace: "Trebuchet MS", align: "left", margin: 0 });
-  s.addText("Victorian Certificate of Education (VCE) Systems Engineering - Unit 3 School Assessed Task (SAT)", { x: 0.5, y: 1.9, w: 8, h: 0.45, fontSize: 16, color: "A8D5BA", fontFace: "Calibri", align: "left", margin: 0 });
+  s.addText("Victorian Certificate of Education (VCE) Systems Engineering - Units 3 & 4 School Assessed Task (SAT)", { x: 0.5, y: 1.9, w: 8, h: 0.45, fontSize: 16, color: "A8D5BA", fontFace: "Calibri", align: "left", margin: 0 });
   s.addText("Criterion 1: Design Brief and Evaluation Criteria", { x: 0.5, y: 2.38, w: 8, h: 0.35, fontSize: 13, color: "7EC8A0", fontFace: "Calibri", align: "left", italic: true, margin: 0 });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 3.05, w: 6.5, h: 0.02, fill: { color: C.accent, transparency: 40 }, line: { color: C.accent, transparency: 40 } });
@@ -390,7 +385,7 @@ function addFooter(s, text) {
     [
       "Accurately classify and sort different types of waste.",
       "Classification Accuracy > 90%",
-      "Drop 50 different test items (plastic, paper, general waste) and count how many are routed to the correct compartment.",
+      "Drop 50 test items (plastic, paper, general waste) and count how many are sorted correctly.",
       "Aligns with the design brief's goal of addressing incorrect sorting and the environmental ethical issue."
     ],
     [
@@ -402,8 +397,8 @@ function addFooter(s, text) {
     [
       "Operate quietly during the sorting process.",
       "Operating Noise < 50 Decibels",
-      "Use a decibel meter placed 1 metre from the bin while motors are actuating. The 50dB target is based on WHO guidelines for indoor noise in work environments (WHO, 1999).",
-      "Meets the Environment of Use constraint -suitable for quiet indoor spaces such as offices and classrooms."
+      "Decibel meter 1 m from the bin while the motors run. The 50 dB target comes from WHO indoor noise guidelines (WHO, 1999).",
+      "Meets the Environment of Use factor -suitable for quiet offices and classrooms."
     ],
     [
       "Consume minimal energy while waiting for users.",
@@ -412,9 +407,9 @@ function addFooter(s, text) {
       "Supports the Waste & Energy sustainability factor -minimises the bin's own carbon footprint."
     ],
     [
-      "Keep users safe with no exposed moving parts or high voltage.",
-      "Operating Voltage < 12 V DC, all mechanics enclosed",
-      "Visual inspection that no moving part is reachable, plus a multimeter check that no accessible point exceeds 12 V.",
+      "Keep users safe: no exposed moving parts or high voltage.",
+      "Operating Voltage < 12 V DC, mechanics enclosed",
+      "Visual check that no moving part is reachable; multimeter confirms no point exceeds 12 V.",
       "Meets the Safety factor (4.4) and the AS/NZS 3000 low-voltage requirement."
     ],
     [
@@ -434,12 +429,13 @@ function addFooter(s, text) {
   s.addTable(tableData, {
     x: 0.3, y: 1.15, w: 9.4, h: 4.35,
     border: { pt: 0.5, color: "C8E0CC" },
-    colW: [2.1, 1.9, 2.4, 3.0],
+    colW: [1.9, 1.8, 2.9, 2.8],
     fill: { color: C.white },
-    fontSize: 9,
+    fontSize: 8.5,
     fontFace: "Calibri",
     color: C.text,
     valign: "middle",
+    rowH: 0.42,
   });
 
   addFooter(s, "Section 7 - Evaluation Criteria  |  Each criterion must be measurable, linked to a parameter, and testable");
@@ -2041,6 +2037,8 @@ addTestSlide(
 
   addFooter(s, "References");
 }
+
+buildSlides(pres);
 
 pres.writeFile({ fileName: "AI_Smart_Bin.pptx" })
   .then(() => console.log("Done! -> AI_Smart_Bin.pptx"))
