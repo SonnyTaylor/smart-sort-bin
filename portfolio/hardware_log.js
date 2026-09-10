@@ -111,17 +111,17 @@ function tableOpts(extra = {}) {
 
   s.addTable([
     [hdr("Date"), hdr("Work done"), hdr("Slide")],
-    ["24 Feb", "Sketched three concepts and selected one", "3"],
-    ["26 Feb", "Drew the first sorting tray", "4"],
-    ["4 Aug", "Designed the tripod hub and the bin clamps", "5, 6"],
-    ["10 Aug", "Moved the parts into Fusion 360", "7"],
-    ["11 Aug", "Redesigned the head to bring its height down", "8, 9"],
-    ["11 Aug", "Designed the camera post and its mount", "10"],
-    ["11 Aug", "Lightened the pipe sockets on six parts", "12"],
-    ["11 Aug", "Designed the electronics enclosure", "13"],
-    ["11 Aug", "Recovered two parts lost to a CAD crash", "14"],
-    ["12 Aug", "Worked out print orientation and supports", "15"],
-    ["1 Sep", "Loaded the first print plate with three parts", "16"],
+    ["24 Feb", "Sketched three concepts and selected one", "48"],
+    ["26 Feb", "Drew the first sorting tray", "49"],
+    ["4 Aug", "Designed the tripod hub and the bin clamps", "50, 51"],
+    ["10 Aug", "Moved the parts into Fusion 360", "52"],
+    ["11 Aug", "Redesigned the head to bring its height down", "53, 54"],
+    ["11 Aug", "Designed the camera post and its mount", "55"],
+    ["11 Aug", "Drew the head parts around the real servo, not the datasheet box", "56"],
+    ["11 Aug", "Lightened the pipe sockets on six parts", "57"],
+    ["11 Aug", "Designed the electronics enclosure", "58"],
+    ["12 Aug", "Worked out print orientation and supports", "60"],
+    ["1 Sep", "Loaded the first print plate with three parts", "61"],
   ], tableOpts({ x: 0.3, y: 1.2, w: 9.4, colW: [1.3, 7.1, 1.0], rowH: 0.36, fontSize: 10 }));
 }
 
@@ -439,38 +439,6 @@ function tableOpts(extra = {}) {
   });
 
   note(s, "Still to check: I measured the breadboard off a photo instead of with calipers. If it is the bigger 165mm one, I have to redraw the box.", { y: 4.05, h: 0.5, fontSize: 10 });
-}
-
-// ─────────────────────────────────────────────
-// 15. Fusion crashed
-// ─────────────────────────────────────────────
-{
-  let s = pres.addSlide();
-  s.background = { color: C.lightgray };
-  addHeader(s, "Recovering two lost parts", "11 Aug");
-
-  card(s, {
-    x: 0.3, y: 1.2, w: 9.4, h: 1.15,
-    body: "Fusion crashed while I was working. When it came back, two of my parts had gone backwards to older versions. Both of them said they were saved and up to date, so I had been working on edits that had never actually been written anywhere. I had trusted it because it told me it had saved.",
-    fontSize: 10.5,
-  });
-
-  card(s, {
-    x: 0.3, y: 2.55, w: 4.65, h: 1.65,
-    title: "THE DECISION",
-    body: "The shapes themselves were not gone, because I had exported them. What was gone was the Fusion history, the list of steps that builds each part.\n\nI could have imported the exported shape back in as one solid lump in about a minute. I redrew both properly instead, because a lump has no steps behind it and the steps are the part that gets marked.",
-    fontSize: 9.5,
-  });
-
-  card(s, {
-    x: 5.05, y: 2.55, w: 4.65, h: 1.65,
-    title: "VERIFYING THE REBUILD",
-    strip: C.primary, stripText: C.white,
-    body: "I compared both against the versions I had exported earlier. The plate came out at 28,295.24 against 28,295.2, with the same number of faces.\n\nThe yoke was missing a small notch, which turned out to be the relief I had cut for the servo flange. Once I cut it again the yoke matched exactly.",
-    fontSize: 9.5,
-  });
-
-  note(s, "I now export a part as soon as I am happy with it, instead of trusting that it is safe inside the program.", { y: 4.4, h: 0.5 });
 }
 
 // ─────────────────────────────────────────────
